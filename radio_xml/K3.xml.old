@@ -1,0 +1,208 @@
+<!--
+    Rig definition file for use with fldigi
+
+Fldigi uses CAT commands for TX and RX control.
+Set the K3 PTT-KEY menu to OFF-OFF on the rig, and don't assert either 
+RTS or CTS in fldigi config.
+
+if you know the bandwidth values for the 4 IF filters you can substitute
+the numeric values for the strings FL-1 to FL-4, ie 400 for FL-1.  See
+the definition for <BANDWIDTHS>...</BANDWIDTHS> below.
+
+-->
+
+<RIGDEF>
+
+  <RIG>Elecraft K3</RIG>
+
+  <PROGRAMMER>
+    Programmers: Dave, W1HKJ; 
+                 Leigh L. Klotz, Jr. WA5ZNU and
+                 Alan Steele VA3STL
+    Tested by:   John, W1ZI
+  </PROGRAMMER>
+
+  <STATUS>
+    Stable
+    Version:    3.20.28
+    Date:       5 September 2010
+  </STATUS>
+
+  <TITLE>RigCAT - K3</TITLE>
+
+  <!--
+      default settings for initial setup
+  -->
+
+  <TIMEOUT>50</TIMEOUT>
+  <RETRIES>2</RETRIES>
+  <WRITE_DELAY>5</WRITE_DELAY>
+  <BAUDRATE>38400</BAUDRATE>
+  <RTSCTS>false</RTSCTS>
+  <ECHO>false</ECHO>
+  <STOPBITS>1</STOPBITS>
+<!--
+  <RTSCTS>false</RTSCTS>
+  <DTRPLUS>true</DTRPLUS>
+  <RTSPLUS>false</RTSPLUS>
+  <DTRPTT>false</DTRPTT>
+  <RTSPTT>false</RTSPTT>
+-->
+  <CMDPTT>true</CMDPTT>
+
+  <MODES>
+    <ELEMENT><SYMBOL>LSB</SYMBOL><BYTE>31</BYTE></ELEMENT>
+    <ELEMENT><SYMBOL>USB</SYMBOL><BYTE>32</BYTE></ELEMENT>
+    <ELEMENT><SYMBOL>CW</SYMBOL><BYTE>33</BYTE></ELEMENT>
+    <ELEMENT><SYMBOL>DATA</SYMBOL><BYTE>36</BYTE></ELEMENT>
+  </MODES>
+
+  <!-- lsb mode strings should match those given in the modes symbol specifier -->
+
+  <LSBMODES>
+    <STRING>LSB</STRING>
+    <STRING>RTTY</STRING>
+    <STRING>CW</STRING>
+  </LSBMODES>
+
+  <!-- if you know the bandwidth values for the 4 IF filters you can substitute the
+       numeric values for the strings FL-1 to FL-4, ie 400 for FL-1
+  -->
+  
+  <BANDWIDTHS>
+    <ELEMENT><SYMBOL>FL-1</SYMBOL><BYTE>31</BYTE></ELEMENT>
+    <ELEMENT><SYMBOL>FL-2</SYMBOL><BYTE>32</BYTE></ELEMENT>
+    <ELEMENT><SYMBOL>FL-3</SYMBOL><BYTE>33</BYTE></ELEMENT>
+    <ELEMENT><SYMBOL>FL-4</SYMBOL><BYTE>34</BYTE></ELEMENT>
+  </BANDWIDTHS>
+  
+  <REPLY>
+    <SYMBOL>MODE</SYMBOL>
+    <SIZE>4</SIZE>
+    <STRING>MD</STRING>
+    <DATA>
+      <DTYPE>BYTE</DTYPE>
+      <SIZE>1</SIZE>
+    </DATA>
+    <STRING>;</STRING>
+  </REPLY>
+
+  <REPLY>
+    <SYMBOL>FREQ</SYMBOL>
+    <SIZE>14</SIZE>
+    <STRING>FA</STRING>
+    <DATA>
+      <DTYPE>DECIMAL</DTYPE>
+      <SIZE>11</SIZE>
+      <MAX>99999999999</MAX>
+      <MIN>00001500000</MIN>
+      <RESOL>1</RESOL>
+    </DATA>
+    <STRING>;</STRING>
+  </REPLY>  
+
+  <!-- 
+       Response to a request for Bandwidth
+       K2 replies with FWwwwwNA;
+       where wwww = filter bandwidth in hz ie, 0400  ===> not used for this implementation
+       N    = filter number, 1 to 4 as decimal character
+       A    = audio filter state, 0 = OFF, 1 = AF1, 2 = AF2
+  -->
+
+  <REPLY>
+    <SYMBOL>BW</SYMBOL> 
+    <SIZE>9</SIZE>
+    <STRING>FW</STRING>
+    <FILL>4</FILL>
+    <DATA>
+      <DTYPE>BYTE</DTYPE>
+      <SIZE>1</SIZE>
+    </DATA>
+    <FILL>1</FILL>
+    <STRING>;</STRING>
+  </REPLY>
+
+  <!-- 
+       Initialization command
+       K22; sets the extended command mode for the K2 
+  -->
+
+  <COMMAND>
+    <SYMBOL>INIT</SYMBOL>
+    <SIZE>3</SIZE>
+    <STRING>K32;</STRING>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>SETFREQ</SYMBOL>
+    <SIZE>14</SIZE>
+    <STRING>FA</STRING>
+    <DATA>
+      <DTYPE>DECIMAL</DTYPE>
+      <SIZE>11</SIZE>
+      <MAX>99999999999</MAX>
+      <MIN>00001500000</MIN>
+      <RESOL>1</RESOL>
+    </DATA>
+    <STRING>;</STRING>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>GETFREQ</SYMBOL>
+    <SIZE>3</SIZE>
+    <STRING>FA;</STRING>
+    <INFO>FREQ</INFO>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>SETMODE</SYMBOL>
+    <SIZE>4</SIZE>
+    <STRING>MD</STRING>
+    <DATA>
+      <DTYPE>BYTE</DTYPE>
+      <SIZE>1</SIZE>
+    </DATA>
+    <STRING>;</STRING>
+    <OK>MODE</OK>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>GETMODE</SYMBOL>
+    <SIZE>3</SIZE>
+    <STRING>MD;</STRING>
+    <INFO>MODE</INFO>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>SETBW</SYMBOL>
+    <SIZE>8</SIZE>
+    <STRING>FW0000</STRING>
+    <DATA>
+      <DTYPE>BYTE</DTYPE>
+      <SIZE>1</SIZE>
+    </DATA>
+    <STRING>;</STRING>
+    <OK>OK</OK>
+    <BAD>BAD</BAD>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>GETBW</SYMBOL>
+    <SIZE>19</SIZE>
+    <STRING>K30;K22;FW;K20;K31;</STRING>
+    <INFO>BW</INFO>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>PTTON</SYMBOL>
+    <SIZE>3</SIZE>
+    <STRING>TX;</STRING>
+  </COMMAND>
+
+  <COMMAND>
+    <SYMBOL>PTTOFF</SYMBOL>
+    <SIZE>3</SIZE>
+    <STRING>RX;</STRING>
+  </COMMAND>
+
+</RIGDEF>
