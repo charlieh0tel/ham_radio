@@ -1,0 +1,169 @@
+# Elecraft transceiver control.   Rest is TBD.
+
+_DEBUG=False
+
+class _Device(object):
+    def __init__(self, serial, wakeup_required=False):
+        self._serial = serial
+        self._wakeup_required = wakeup_required
+        serial.timeout = 0.250
+
+    def _WakeUp(self):
+        if _DEBUG: print "_WakeUp"
+        i = 0
+        while i < 2:
+            self._serial.write(";")
+            self._serial.flush()
+            c = self._serial.read()
+            if (c and c[0] == ';'):
+                i += 1
+        if _DEBUG: print "_WakeUp done"
+
+    def _ReadUntilSemi(self):
+        result = bytes()
+        while True:
+            c = self._serial.read()
+            if _DEBUG: print "Read: \"%s\"" % c
+            if (c and c[0] == ';'):
+                return result
+            result += c
+            
+    def _SendCommandNoResponse(self, command):
+        if self._wakeup_required:
+            self._WakeUp()
+        command += ";"
+        if _DEBUG: print "_SendCommand \"%s\"" % command
+        self._serial.write(command)
+        self._serial.flush()
+
+    def _SendCommand(self, command):
+        self._SendCommandNoResponse(command)
+        while True:
+            response = self._ReadUntilSemi()
+            if _DEBUG: print "response=\"%s\"" % response
+            if response == command:
+                return
+
+    def _SendQuery(self, command):
+        self._SendCommandNoResponse(command)
+        response = self._ReadUntilSemi()
+        if _DEBUG: print "response=\"%s\"" % response
+        return response
+
+    def _SendTaggedQuery(self, command):
+        self._SendCommandNoResponse(command)
+        while True:
+            response = self._ReadUntilSemi()
+            if _DEBUG: print "response=\"%s\"" % response
+            if response.startswith(command):
+                return response[len(command):]
+
+            
+
+class Transceiver(_Device):
+    def __init__(self, serial):
+        super(Transceiver, self).__init__(serial)
+
+    @classmethod
+    def _SetFrequencyCommand(cls, vfo, frequency):
+        return "F%s%011d" % (vfo, frequency)
+
+    def SetVfoA(self, frequency):
+        command = self._SetFrequencyCommand("A", frequency)
+        self._SendCommand(command)
+
+    def TuneToggle(self):
+        self._SendCommandNoResponse("SWH16") # no response generated
+
+
+class Tuner(_Device):
+    def __init__(self, serial):
+        super(Tuner, self).__init__(serial, wakeup_required=True)
+
+    def Verify(self):
+        response = self._SendQuery("I")
+        assert response.lower() == "kat500"
+
+    def ReadBypass(self):
+        response = self._SendTaggedQuery("BYP")
+        assert response == "N" or response == "B"
+        return response == "B"
+
+    def SetBypass(self, bypassed):
+        command = "BYPB" if bypassed else "BYPN"
+        self._SendCommandNoResponse(command)
+
+    _Cs=[8e-12, 22e-12, 39e-12, 82e-12, 180e-12, 330e-12, 680e-12, 1360e-12]
+
+    _Ls=[50e-9, 110e-9, 230e-9, 480e-9, 1000e-9, 2100e-9, 4400e-9, 9000e-9]
+
+    @staticmethod
+    def _ComputeLC(bitmap, mapping):
+        total = 0.
+        for bit in xrange(0, 8):
+            if bitmap & (1<<bit):
+                total += mapping[bit]
+        return total
+        
+    def ReadCapacitance(self):
+        bits = int(self._SendTaggedQuery("C"), 16);
+        return self._ComputeLC(bits, self._Cs)
+
+    def ReadInductance(self):
+        bits = int(self._SendTaggedQuery("L"), 16);
+        return self._ComputeLC(bits, self._Ls)
+    
+    def ReadCapacitorSide(self):
+        response = self._SendTaggedQuery("SIDE")
+        assert response == "T" or response == "A"
+        return response
+
+    def ClearMatch(self):
+        self._SendCommandNoResponse("C00")
+        self._SendCommandNoResponse("L00")
+
+    def ReadMatch(self):
+        """Returns match (L, C, side) with L in [H] and C in [F] and side
+        being either "T" or "A" or None if in bypass."""
+        if self.ReadBypass():
+            return None
+        else:
+            l = self.ReadInductance()
+            c = self.ReadCapacitance()
+            side = self.ReadCapacitorSide()
+            return (l, c, side)
+
+    def ReadFrequency(self):
+        return int(self._SendTaggedQuery("F")) * 1000.
+
+    def ReadVSWR(self):
+        return float(self._SendTaggedQuery("VSWR"))
+
+    def ReadVSWRInBypass(self):
+        return float(self._SendTaggedQuery("VSWR"))
+    
+    def ClearFault(self):
+        self._SendCommandNoResponse("FLTC")
+
+    def GetFaultCode(self):
+        return int(self._SendTaggedQuery("FLT"))
+
+    def FullTune(self):
+        return self._SendCommand("FT")
+        
+    def SaveMemory(self, frequency=0):
+        self._SendCommandNoResponse("SM%d" % frequency)
+
+    def ReadAntenna(self):
+        return int(self._SendTaggedQuery("AN"))
+
+    def SetAntenna(self, antenna):
+        assert antenna >= 1 and antenna <= 3
+        self._SendCommandNoResponse("AN%d" % antenna)
+
+    def _EraseMemory(self, antenna, band):
+        self._SendCommandNoResponse("EM%02d%d" % (band, antenna))
+
+    def EraseMemoryAllBands(self, antenna):
+        for band in xrange(0, 11):
+            self._EraseMemory(antenna, band)
