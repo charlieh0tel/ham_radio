@@ -1,5 +1,7 @@
 # Elecraft transceiver control.   Rest is TBD.
 
+import band_plan
+
 _DEBUG=False
 
 class _Device(object):
@@ -125,13 +127,10 @@ class Tuner(_Device):
     def ReadMatch(self):
         """Returns match (L, C, side) with L in [H] and C in [F] and side
         being either "T" or "A" or None if in bypass."""
-        if self.ReadBypass():
-            return None
-        else:
-            l = self.ReadInductance()
-            c = self.ReadCapacitance()
-            side = self.ReadCapacitorSide()
-            return (l, c, side)
+        l = self.ReadInductance()
+        c = self.ReadCapacitance()
+        side = self.ReadCapacitorSide()
+        return (l, c, side)
 
     def ReadFrequency(self):
         return int(self._SendTaggedQuery("F")) * 1000.
@@ -150,6 +149,14 @@ class Tuner(_Device):
 
     def FullTune(self):
         return self._SendCommand("FT")
+
+    def CancelTune(self):
+        return self._SendCommandNoResponse("CT")
+
+    def ReadTunePoll(self):
+        result = int(self._SendTaggedQuery("TP"))
+        assert result in [0, 1]
+        return bool(result)
         
     def SaveMemory(self, frequency=0):
         self._SendCommandNoResponse("SM%d" % frequency)
@@ -161,9 +168,16 @@ class Tuner(_Device):
         assert antenna >= 1 and antenna <= 3
         self._SendCommandNoResponse("AN%d" % antenna)
 
-    def _EraseMemory(self, antenna, band):
-        self._SendCommandNoResponse("EM%02d%d" % (band, antenna))
+    # Band number to wavelength [m]
+    _BANDMAP= [(0, 160), (1, 80), (2, 60), (3, 40), (4, 30),
+               (5, 20), (6, 17), (7, 15), (8, 12), (9, 10), (10, 6)]
+    _BAND_NUMBER_TO_METER=dict(_BANDMAP)
+    _BAND_METER_TO_NUMBER=dict(reversed(item) for item in _BANDMAP)
+
+    def EraseMemory(self, antenna, band):
+        band_num = self._BAND_METER_TO_NUMBER[band.wavelength_meter]
+        self._SendCommandNoResponse("EM%02d%d" % (band_num, antenna))
 
     def EraseMemoryAllBands(self, antenna):
-        for band in xrange(0, 11):
-            self._EraseMemory(antenna, band)
+        for (band_num, _) in self._BANDMAP:
+            self._EraseMemory(antenna, band_num)
