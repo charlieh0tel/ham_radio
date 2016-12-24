@@ -108,7 +108,7 @@ def TrainKAT500OnBand(rig, tuner, band):
             TuneRigAt(rig, tuner, center)
     else:
         start_frequency = band.frequency_range.min_inclusive
-        stop_frequency = band.frequency_range.max_inclusive
+        stop_frequency = band.frequency_range.max_inclusive - ONE_KHZ
         step = KAT500MemorySegmentWidth(start_frequency)
         frequency = start_frequency + int(step/2.)
         while frequency <= stop_frequency:
