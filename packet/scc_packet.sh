@@ -3,7 +3,7 @@
 set -o errexit
 set -o xtrace
 
-DIREWOLF=$HOME/src/direwolf-1.2
+DIREWOLF=$HOME/src/direwolf
 
 ${DIREWOLF}/direwolf -t 0 -c ${DIREWOLF}/direwolf.conf -p -d k  \
   >> direwolf.log  2>&1 &
