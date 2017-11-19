@@ -3,9 +3,11 @@
 set -o errexit
 set -o xtrace
 
+HERE="$(pwd)"
+
 DIREWOLF=$HOME/src/direwolf
 
-${DIREWOLF}/direwolf -t 0 -c ${DIREWOLF}/direwolf.conf -p -d k  \
+${DIREWOLF}/direwolf -t 0 -c "${HERE}/direwolf.conf" -p -d k  \
   >> direwolf.log  2>&1 &
 
 sleep 1
