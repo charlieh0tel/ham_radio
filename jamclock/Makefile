@@ -1,0 +1,2 @@
+jamclock: jamclock.c
+
