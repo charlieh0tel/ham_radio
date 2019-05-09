@@ -31,20 +31,4 @@ int main(int argc, char **argv) {
     fprintf(stderr, "%s: settimeofday failed: %m\n", argv[0]);
     exit(1);
   }
-
-  
-#if 0
-  struct timex timex;
-  memset(&timex, 0, sizeof(timex));
-  timex.modes = ADJ_SETOFFSET;
-  timex.time.tv_usec = (long) (offset_ms * 1000.);
-  
-  int rc = adjtimex(&timex);
-  if (rc == TIME_OK) {
-    exit(0);
-  } else {
-    fprintf(stderr, "%s: adjtimex failed: %m\n", argv[0]);
-    exit(1);
-  }
-#endif
 }
