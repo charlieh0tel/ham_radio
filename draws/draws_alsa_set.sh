@@ -30,7 +30,7 @@ function sset() {
 }
 
 sset 'PCM' '0.0dB,0.0dB'
-sset 'ADC Level' '0.0dB,00dB'
+sset 'ADC Level' '16.0dB,16.0dB'
 sset 'LO Driver Gain' '7.0dB,7.0dB'
 sset 'IN1_L to Left Mixer Positive Resistor' '10 kOhm'
 sset 'IN1_R to Right Mixer Positive Resistor' Off
