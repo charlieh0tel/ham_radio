@@ -17,13 +17,7 @@
 # IO27 in = RIGHT PIN 6 (SQL)
 
 #
-# TM-V71A     1200              9600
-# --------------------------------------------
-# IN1_x       off               '10 kOhm'
-# IN2_x       '10 kOhm'         off
-# PCM_x       -2.0              0.0
-# LO_x        0.0               3.0
-# ADC_x       0.0               -4.0
+# Settings are TX-790 #1 9600 baud
 #
 
 set -o errexit
@@ -36,14 +30,15 @@ function sset() {
 }
 
 sset 'PCM' '0.0dB,0.0dB'
-sset 'ADC Level' '-4.0dB,-4.0dB'
-sset 'LO Driver Gain' '3.0dB,3.0dB'
+sset 'ADC Level' '0.0dB,00dB'
+sset 'LO Driver Gain' '7.0dB,7.0dB'
 sset 'IN1_L to Left Mixer Positive Resistor' '10 kOhm'
 sset 'IN1_R to Right Mixer Positive Resistor' Off
 sset 'IN2_L to Left Mixer Positive Resistor' Off
 sset 'IN2_R to Right Mixer Positive Resistor' Off
 sset 'DAC Left Playback PowerTune' P3
 sset 'DAC Right Playback PowerTune' P3
+sset 'LO Playback Common Mode' '1.65V'
 
 #
 sset 'CM_L to Left Mixer Negative Resistor' '10 kOhm'
@@ -87,4 +82,3 @@ sset 'LO DAC' on
 sset 'LOL Output Mixer L_DAC' on
 sset 'LOR Output Mixer R_DAC' on
 #
-sset 'LO Playback Common Mode' 'Full Chip'
