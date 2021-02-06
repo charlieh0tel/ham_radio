@@ -30,19 +30,19 @@ function sset() {
 }
 
 sset 'PCM' '0.0dB,0.0dB'
-sset 'ADC Level' '10.0dB,10.0dB'
-sset 'LO Driver Gain' '7.0dB,7.0dB'
+sset 'ADC Level' '5.0dB,0dB'
+sset 'LO Driver Gain' '7.0dB,0dB'
 sset 'IN1_L to Left Mixer Positive Resistor' '10 kOhm'
 sset 'IN1_R to Right Mixer Positive Resistor' Off
 sset 'IN2_L to Left Mixer Positive Resistor' Off
 sset 'IN2_R to Right Mixer Positive Resistor' Off
 sset 'DAC Left Playback PowerTune' P3
-sset 'DAC Right Playback PowerTune' P3
+sset 'DAC Right Playback PowerTune' P1
 sset 'LO Playback Common Mode' '1.65V'
 
 #
 sset 'CM_L to Left Mixer Negative Resistor' '10 kOhm'
-sset 'CM_R to Right Mixer Negative Resistor' '10 kOhm'
+sset 'CM_R to Right Mixer Negative Resistor' 'Off'
 sset 'IN1_L to Right Mixer Negative Resistor' Off
 sset 'IN1_R to Left Mixer Positive Resistor' Off
 sset 'IN2_L to Right Mixer Positive Resistor' Off
