@@ -35,7 +35,7 @@ state.pirim {
 	control.4 {
 		iface MIXER
 		name 'Mic Playback Volume'
-		value 27
+		value 0
 		comment {
 			access 'read write'
 			type INTEGER
@@ -43,7 +43,7 @@ state.pirim {
 			range '0 - 31'
 			dbmin -2300
 			dbmax 800
-			dbvalue.0 400
+			dbvalue.0 -2300
 		}
 	}
 	control.5 {
