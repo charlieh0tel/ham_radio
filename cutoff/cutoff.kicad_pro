@@ -397,7 +397,7 @@
       "netlist": "",
       "specctra_dsn": "",
       "step": "",
-      "vrml": ""
+      "vrml": "cutoff.wrl"
     },
     "page_layout_descr_file": ""
   },
