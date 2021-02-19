@@ -29,9 +29,9 @@ function sset() {
     amixer -c udrc -- sset "${name}" "${setting}"
 }
 
-sset 'PCM' '0.0dB,0.0dB'
-sset 'ADC Level' '5.0dB,0dB'
-sset 'LO Driver Gain' '7.0dB,0dB'
+sset 'PCM' '0.0dB,-63.5dB'
+sset 'ADC Level' '14.0dB,-12dB'
+sset 'LO Driver Gain' '7.0dB,-6.0dB'
 sset 'IN1_L to Left Mixer Positive Resistor' '10 kOhm'
 sset 'IN1_R to Right Mixer Positive Resistor' Off
 sset 'IN2_L to Left Mixer Positive Resistor' Off

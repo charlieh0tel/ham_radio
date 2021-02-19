@@ -61,7 +61,7 @@ state.udrc {
 		iface MIXER
 		name 'LO Driver Gain Volume'
 		value.0 13
-		value.1 6
+		value.1 0
 		comment {
 			access 'read write'
 			type INTEGER
@@ -70,7 +70,7 @@ state.udrc {
 			dbmin -600
 			dbmax 2900
 			dbvalue.0 700
-			dbvalue.1 0
+			dbvalue.1 -600
 		}
 	}
 	control.6 {
@@ -141,7 +141,7 @@ state.udrc {
 	control.12 {
 		iface MIXER
 		name 'ADC Level Volume'
-		value.0 34
+		value.0 52
 		value.1 0
 		comment {
 			access 'read write'
@@ -150,7 +150,7 @@ state.udrc {
 			range '0 - 64'
 			dbmin -1200
 			dbmax 2000
-			dbvalue.0 500
+			dbvalue.0 1400
 			dbvalue.1 -1200
 		}
 	}
