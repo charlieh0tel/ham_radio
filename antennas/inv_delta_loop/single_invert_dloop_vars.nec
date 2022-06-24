@@ -4,9 +4,9 @@ SY TOP=18	'top (X)
 SY R=5.1667	'length of spreader (1/2 full width) (Y/Z)
 SY FW=0.1667	'width at feedpoint (Y/Z)
 SY BOT=2	'bottom (X)
-GW	1	15	FW	0	BOT	R	0	TOP	0.001	'riser +x
-GW	2	5	R	0	TOP	-R	0	TOP	0.001	'top x
-GW	3	15	-R	0	TOP	-FW	0	BOT	0.001	'riser -x
+GW	1	1	FW	0	BOT	R	0	TOP	0.001	'riser +x
+GW	2	1	R	0	TOP	-R	0	TOP	0.001	'top x
+GW	3	1	-R	0	TOP	-FW	0	BOT	0.001	'riser -x
 GW	4	1	FW	0	BOT	-FW	0	BOT	0.001	'feedpoint
 GS	0	0	0.3048
 GE	-1
