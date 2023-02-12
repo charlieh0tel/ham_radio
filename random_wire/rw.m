@@ -49,17 +49,13 @@ function rw(varargin)
     clf
     hold on
     grid on
-    figHandle = figure(1);
-    screensize = get( 0, 'ScreenSize' );
-    scrWidth = screensize(3);
-    scrHeight = screensize(4);
-    set(figHandle, 'Position', ...
-        [scrWidth/2 - 500, scrHeight/2, 150 * size(bands_m, 2), 100]);
+
     if useCw
         bandStr = ' USA CW Sub-bands';
     else
         bandStr = ' USA Bands';
     end
+
     title(['End-fed Antenna High Impedance Lengths for ', ...
         mat2str(bands_m), bandStr]);
     xlabel('Lengths to Avoid in Red (ft)');
@@ -78,6 +74,7 @@ function rw(varargin)
         badLengths(freqs_kHz(i, 1), freqs_kHz(i, 2), fullWave_ft)
     end
     set(gca(), 'YTickLabel', '')
+    set(gca(), "fontsize", 24)
     
     % Adjust limits of x axis to multiples of 10 feet.
     shortestQtrWave = 234 / (freqs_kHz(1) * 1e-3);
