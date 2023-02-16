@@ -7,4 +7,4 @@ avoid.png: avoid avoid.gnuplot
 	gnuplot avoid.gnuplot
 
 clean:
-	rm -f avoid.txt avoid.pn avoid
+	rm -f avoid.txt avoid.png avoid
