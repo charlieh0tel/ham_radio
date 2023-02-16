@@ -1,11 +1,10 @@
 all: avoid.png
 
-rw: rw.c
+avoid: avoid.c
 
-avoid.png: rw rw.gnuplot
-	./rw > f
-	gnuplot rw.gnuplot
-	mv f.png avoid.png
+avoid.png: avoid avoid.gnuplot
+	./avoid > avoid.txt
+	gnuplot avoid.gnuplot
 
 clean:
-	rm -f rw f f.png avoid.png
+	rm -f avoid.txt avoid.pn avoid
