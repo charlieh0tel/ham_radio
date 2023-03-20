@@ -6,6 +6,11 @@ import sys
 
 import fastkml
 
+# Reference:
+#
+# http://data.fcc.gov/download/license-view/fcc-license-view-data-dictionary.doc
+
+
 @dataclasses.dataclass(kw_only=True)
 class ULSRecord:
     callsign: str
@@ -31,16 +36,19 @@ class ULSRecord:
             city=parts[16],
             state=parts[17],
             zipcode=parts[18],
-            frn=parts[22])
-    
+            frn=parts[22],
+        )
+
+
 def ParseULSRecords(csvfile):
-    reader = csv.reader(csvfile, delimiter='|', quotechar='\'')
+    reader = csv.reader(csvfile, delimiter="|", quotechar="'")
     records = []
     for record in reader:
-        if record[0] == 'EN':
+        if record[0] == "EN":
             records.append(ULSRecord.MakeRecord(record))
     return records
-    
+
+
 def CreateKMLFromRecords(records):
     k = fastkml.kml.KML()
     ns = "{http://www.opengis.net/kml/2.2}"
@@ -64,4 +72,3 @@ def main(argv):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-    
