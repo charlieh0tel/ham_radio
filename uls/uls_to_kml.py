@@ -59,6 +59,7 @@ def CreateKMLFromRecords(records):
 def main(argv):
     records = ParseULSRecords(sys.stdin)
     print(CreateKMLFromRecords(records))
+    return 0
 
 
 if __name__ == "__main__":
