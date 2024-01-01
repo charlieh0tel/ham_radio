@@ -58,6 +58,4 @@ for index, memory in enumerate(MEMORIES):
     dtone = get_tone(memory[13:15])
     utone = get_tone(memory[15:17])
     name = memory[17:27].decode('ascii', errors='backslashreplace')
-    if ord(name[0]) == 0: continue
-    if down < 0: continue
     print(f"{index:3} {down:8.4f} {up:8.4f} {dtone} {utone} {name}")
