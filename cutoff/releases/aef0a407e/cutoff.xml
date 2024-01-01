@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>/home/ch/src/ham_radio/cutoff/cutoff.kicad_sch</source>
+    <date>Mon 15 Feb 2021 08:18:27 PM PST</date>
+    <tool>Eeschema 5.99.0-unknown-379c28340f~115~ubuntu20.04.1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>12V Cutoff</title>
+        <company/>
+        <rev>0.9</rev>
+        <date/>
+        <source>cutoff.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>10n</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>ae8e9e25-2022-4e91-9d78-987f996c8bdc</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>10n</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>a61c07fe-5cfb-4046-ae75-8441fa710d44</tstamp>
+    </comp>
+    <comp ref="C3">
+      <value>0.1u</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>13db7803-6157-4cfc-a44b-aab3766e18d4</tstamp>
+    </comp>
+    <comp ref="C4">
+      <value>0.1u</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>73ec562a-03d6-4d2a-b976-9554d6b90603</tstamp>
+    </comp>
+    <comp ref="F1">
+      <value>Fuse</value>
+      <footprint>Fuse:Fuseholder_Blade_Mini_Keystone_3568</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="Fuse" description="Fuse"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>930dc8f0-38b2-4b52-893a-516b7305de48</tstamp>
+    </comp>
+    <comp ref="H1">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>1f20c529-6900-4343-a6a1-e6ac5b3c393c</tstamp>
+    </comp>
+    <comp ref="H2">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>e844b357-d075-4dc0-b263-05c6d8accde5</tstamp>
+    </comp>
+    <comp ref="H3">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>a67f4fd3-267b-48dd-8c2e-f3bf9fdb00ee</tstamp>
+    </comp>
+    <comp ref="H4">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>3ea13f11-904d-4d2b-afef-91d64d9dda96</tstamp>
+    </comp>
+    <comp ref="H5">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>ef88aa0a-cb77-46f1-82f0-6d5dc90b3059</tstamp>
+    </comp>
+    <comp ref="J1">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>8afa4de4-e64f-4dd6-ac8c-936257208187</tstamp>
+    </comp>
+    <comp ref="J2">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>275dff2b-c3aa-4b1c-8c40-dd297cedf5a8</tstamp>
+    </comp>
+    <comp ref="J3">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>1ffbf4b9-3be8-426e-8d56-e34695e87497</tstamp>
+    </comp>
+    <comp ref="J4">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5935ea9c-3735-4603-8d73-b2847657631c</tstamp>
+    </comp>
+    <comp ref="J5">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>7798de50-ee8e-4c59-924f-960a1dc4d92c</tstamp>
+    </comp>
+    <comp ref="J6">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>1c652ec4-0ed2-4c87-ab02-5f15af929183</tstamp>
+    </comp>
+    <comp ref="J7">
+      <value>Conn_01x02</value>
+      <footprint>connectors_anderson:45A-VERT-PAIR</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x02" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>9c829568-896f-4af9-af3b-73e27bcd9e53</tstamp>
+    </comp>
+    <comp ref="J8">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-0.5sqmm_1x01_D0.9mm_OD2.1mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>eb012398-bde8-46f5-b9bd-19666f0d05ed</tstamp>
+    </comp>
+    <comp ref="J9">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-0.5sqmm_1x01_D0.9mm_OD2.1mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>b7a183f4-012d-44d3-a1b2-5a03f9d41c8c</tstamp>
+    </comp>
+    <comp ref="J10">
+      <value>Conn_01x02</value>
+      <footprint>connectors_anderson:45A-VERT-PAIR</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x02" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>28199260-875f-47a4-98ac-95aca81900aa</tstamp>
+    </comp>
+    <comp ref="J11">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>7c934227-3d96-465e-ad1e-a81888a24224</tstamp>
+    </comp>
+    <comp ref="J12">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>e9d2fcd4-2f63-47fe-adde-6d05732b292a</tstamp>
+    </comp>
+    <comp ref="J13">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>92465277-9b4c-40d4-b805-110a5ae3902e</tstamp>
+    </comp>
+    <comp ref="J14">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>1ddf6a3f-e355-4703-b045-c87c0e38e389</tstamp>
+    </comp>
+    <comp ref="J15">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>d1effdc7-a84f-4ace-ac49-c29e5b658c48</tstamp>
+    </comp>
+    <comp ref="J16">
+      <value>Conn_01x01</value>
+      <footprint>Connector_Wire:SolderWire-2.5sqmm_1x01_D2.4mm_OD4.4mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>05c14a8e-5fa0-468a-b33c-fe6f4be33d89</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>1M</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>c78ba030-89b4-4e06-948e-81fb342ffa0d</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>1K</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>43addf5b-ae04-48fe-9787-b7d676769143</tstamp>
+    </comp>
+    <comp ref="R3">
+      <value>20K</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>bd7ffa27-d3df-4877-8751-1d1bd44449e5</tstamp>
+    </comp>
+    <comp ref="R4">
+      <value>*0</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>ffcb17f9-0800-4ccb-a931-479429b40133</tstamp>
+    </comp>
+    <comp ref="R5">
+      <value>2M</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>8b815f9c-7b52-4e54-8794-db6cc3b88ae2</tstamp>
+    </comp>
+    <comp ref="RV1">
+      <value>100K</value>
+      <footprint>Potentiometer_SMD:Potentiometer_Bourns_3224X_Vertical</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R_Potentiometer_Trim" description="Trim-potentiometer"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>d5b090bc-f766-46c3-b778-a68417655b2c</tstamp>
+    </comp>
+    <comp ref="RV2">
+      <value>5K</value>
+      <footprint>Potentiometer_SMD:Potentiometer_Bourns_3224X_Vertical</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R_Potentiometer_Trim" description="Trim-potentiometer"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>3c4467b5-9725-4a7e-b04b-612843886338</tstamp>
+    </comp>
+    <comp ref="U1">
+      <value>TPS3700DDCR</value>
+      <footprint>digikey-footprints:SOT-23-6</footprint>
+      <datasheet>http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&amp;gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftps3700</datasheet>
+      <fields>
+        <field name="Category">Integrated Circuits (ICs)</field>
+        <field name="DK_Datasheet_Link">http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&amp;gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftps3700</field>
+        <field name="DK_Detail_Page">/product-detail/en/texas-instruments/TPS3700DDCR/296-30395-1-ND/3250123</field>
+        <field name="Description">IC COMP WINDOW W/REF 6SOT</field>
+        <field name="Digi-Key_PN">296-30395-1-ND</field>
+        <field name="Family">Linear - Comparators</field>
+        <field name="MPN">TPS3700DDCR</field>
+        <field name="Manufacturer">Texas Instruments</field>
+        <field name="Status">Active</field>
+      </fields>
+      <libsource lib="dk_Linear-Comparators" part="TPS3700DDCR" description="IC COMP WINDOW W/REF 6SOT"/>
+      <property name="Digi-Key_PN" value="296-30395-1-ND"/>
+      <property name="MPN" value="TPS3700DDCR"/>
+      <property name="Category" value="Integrated Circuits (ICs)"/>
+      <property name="Family" value="Linear - Comparators"/>
+      <property name="DK_Datasheet_Link" value="http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&amp;gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftps3700"/>
+      <property name="DK_Detail_Page" value="/product-detail/en/texas-instruments/TPS3700DDCR/296-30395-1-ND/3250123"/>
+      <property name="Description" value="IC COMP WINDOW W/REF 6SOT"/>
+      <property name="Manufacturer" value="Texas Instruments"/>
+      <property name="Status" value="Active"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>db29199f-c4d4-4b1f-aad4-997d689e32e6</tstamp>
+    </comp>
+    <comp ref="U2">
+      <value>BTS50010-1TAD</value>
+      <footprint>Package_TO_SOT_SMD:TO-263-7_TabPin4</footprint>
+      <datasheet>https://www.infineon.com/dgdl/Infineon-BTS50010-1TAD-DS-v01_00-EN.pdf?fileId=5546d462576f34750157c38810ca55cd</datasheet>
+      <libsource lib="Power_Management" part="BTS50010-1TAD" description="Smart High-Side Power Switch, PROFET, Single, 1mOhm, 40A, 18V, TO-263-7"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="cutoff.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>a4bab246-b318-4615-bf55-7298d1c07552</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector_Generic" part="Conn_01x01">
+      <description>Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x01</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector_Generic" part="Conn_01x02">
+      <description>Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x02</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="Fuse">
+      <description>Fuse</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>*Fuse*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">F</field>
+        <field name="Value">Fuse</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R">
+      <description>Resistor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R_Potentiometer_Trim">
+      <description>Trim-potentiometer</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Potentiometer*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">RV</field>
+        <field name="Value">R_Potentiometer_Trim</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+        <pin num="3" name="3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Mechanical" part="MountingHole_Pad">
+      <description>Mounting Hole with connection</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>MountingHole*Pad*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">H</field>
+        <field name="Value">MountingHole_Pad</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="Power_Management" part="BTS50010-1TAD">
+      <description>Smart High-Side Power Switch, PROFET, Single, 1mOhm, 40A, 18V, TO-263-7</description>
+      <docs>https://www.infineon.com/dgdl/Infineon-BTS50010-1TAD-DS-v01_00-EN.pdf?fileId=5546d462576f34750157c38810ca55cd</docs>
+      <footprints>
+        <fp>TO*263*TabPin4*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">BTS50010-1TAD</field>
+        <field name="Footprint">Package_TO_SOT_SMD:TO-263-7_TabPin4</field>
+        <field name="Datasheet">https://www.infineon.com/dgdl/Infineon-BTS50010-1TAD-DS-v01_00-EN.pdf?fileId=5546d462576f34750157c38810ca55cd</field>
+      </fields>
+      <pins>
+        <pin num="1" name="GND" type="power_in"/>
+        <pin num="2" name="IN" type="input"/>
+        <pin num="3" name="IS" type="output"/>
+        <pin num="4" name="Vbb" type="power_in"/>
+        <pin num="5" name="OUT" type="passive"/>
+        <pin num="6" name="OUT" type="passive"/>
+        <pin num="7" name="OUT" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="dk_Linear-Comparators" part="TPS3700DDCR">
+      <description>IC COMP WINDOW W/REF 6SOT</description>
+      <docs>http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&amp;gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftps3700</docs>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">TPS3700DDCR</field>
+        <field name="Footprint">digikey-footprints:SOT-23-6</field>
+        <field name="Datasheet">http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&amp;gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftps3700</field>
+        <field name="Digi-Key_PN">296-30395-1-ND</field>
+        <field name="MPN">TPS3700DDCR</field>
+        <field name="Category">Integrated Circuits (ICs)</field>
+        <field name="Family">Linear - Comparators</field>
+        <field name="DK_Datasheet_Link">http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&amp;gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftps3700</field>
+        <field name="DK_Detail_Page">/product-detail/en/texas-instruments/TPS3700DDCR/296-30395-1-ND/3250123</field>
+        <field name="Description">IC COMP WINDOW W/REF 6SOT</field>
+        <field name="Manufacturer">Texas Instruments</field>
+        <field name="Status">Active</field>
+      </fields>
+      <pins>
+        <pin num="1" name="OUTA" type="output"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="INA+" type="input"/>
+        <pin num="4" name="INB-" type="input"/>
+        <pin num="5" name="VDD" type="power_in"/>
+        <pin num="6" name="OUTB" type="output"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector_Generic">
+      <uri>/usr/lib/kicad-nightly/share/kicad/library/Connector_Generic.kicad_sym</uri>
+    </library>
+    <library logical="Device">
+      <uri>/usr/lib/kicad-nightly/share/kicad/library/Device.kicad_sym</uri>
+    </library>
+    <library logical="Mechanical">
+      <uri>/usr/lib/kicad-nightly/share/kicad/library/Mechanical.kicad_sym</uri>
+    </library>
+    <library logical="Power_Management">
+      <uri>/usr/lib/kicad-nightly/share/kicad/library/Power_Management.kicad_sym</uri>
+    </library>
+    <library logical="dk_Linear-Comparators">
+      <uri>/home/ch/src/digikey-kicad-library/digikey-symbols/dk_Linear-Comparators.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="/EN">
+      <node ref="R3" pin="2" pintype="passive"/>
+      <node ref="U1" pin="1" pinfunction="OUTA" pintype="output"/>
+      <node ref="U1" pin="6" pinfunction="OUTB" pintype="output"/>
+      <node ref="U2" pin="2" pinfunction="IN" pintype="input"/>
+    </net>
+    <net code="2" name="/IS">
+      <node ref="C1" pin="1" pintype="passive"/>
+      <node ref="R2" pin="1" pintype="passive"/>
+      <node ref="U1" pin="4" pinfunction="INB-" pintype="input"/>
+      <node ref="U2" pin="3" pinfunction="IS" pintype="output"/>
+    </net>
+    <net code="3" name="/OUT">
+      <node ref="J10" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J11" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J12" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J13" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J7" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="U2" pin="5" pinfunction="OUT" pintype="passive"/>
+      <node ref="U2" pin="6" pinfunction="OUT" pintype="passive"/>
+      <node ref="U2" pin="7" pinfunction="OUT" pintype="passive"/>
+    </net>
+    <net code="4" name="/VIN">
+      <node ref="F1" pin="2" pintype="passive"/>
+      <node ref="J1" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J2" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J3" pin="1" pinfunction="Pin_1" pintype="passive"/>
+    </net>
+    <net code="5" name="/Voff">
+      <node ref="C2" pin="1" pintype="passive"/>
+      <node ref="R1" pin="1" pintype="passive"/>
+      <node ref="RV1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U1" pin="3" pinfunction="INA+" pintype="input"/>
+    </net>
+    <net code="6" name="/Vsense">
+      <node ref="J8" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="R4" pin="1" pintype="passive"/>
+      <node ref="R5" pin="1" pintype="passive"/>
+    </net>
+    <net code="7" name="GND">
+      <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="C2" pin="2" pintype="passive"/>
+      <node ref="C3" pin="2" pintype="passive"/>
+      <node ref="C4" pin="2" pintype="passive"/>
+      <node ref="H1" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H2" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H3" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H4" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H5" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="J10" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J14" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J15" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J16" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J4" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J5" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J6" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J7" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J9" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="R1" pin="2" pintype="passive"/>
+      <node ref="RV1" pin="3" pinfunction="3" pintype="passive"/>
+      <node ref="RV2" pin="3" pinfunction="3" pintype="passive"/>
+      <node ref="U1" pin="2" pinfunction="GND" pintype="power_in"/>
+      <node ref="U2" pin="1" pinfunction="GND" pintype="power_in"/>
+    </net>
+    <net code="8" name="Net-(R2-Pad2)">
+      <node ref="R2" pin="2" pintype="passive"/>
+      <node ref="RV2" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="RV2" pin="2" pinfunction="2" pintype="passive"/>
+    </net>
+    <net code="9" name="Net-(R5-Pad2)">
+      <node ref="R5" pin="2" pintype="passive"/>
+      <node ref="RV1" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="10" name="VDD">
+      <node ref="C3" pin="1" pintype="passive"/>
+      <node ref="C4" pin="1" pintype="passive"/>
+      <node ref="F1" pin="1" pintype="passive"/>
+      <node ref="R3" pin="1" pintype="passive"/>
+      <node ref="R4" pin="2" pintype="passive"/>
+      <node ref="U1" pin="5" pinfunction="VDD" pintype="power_in"/>
+      <node ref="U2" pin="4" pinfunction="Vbb" pintype="power_in"/>
+    </net>
+  </nets>
+</export>
