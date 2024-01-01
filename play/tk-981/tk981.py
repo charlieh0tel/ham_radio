@@ -44,7 +44,7 @@ def get_tone(mem):
     elif raw > 0x2800:
         code = raw & 0x07FF
         pol =  "R" if raw & 0x8000 else "N"
-        return f"{code:03o} {pol}"
+        return f"D{code:03o}{pol}"
     else:
         return "%5.1f" % (float(raw) / 10.)
 
