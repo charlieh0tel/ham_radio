@@ -9,7 +9,7 @@ CONTENTS=read("kpg49d_example.dat")
 
 def memories(contents):
     start=0x330
-    record_length=64
+    record_length=32
     max_records=200
     return [contents[start + n * record_length:
                      start + (n + 1) * record_length]
@@ -38,7 +38,7 @@ def freq(mem):
 
 def get_tone(mem):
     assert len(mem) == 2
-    raw = mem[1]<<8 | mem[0]
+    raw = mem[1] << 8 | mem[0]
     if raw == 0xffff:
         return "none "
     elif raw > 0x2800:
@@ -52,10 +52,11 @@ print()
 print()
 
 for index, memory in enumerate(MEMORIES):
-    name = memory[49:59].decode('ascii', errors='backslashreplace')
-    down = freq(memory[35:39])
-    up = freq(memory[39:43])
-    tone = get_tone(memory[45:47])
+    if memory[4] == 0xff: continue
+    down = freq(memory[3:7])
+    up = freq(memory[7:11])
+    tone = get_tone(memory[13:15])
+    name = memory[17:27].decode('ascii', errors='backslashreplace')
     if ord(name[0]) == 0: continue
     if down < 0: continue
     print(f"{index:3} {down:8.4f} {up:8.4f} {tone} {name}")
