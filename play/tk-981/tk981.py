@@ -55,8 +55,9 @@ for index, memory in enumerate(MEMORIES):
     if memory[4] == 0xff: continue
     down = freq(memory[3:7])
     up = freq(memory[7:11])
-    tone = get_tone(memory[13:15])
+    dtone = get_tone(memory[13:15])
+    utone = get_tone(memory[15:17])
     name = memory[17:27].decode('ascii', errors='backslashreplace')
     if ord(name[0]) == 0: continue
     if down < 0: continue
-    print(f"{index:3} {down:8.4f} {up:8.4f} {tone} {name}")
+    print(f"{index:3} {down:8.4f} {up:8.4f} {dtone} {utone} {name}")
