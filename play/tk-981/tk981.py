@@ -10,7 +10,7 @@ CONTENTS=read("kpg49d_example.dat")
 def memories(contents):
     start=0x330
     record_length=64
-    max_records = 200
+    max_records=200
     return [contents[start + n * record_length:
                      start + (n + 1) * record_length]
             for n in range(max_records)]
@@ -58,5 +58,4 @@ for index, memory in enumerate(MEMORIES):
     tone = get_tone(memory[45:47])
     if ord(name[0]) == 0: continue
     if down < 0: continue
-    print(f"{index:3} {down:7.3f} {up:7.3f} {tone} {name}")
-    
+    print(f"{index:3} {down:8.4f} {up:8.4f} {tone} {name}")
