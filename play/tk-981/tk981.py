@@ -36,9 +36,13 @@ def freq(mem):
         return -1
 
 
+def u16le(m):
+    assert len(m) == 2
+    return m[1] << 8 | m[0]
+
+
 def get_tone(mem):
-    assert len(mem) == 2
-    raw = mem[1] << 8 | mem[0]
+    raw = u16le(mem)
     if raw == 0xffff:
         return "none "
     elif raw > 0x2800:
@@ -49,23 +53,24 @@ def get_tone(mem):
         return "%5.1f" % (float(raw) / 10.)
 
 print()
-print()
 
 for index, memory in enumerate(MEMORIES):
-    ffff = memory[1] << 8 | memory[0]
+    ffff = u16le(memory[0:2])
     assert ffff == 0xffff
 
     n = memory[2]
     if n == 0xff: continue
-    if memory[4] != 0xff: 
+
+    if memory[4] == 0xff: 
+        ## Start of system.
+        n_entries = memory[3]
+        name = memory[5:15].decode('ascii', errors='backslashreplace')
+        print(f"-- {n:2} {n_entries:3} {name}")
+    else:
+        ## Mmemory.
         down = freq(memory[3:7])
         up = freq(memory[7:11])
         dtone = get_tone(memory[13:15])
         utone = get_tone(memory[15:17])
         name = memory[17:27].decode('ascii', errors='backslashreplace')
         print(f"{n:2} {down:8.4f} {up:8.4f} {dtone} {utone} {name}")
-    else:
-        group = memory[3]
-        name = memory[5:15].decode('ascii', errors='backslashreplace')
-        print(f"-- {n:2} {group:3} {name}")
-        
