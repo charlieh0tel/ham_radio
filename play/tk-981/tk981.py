@@ -10,7 +10,7 @@ CONTENTS=read("kpg49d_example.dat")
 def memories(contents):
     start=0x330
     record_length=32
-    max_records=200
+    max_records=32 * 16
     return [contents[start + n * record_length:
                      start + (n + 1) * record_length]
             for n in range(max_records)]
@@ -52,10 +52,20 @@ print()
 print()
 
 for index, memory in enumerate(MEMORIES):
-    if memory[4] == 0xff: continue
-    down = freq(memory[3:7])
-    up = freq(memory[7:11])
-    dtone = get_tone(memory[13:15])
-    utone = get_tone(memory[15:17])
-    name = memory[17:27].decode('ascii', errors='backslashreplace')
-    print(f"{index:3} {down:8.4f} {up:8.4f} {dtone} {utone} {name}")
+    ffff = memory[1] << 8 | memory[0]
+    assert ffff == 0xffff
+
+    n = memory[2]
+    if n == 0xff: continue
+    if memory[4] != 0xff: 
+        down = freq(memory[3:7])
+        up = freq(memory[7:11])
+        dtone = get_tone(memory[13:15])
+        utone = get_tone(memory[15:17])
+        name = memory[17:27].decode('ascii', errors='backslashreplace')
+        print(f"{n:2} {down:8.4f} {up:8.4f} {dtone} {utone} {name}")
+    else:
+        group = memory[3]
+        name = memory[5:15].decode('ascii', errors='backslashreplace')
+        print(f"-- {n:2} {group:3} {name}")
+        
