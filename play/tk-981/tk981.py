@@ -65,9 +65,9 @@ for index, memory in enumerate(MEMORIES):
         ## Start of system.
         n_entries = memory[3]
         name = memory[5:15].decode('ascii', errors='backslashreplace')
-        print(f"-- {n:2} {n_entries:3} {name}")
+        print(f"-- System {n:2} {n_entries:3} {name} --")
     else:
-        ## Mmemory.
+        ## Group (memory).
         down = freq(memory[3:7])
         up = freq(memory[7:11])
         dtone = get_tone(memory[13:15])
