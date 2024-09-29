@@ -3,7 +3,7 @@
 set -o errexit
 set -o xtrace
 
-MACADDR="34:81:f4:33:aa:02"
+MACADDR="34:81:f4:f6:0f:a1"
 AXPORTNUM=0
 RFCOMMPORT=0
 RFCOMMCHAN=6
