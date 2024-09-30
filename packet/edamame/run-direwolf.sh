@@ -7,8 +7,10 @@ set -o errexit
 function cset() {
     local name="$1"
     local setting="$2"
-    amixer -q -c dra-70 cset "${name}" "${setting}"
+    amixer -c dra-70 cset "${name}" "${setting}"
 }
+
+sudo systemctl stop direwolf || :;
 
 # DRA-70 for TM-V71A
 #
@@ -25,4 +27,3 @@ cset numid=9,iface=MIXER,name='Auto Gain Control' off
 
 sudo systemctl restart direwolf
 sudo journalctl -u direwolf -f
-
