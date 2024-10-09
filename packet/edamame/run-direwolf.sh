@@ -10,7 +10,12 @@ function cset() {
     amixer -c dra-70 cset "${name}" "${setting}"
 }
 
-sudo systemctl stop direwolf || :;
+if [ $EUID -ne 0 ]; then
+    echo "$0: need to run as root" 2>&1
+    exit 1
+fi
+
+systemctl stop direwolf || :;
 
 # DRA-70 for TM-V71A
 #
@@ -25,5 +30,5 @@ cset numid=7,iface=MIXER,name='Mic Capture Switch' on
 cset numid=8,iface=MIXER,name='Mic Capture Volume' 1
 cset numid=9,iface=MIXER,name='Auto Gain Control' off
 
-sudo systemctl restart direwolf
-sudo journalctl -u direwolf -f
+systemctl start direwolf
+journalctl -u direwolf -f
