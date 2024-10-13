@@ -12,7 +12,6 @@ import pymeasure.adapters
 
 import bands
 import hp8560e
-import noisy
 
 
 def main(argv):

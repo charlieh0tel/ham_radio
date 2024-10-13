@@ -14,6 +14,11 @@ import bands
 import hp8560e
 
 
+def load_thru_calibrations():
+    with open("thru_calibration.pkl", "rb") as f:
+        return pickle.load(f)
+
+
 def main(argv):
     #logging.basicConfig(level=logging.DEBUG)
     resource = "tcpip::e5810a::gpib0,11"
@@ -23,23 +28,21 @@ def main(argv):
 
     band_name = argv[1]
     band = bands.BAND_BY_NAME[band_name]
+    thru_calibrations = load_thru_calibrations()
+    
     print(f"{band_name} {band.start_frequency:.3f}  {band.stop_frequency:.3f}")
+    calibration = thru_calibrations[band_name]
+    #print(calibration)
 
     sa.preset()
     sa.start_frequency = band.start_frequency
     sa.stop_frequency = band.stop_frequency
+    sa.write_trace(calibration, which='B')
+    sa.normalize = True
     sa.sweep_coupling = "SR"
     sa.source_power = True
-
-    input("Attach thru.  Press return to continue. -> ")
-
-    sa.write("SRCTKPK;")
-    sa.wait_for_done()
     sa.take_sweep()
-    sa.write("STORETHRU;")
-    sa.take_sweep()
-    sa.normalize = True
-
+    
     return 0
 
 

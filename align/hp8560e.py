@@ -192,12 +192,14 @@ class HP8560E(pymeasure.instruments.Instrument):
         amplitude_units = self.amplitude_units
         reference_level = self.reference_level
         log_scale = self.log_scale
+        frequencies = self.frequencies
         self.write(f"TDF A;TR{which}?;")
         trace_data = self.read_bytes(self._A_BLOCK_SIZE)
         trace_mu = ablock.from_ablock_u16(trace_data)
         return self.Trace(amplitude_units=amplitude_units,
                           reference_level=reference_level,
                           log_scale=log_scale,
+                          frequencies=frequencies,
                           trace_mu=trace_mu)
 
     def write_trace(self, trace, which='A'):
@@ -215,6 +217,7 @@ class HP8560E(pymeasure.instruments.Instrument):
         amplitude_units: str
         reference_level: float
         log_scale: int
+        frequencies: [float]
         trace_mu: [int]
 
         def to_parameter_units(self):
