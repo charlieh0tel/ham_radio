@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import pickle
 import sys
 import time
@@ -8,69 +9,35 @@ import numpy as np
 
 import pymeasure
 import pymeasure.adapters
+import pyvisa
 
 import hp8560e
 import noisy
 import ablock
 
-def escape_for_prologix(block):
-    SPECIAL_CHARS = b'\x0d\x0a\x1b\x2b'
-    new_block = b''
-    for b in block:
-        escape = b''
-        if b in SPECIAL_CHARS:
-            escape = b'\x1b'
-            new_block += (escape + bytes((b,)))
-
-    return new_block
-    
-
 def main(argv):
-    serial = argv[1]
-    id = int(argv[2])
-
-    #adapter = pymeasure.adapters.PrologixAdapter(serial, 11)
-    adapter = noisy.NoisyPrologixAdapter(serial, 11)
-
+    #logging.basicConfig(level=logging.DEBUG)
+    resource = "tcpip::e5810a::gpib0,11"
+    adapter = pymeasure.adapters.VISAAdapter(resource, visa_library="@py")
     sa = hp8560e.HP8560E(adapter)
 
     sa.preset()
     sa.start_frequency = 1e6
     sa.stop_frequency = 10e6
     sa.set_single_sweep_mode()
-    #sa.take_sweep()
+    sa.take_sweep()
 
-    r = [300] * sa.N_POINTS
-    raw_bytes = ablock.to_ablock_u16(r)
-    escaped_bytes = escape_for_prologix(raw_bytes)
+    trace = sa.read_trace(which='A')
+    print(trace)
+    print(list(trace.to_parameter_units()))
 
-    sa.write("TDF A;")
-    sa.write_bytes(b"TRA " + raw_bytes)
+    trace2 = sa.Trace(
+        amplitude_units='DBM', reference_level=0.0, log_scale=10,
+        trace_mu = [100] * sa.N_POINTS)
 
-    #print(f"r={r}")
-    #sa.trace_a = r
-
-    trace_a = sa.trace_a
-    print(f"trace_a={trace_a}")
-
-    """
-
-    sa.trace_b = trace_a
-    sa.write("VIEW TRB;")
-
-    r = np.linspace(-80, 40, sa.N_POINTS, dtype=np.float64)
-    r = [-20.] * sa.N_POINTS
-    print(f"r={r}")
-    sa.trace_a = r
-    sa.trace_b = r
+    sa.write_trace(trace2, which='B')
     
-    sa.write("VIEW TRA;")
-    time.sleep(2)
-    sa.write("VIEW TRB;")
-
-    """
-    time.sleep(5)
-    adapter.write("++loc")
+    return 0
 
 
 if __name__ == "__main__":

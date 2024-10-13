@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import pickle
 import sys
 import time
@@ -20,16 +21,14 @@ def load_thru_calibrations():
 
 
 def main(argv):
-    serial = argv[1]
-    id = int(argv[2])
-    band_name = argv[3]
+    #logging.basicConfig(level=logging.DEBUG)
+    resource = "tcpip::e5810a::gpib0,11"
+    adapter = pymeasure.adapters.VISAAdapter(resource, visa_library="@py")
+    sa = hp8560e.HP8560E(adapter)
+
+    band_name = argv[1]
     band = bands.BAND_BY_NAME[band_name]
     thru_calibrations = load_thru_calibrations()
-    
-    #adapter = pymeasure.adapters.PrologixAdapter(serial, 11)
-    adapter = noisy.NoisyPrologixAdapter(serial, 11)
-
-    sa = hp8560e.HP8560E(adapter)
     
     sa.preset()
     sa.start_frequency = band.start_frequency
@@ -40,8 +39,6 @@ def main(argv):
     #sa.normalize = True
     #sa.sweep_coupling = "SR"
     #sa.source_power = True
-
-    adapter.write("++loc")
 
     return 0
 
