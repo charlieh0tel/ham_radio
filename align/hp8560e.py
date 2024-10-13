@@ -6,6 +6,7 @@ import numpy as np
 
 import pymeasure
 import pymeasure.instruments
+import pymeasure.instruments.validators
 
 
 class HP8560E(pymeasure.instruments.Instrument):
