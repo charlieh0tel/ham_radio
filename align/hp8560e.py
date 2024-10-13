@@ -5,6 +5,7 @@ import struct
 import time
 
 import numpy as np
+import pandas as pd
 
 import pymeasure
 import pymeasure.instruments
@@ -166,6 +167,9 @@ class HP8560E(pymeasure.instruments.Instrument):
     def set_single_sweep_mode(self):
         self.write("SNGLS;")
 
+    def set_continuous_sweep_mode(self):
+        self.write("CONTS;")
+
     def wait_for_done(self):
         """
         # Needed for prologix.  Any better way?
@@ -227,3 +231,7 @@ class HP8560E(pymeasure.instruments.Instrument):
             else:
                 return map(lambda x: self.reference_level * (x / 600.),
                            self.trace_mu)
+
+        def to_dataframe(self):
+            return pd.DataFrame({'amplitudes': self.to_parameter_units()},
+                                index=self.frequencies)

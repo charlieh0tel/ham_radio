@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import datetime
 import logging
 import pickle
 import sys
@@ -26,6 +27,7 @@ def main(argv):
     print(f"{band_name} {band.start_frequency:.3f}  {band.stop_frequency:.3f}")
 
     sa.preset()
+    sa.set_single_sweep_mode()
     sa.start_frequency = band.start_frequency
     sa.stop_frequency = band.stop_frequency
     sa.sweep_coupling = "SR"
@@ -39,6 +41,24 @@ def main(argv):
     sa.write("STORETHRU;")
     sa.take_sweep()
     sa.normalize = True
+
+    sa.set_continuous_sweep_mode()
+    print("Attach radio/filter and adjust if necessary.")
+    input("Press return to continue to anaylize and record sweep. -> ")
+
+    sa.set_single_sweep_mode()
+    sa.take_sweep()
+    trace = sa.read_trace()
+
+    data = np.array(list(trace.to_parameter_units()))
+    mean = np.mean(data)
+    std = np.std(data)
+    print(f"band={band_name} mean={mean:.3f} sd={std:.3f} dB")
+
+    yymmdd = datetime.datetime.now().strftime("%y%m%d")
+    with open(f"align_{band_name}_{yymmdd}.json", "w") as f:
+        trace.to_dataframe().to_json(f)
+    
 
     return 0
 
