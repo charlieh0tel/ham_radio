@@ -23,3 +23,10 @@ BANDS=[
 ]
 
 BAND_BY_NAME={band.name: band for band in BANDS}
+
+
+def which_band(freq):
+    for band in BANDS:
+        if band.start_frequency <= freq <= band.stop_frequency:
+            return band
+    return None
