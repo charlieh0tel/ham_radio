@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import json
 import pathlib
 import sys
@@ -29,7 +30,9 @@ def main(argv):
             ax.get_legend().remove()
             ax.set(xlabel="MHz", ylabel="IL (dB)", title=title)
             ax.minorticks_on()
-            ax.set_ybound(0., -20.)
+            y_max = 0 if df['amplitudes'].max() < 0. else 5.0
+            y_min = min(math.ceil(df['amplitudes'].min() / -10.) * -10., -10.)
+            ax.set_ybound(y_max, y_min)
 
             plt.tight_layout()
             

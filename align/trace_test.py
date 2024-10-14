@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-import pickle
 import sys
 import time
 
@@ -12,7 +11,6 @@ import pymeasure.adapters
 import pyvisa
 
 import hp8560e
-import noisy
 import ablock
 
 def main(argv):
