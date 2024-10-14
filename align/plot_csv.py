@@ -19,7 +19,9 @@ def main(argv):
             #df['amplitudes'] = df['amplitudes'].abs()
             df['frequencies'] = df['frequencies'] / 1e6
 
-            ax = df.plot(x='frequencies', y='amplitudes')
+            label = (f"IL, mean={df['amplitudes'].mean():.2f}, "
+                     f"std={df['amplitudes'].std():.2f} dB")
+            ax = df.plot(x='frequencies', y='amplitudes', label=label)
             ax.minorticks_on()
             ax.set_ybound(0., -20.)
 
