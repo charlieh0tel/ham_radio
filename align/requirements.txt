@@ -2,3 +2,4 @@ numpy<2
 pandas
 pymeasure
 pyvisa_py
+seaborn
