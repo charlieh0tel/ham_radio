@@ -16,7 +16,6 @@ def main(argv):
         with open(path, "r") as f:
             df = pd.read_csv(path)
         
-            #df['amplitudes'] = df['amplitudes'].abs()
             df['frequencies'] = df['frequencies'] / 1e6
 
             label = (f"IL, mean={df['amplitudes'].mean():.2f}, "
