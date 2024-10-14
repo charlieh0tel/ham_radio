@@ -26,6 +26,7 @@ def main(argv):
                      f"std={df['amplitudes'].std():.2f} dB")
             ax = df.plot(x='frequencies', y='amplitudes',
                          label=None)
+            ax.get_legend().remove()
             ax.set(xlabel="MHz", ylabel="IL (dB)", title=title)
             ax.minorticks_on()
             ax.set_ybound(0., -20.)

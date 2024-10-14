@@ -32,7 +32,7 @@ def main(argv):
         ax.set(xlabel="MHz", ylabel="IL (dB)", title=title)
         ax.minorticks_on()
         ax.set_ybound(0., -20.)
-
+        
         plt.tight_layout()
         plt.show()
 
