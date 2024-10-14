@@ -16,6 +16,7 @@ def main(argv):
     sns.set_theme()
     
     for path in argv[1:]:
+        print(path)
         with open(path, "r") as f:
             df = pd.read_csv(path)
             band = bands.which_band(df['frequencies'][0])
@@ -23,9 +24,8 @@ def main(argv):
 
             title = (f"{band.name} mean={df['amplitudes'].mean():.2f}, "
                      f"std={df['amplitudes'].std():.2f} dB")
-            ax = sns.lineplot(data=df,
-                              x='frequencies', y='amplitudes',
-                              label=None)
+            ax = df.plot(x='frequencies', y='amplitudes',
+                         label=None)
             ax.set(xlabel="MHz", ylabel="IL (dB)", title=title)
             ax.minorticks_on()
             ax.set_ybound(0., -20.)

@@ -23,10 +23,12 @@ def main(argv):
         mean = np.mean(amplitudes)
         std = np.std(amplitudes)
         
-        print(f"  mean={mean:.3f} sd={std:.3f} {trace.amplitude_units} ")
+        print(f"band={band.name:10s}  mean={mean:6.3f} sd={std:6.3f} {trace.amplitude_units} ")
         
         title = (f"{band.name} mean={mean:.2f} std={std:.2f} dB")
-        ax = sns.lineplot(x=frequencies, y=amplitudes, label=None)
+
+        fig, ax = plt.subplots()
+        ax.plot(frequencies, amplitudes, label=None)
         ax.set(xlabel="MHz", ylabel="IL (dB)", title=title)
         ax.minorticks_on()
         ax.set_ybound(0., -20.)
@@ -40,4 +42,3 @@ def main(argv):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-        
