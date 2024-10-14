@@ -56,8 +56,8 @@ def main(argv):
     print(f"band={band_name} mean={mean:.3f} sd={std:.3f} dB")
 
     yymmdd = datetime.datetime.now().strftime("%y%m%d")
-    with open(f"align_{band_name}_{yymmdd}.json", "w") as f:
-        trace.to_dataframe().to_json(f)
+    with open(f"align_{band_name}_{yymmdd}.csv", "w") as f:
+        trace.to_dataframe().to_csv(f, index=False)
     
 
     return 0

@@ -233,5 +233,5 @@ class HP8560E(pymeasure.instruments.Instrument):
                            self.trace_mu)
 
         def to_dataframe(self):
-            return pd.DataFrame({'amplitudes': self.to_parameter_units()},
-                                index=self.frequencies)
+            return pd.DataFrame({'frequencies': self.frequencies,
+                                 'amplitudes': self.to_parameter_units()})
