@@ -1,0 +1,11 @@
+6m     mean= -9.60, std=  1.00 dB
+10m    mean= -6.75, std=  0.47 dB
+12m    mean= -5.04, std=  0.02 dB
+15m    mean= -4.90, std=  0.21 dB
+17m    mean= -4.90, std=  0.03 dB
+20m    mean= -5.24, std=  0.08 dB
+30m    mean= -5.57, std=  0.09 dB
+40m    mean= -4.15, std=  0.29 dB
+60m    mean= -4.33, std=  0.29 dB
+80m    mean= -2.93, std=  0.17 dB
+160m   mean= -5.19, std=  0.23 dB
