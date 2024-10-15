@@ -143,6 +143,28 @@ class HP8560E(pymeasure.instruments.Instrument):
         validator=pymeasure.instruments.validators.strict_discrete_set,
         values=[0, 1, 2, 5, 10]
     )
+    logarithmic_scale = pymeasure.instruments.Instrument.control(
+        "LG?", "LG %d DB",
+        """
+        Control the logarithmic amplitude scale. When in linear
+        mode, querying 'logarithmic_scale' returns a “0”.
+        Allowed values are 0, 1, 2, 5, 10
+
+        Type: :class:`int`
+
+        .. code-block:: python
+
+            if instr.logarithmic_scale:
+                pass
+
+            # set the scale to 10 db per division
+            instr.logarithmic_scale = 10
+
+        """,
+        cast=int,
+        validator=pymeasure.instruments.validators.strict_discrete_set,
+        values=[0, 1, 2, 5, 10]
+    )
 
 
     @property

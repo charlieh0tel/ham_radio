@@ -22,6 +22,7 @@ def main(argv):
     sa = hp8560e.HP8560E(adapter)
 
     band_name = argv[1]
+    logarithmic_scale = int(argv[2]) if len(argv) >= 3 else 2
     band = bands.BAND_BY_NAME[band_name]
     print(f"{band_name} {band.start_frequency:.3f}  {band.stop_frequency:.3f}")
 
@@ -29,6 +30,7 @@ def main(argv):
     sa.set_single_sweep_mode()
     sa.start_frequency = band.start_frequency
     sa.stop_frequency = band.stop_frequency
+    sa.logarithmic_scale = logarithmic_scale
     sa.sweep_coupling = "SR"
     sa.source_power = True
 
