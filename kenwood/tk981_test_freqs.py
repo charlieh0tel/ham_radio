@@ -56,7 +56,6 @@ def freq_mhz_to_bytes(freq_mhz: Decimal) -> list:
     for place in reversed(_FREQ_PLACES):
         v = remainder_mhz // place
         remainder_mhz -= v * place
-        print(f"v={v} r={remainder_mhz}")
         result.append(int_to_bcd_hex(int(v)))
     return list(reversed(result))
 
