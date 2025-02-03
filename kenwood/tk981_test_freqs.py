@@ -5,7 +5,7 @@ import sys
 
 _TEST_FREQ_OFFSET=0x172
 _TEST_FREQ_SIZE=10
-_N_TEST_FREQS=10
+_N_TEST_FREQS=16
 
 _MEM_OFFSET=0x330
 _MEM_SIZE=64
@@ -75,9 +75,9 @@ def dump_mem_freqs(dat: bytes):
             rx = read_freq(dat, offset + 35)
             tx = read_freq(dat, offset + 39)
         except ValueError:
-            print(f"{i:2d} --EMPTY--")
+            print(f"{i + 1:2d} --EMPTY--")
         else:
-            print(f"{i:2d} {rx:.4f} {tx:.4f}")
+            print(f"{i + 1:2d} {rx:.4f} {tx:.4f}")
         offset += _MEM_SIZE
             
 
@@ -89,24 +89,36 @@ def dump_test_freqs(dat: bytes):
             rx = read_freq(dat, offset)
             tx = read_freq(dat, offset + 4)
         except ValueError:
-            print(f"{i:2d} --EMPTY--")
+            print(f"{i + 1:2d} --EMPTY--")
         else:            
-            print(f"{i:2d} {rx:.4f} {tx:.4f}")
+            print(f"{i + 1:2d} {rx:.4f} {tx:.4f}")
         offset += _TEST_FREQ_SIZE
 
 
 def frob_test_freqs(dat: bytes):
-    MY_TEST_FREQS=[(Decimal("902.00000"), Decimal("902.00000")),
-                   (Decimal("910.00000"), Decimal("910.00000")),
-                   (Decimal("915.00000"), Decimal("915.00000")),
-                   (Decimal("920.00000"), Decimal("920.00000")),
-                   (Decimal("924.00000"), Decimal("924.00000")),
-                   (Decimal("928.00000"), Decimal("928.00000")),
-                   #
-                   (Decimal("902.01250"), Decimal("927.01250")),
-                   (Decimal("927.01250"), Decimal("902.01250")),
-                   (Decimal("902.07500"), Decimal("927.07500")),
-                   (Decimal("927.07500"), Decimal("902.07500"))]
+    MY_TEST_FREQS=[
+        # Part 97 Band
+        (Decimal("902.00000"), Decimal("902.00000")),
+        (Decimal("903.00000"), Decimal("903.00000")),
+        (Decimal("905.00000"), Decimal("905.00000")),
+        (Decimal("910.00000"), Decimal("910.00000")),
+        (Decimal("915.00000"), Decimal("915.00000")),
+        (Decimal("918.00000"), Decimal("918.00000")),
+        (Decimal("920.00000"), Decimal("920.00000")),
+        (Decimal("925.00000"), Decimal("925.00000")),
+        (Decimal("927.00000"), Decimal("927.00000")),
+        (Decimal("927.90000"), Decimal("927.90000")),
+        #
+        # Min/max commercial frequencies.
+        (Decimal("940.90000"), Decimal("940.90000")),
+        (Decimal("896.02500"), Decimal("896.02500")),
+        #
+        # Typical repeaters.
+        (Decimal("902.01250"), Decimal("927.01250")),
+        (Decimal("927.01250"), Decimal("902.01250")),
+        (Decimal("902.07500"), Decimal("927.07500")),
+        (Decimal("927.07500"), Decimal("902.07500"))]
+    assert len(MY_TEST_FREQS) <= _N_TEST_FREQS
     offset = _TEST_FREQ_OFFSET
     dat = list(dat)
     for i, (rx, tx) in enumerate(MY_TEST_FREQS):
