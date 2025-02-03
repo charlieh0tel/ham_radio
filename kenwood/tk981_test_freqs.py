@@ -97,27 +97,27 @@ def dump_test_freqs(dat: bytes):
 
 def frob_test_freqs(dat: bytes):
     MY_TEST_FREQS=[
-        # Part 97 Band
-        (Decimal("902.00000"), Decimal("902.00000")),
-        (Decimal("903.00000"), Decimal("903.00000")),
-        (Decimal("905.00000"), Decimal("905.00000")),
-        (Decimal("910.00000"), Decimal("910.00000")),
-        (Decimal("915.00000"), Decimal("915.00000")),
-        (Decimal("918.00000"), Decimal("918.00000")),
-        (Decimal("920.00000"), Decimal("920.00000")),
-        (Decimal("925.00000"), Decimal("925.00000")),
-        (Decimal("927.00000"), Decimal("927.00000")),
-        (Decimal("927.90000"), Decimal("927.90000")),
+        # Standard TK-981 Test Frequencies
+        (Decimal("935.0250"), Decimal("896.0250")),     # 1
+        (Decimal("935.0500"), Decimal("896.0500")),     # 2
+        (Decimal("938.0000"), Decimal("899.0000")),     # 3
+        (Decimal("938.0250"), Decimal("899.0250")),     # 4
+        (Decimal("939.9875"), Decimal("900.9875")),     # 5
+        (Decimal("940.4000"), Decimal("901.4000")),     # 6
+        (Decimal("940.9000"), Decimal("901.9000")),     # 7
+        (Decimal("936.2500"), Decimal("897.2500")),     # 8
+        (Decimal("939.3000"), Decimal("900.3000")),     # 9
+        (Decimal("936.7500"), Decimal("897.7500")),     # 10
         #
-        # Min/max commercial frequencies.
-        (Decimal("940.90000"), Decimal("940.90000")),
-        (Decimal("896.02500"), Decimal("896.02500")),
-        #
-        # Typical repeaters.
-        (Decimal("902.01250"), Decimal("927.01250")),
-        (Decimal("927.01250"), Decimal("902.01250")),
-        (Decimal("902.07500"), Decimal("927.07500")),
-        (Decimal("927.07500"), Decimal("902.07500"))]
+        (Decimal("901.9000"), Decimal("940.9000")),     # 11 (#7 TA)
+        # Part 97
+        (Decimal("902.0000"), Decimal("902.0000")),     # 12
+        (Decimal("915.0000"), Decimal("915.0000")),     # 13
+        (Decimal("918.0000"), Decimal("918.0000")),     # 14
+        (Decimal("928.0000"), Decimal("928.0000")),     # 15
+        # Typical Part 97 repeaters.
+        (Decimal("902.01250"), Decimal("927.01250")),   # 16
+        ]
     assert len(MY_TEST_FREQS) <= _N_TEST_FREQS
     offset = _TEST_FREQ_OFFSET
     dat = list(dat)
