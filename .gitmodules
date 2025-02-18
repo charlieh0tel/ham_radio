@@ -1,0 +1,3 @@
+[submodule "sinad/pydwf"]
+	path = sinad/pydwf
+	url = https://github.com/tobbad/pydwf.git
