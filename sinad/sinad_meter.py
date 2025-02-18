@@ -14,6 +14,25 @@ from pydwf.utilities import openDwfDevice
 _NOISY=False
 
 
+class MovingAverageFilter:
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.data = np.array([])
+
+    def update(self, value):
+        self.data = np.append(self.data, value)
+        if len(self.data) > self.window_size:
+            self.data = self.data[1:]
+
+    def __call__(self):
+        if len(self.data) > 0:
+            return np.mean(self.data)
+        else:
+            return 0
+
+
+
+
 def run(analogIn, sample_frequency, record_length):
     analogIn.channelEnableSet(0, True)
     analogIn.channelFilterSet(0, DwfAnalogInFilter.Average)
@@ -29,6 +48,7 @@ def run(analogIn, sample_frequency, record_length):
     ch1_line = None
     sinad_line = None
     sinad_text = None
+    sinad_filter = MovingAverageFilter(8)
 
     while True:
         acquisition_nr += 1  # Increment acquisition number.
@@ -82,9 +102,10 @@ def run(analogIn, sample_frequency, record_length):
         t = time_of_first_sample + np.arange(len(samples)) / sample_frequency
 
         (sinad, _) = pysnr.sinad_signal(samples, fs=sample_frequency)
+        sinad_filter.update(sinad)
 
-        if ch1_line is None:
-            fig = plt.figure(figsize=(20,12))
+        if fig is None:
+            fig = plt.figure(figsize=(16, 8))
             fig.suptitle(f"Analog CH1 acquisition {acquisition_nr:5d}\n"
                          f"{num_samples} samples ({record_length} seconds at {sample_frequency} Hz)")
             ch1_axis = fig.add_subplot(111)
@@ -94,7 +115,7 @@ def run(analogIn, sample_frequency, record_length):
             x_min = -0.05 * record_length
             x_max = 1.05 * record_length
             ch1_axis.set_xlim(x_min, x_max)
-            ch1_axis.set_ylim(-1, 1)
+            ch1_axis.set_ylim(-2, 2)
             (ch1_line, ) = ch1_axis.plot(
                 t, samples, color='#346f9f', label="channel 1")
 
@@ -102,16 +123,18 @@ def run(analogIn, sample_frequency, record_length):
             sinad_axis.set_ylabel("SINDAD [dB]")
             sinad_axis.set_ylim(-10, 25)
             sinad_line = sinad_axis.axhline(y=sinad, color='r')
-            sinad_text = sinad_axis.text(0, -9, f"SINAD={sinad:.3f} dB")
+            filtered_sinad = sinad_filter()
+            sinad_text = sinad_axis.text(0, -9, f"SINAD={filtered_sinad:.3f} dB")
         else:
             fig.suptitle(f"Analog CH1 acquisition {acquisition_nr:5d}\n"
                          f"{num_samples} samples ({record_length} seconds at {sample_frequency} Hz)")
             ch1_line.set_xdata(t)
             ch1_line.set_ydata(samples)
             sinad_line.set_ydata([sinad] * 2)
-            sinad_text.set_text(f"SINAD={sinad:.3f} dB")
+            filtered_sinad = sinad_filter()
+            sinad_text.set_text(f"SINAD={filtered_sinad:.3f} dB")
 
-        plt.pause(1e-3)
+        plt.pause(100e-6)
 
         if len(plt.get_fignums()) == 0:
             # User has closed the window, finish.
@@ -125,7 +148,7 @@ def main():
         description="Demonstrate analog input recording with triggering.")
 
     DEFAULT_SAMPLE_FREQUENCY = 16.0e3
-    DEFAULT_RECORD_LENGTH = 100e-3
+    DEFAULT_RECORD_LENGTH = 500e-3
 
     parser.add_argument(
         "-sn", "--serial-number-filter",
