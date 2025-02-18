@@ -69,7 +69,7 @@ def run(analogIn, sample_frequency, record_length):
     ch1_line = None
     sinad_line = None
     sinad_text = None
-    sinad_filter = MovingAverageFilter(4)
+    sinad_filter = MovingAverageFilter(8)
 
     while True:
         acquisition_nr += 1  # Increment acquisition number.
@@ -146,7 +146,8 @@ def run(analogIn, sample_frequency, record_length):
             sinad_line = sinad_axis.axhline(y=sinad, color='r')
             filtered_sinad = sinad_filter()
             sinad_text = sinad_axis.text(
-                0, -9, f"SINAD={filtered_sinad:.3f} dB")
+                0.4, 22, f"SINAD={filtered_sinad:.3f} dB",
+                fontsize=20)
             fig.show()
         else:
             fig.suptitle(f"Analog CH1 acquisition {acquisition_nr:5d}\n"
