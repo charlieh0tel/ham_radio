@@ -4,6 +4,7 @@ import argparse
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.style as mplstyle
 import pysnr
 
 from pydwf import (DwfLibrary, DwfEnumConfigInfo, DwfAnalogOutNode, DwfAnalogOutFunction, DwfAcquisitionMode,
@@ -11,7 +12,11 @@ from pydwf import (DwfLibrary, DwfEnumConfigInfo, DwfAnalogOutNode, DwfAnalogOut
                    PyDwfError)
 from pydwf.utilities import openDwfDevice
 
-_NOISY=False
+
+_NOISY = False
+
+
+mplstyle.use('fast')
 
 
 class MovingAverageFilter:
@@ -31,6 +36,22 @@ class MovingAverageFilter:
             return 0
 
 
+def configure_analog_output(device, channel, frequency, amplitude,
+                            offset, symmetry=None):
+    analogOut = device.analogOut
+    analogOut.reset(-1)  # Reset both channels.
+
+    node = DwfAnalogOutNode.Carrier
+    analogOut.nodeEnableSet(channel, node, True)
+    analogOut.nodeFunctionSet(channel, node, DwfAnalogOutFunction.Sine)
+    analogOut.nodeFrequencySet(channel, node, frequency)
+    analogOut.nodeAmplitudeSet(channel, node, amplitude)
+    if symmetry:
+        analogOut.nodeSymmetrySet(channel, node, symmetry)
+    analogOut.nodeOffsetSet(channel, node, offset)
+    analogOut.nodePhaseSet(channel, node, 0.)
+
+    analogOut.configure(channel, True)
 
 
 def run(analogIn, sample_frequency, record_length):
@@ -48,7 +69,7 @@ def run(analogIn, sample_frequency, record_length):
     ch1_line = None
     sinad_line = None
     sinad_text = None
-    sinad_filter = MovingAverageFilter(8)
+    sinad_filter = MovingAverageFilter(4)
 
     while True:
         acquisition_nr += 1  # Increment acquisition number.
@@ -121,10 +142,12 @@ def run(analogIn, sample_frequency, record_length):
 
             sinad_axis = ch1_axis.twinx()
             sinad_axis.set_ylabel("SINDAD [dB]")
-            sinad_axis.set_ylim(-10, 25)
+            sinad_axis.set_ylim(-15, 25)
             sinad_line = sinad_axis.axhline(y=sinad, color='r')
             filtered_sinad = sinad_filter()
-            sinad_text = sinad_axis.text(0, -9, f"SINAD={filtered_sinad:.3f} dB")
+            sinad_text = sinad_axis.text(
+                0, -9, f"SINAD={filtered_sinad:.3f} dB")
+            fig.show()
         else:
             fig.suptitle(f"Analog CH1 acquisition {acquisition_nr:5d}\n"
                          f"{num_samples} samples ({record_length} seconds at {sample_frequency} Hz)")
@@ -134,7 +157,8 @@ def run(analogIn, sample_frequency, record_length):
             filtered_sinad = sinad_filter()
             sinad_text.set_text(f"SINAD={filtered_sinad:.3f} dB")
 
-        plt.pause(100e-6)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
 
         if len(plt.get_fignums()) == 0:
             # User has closed the window, finish.
@@ -142,10 +166,8 @@ def run(analogIn, sample_frequency, record_length):
 
 
 def main():
-    """Parse arguments and start demo."""
-
     parser = argparse.ArgumentParser(
-        description="Demonstrate analog input recording with triggering.")
+        description="SINAD Meter")
 
     DEFAULT_SAMPLE_FREQUENCY = 16.0e3
     DEFAULT_RECORD_LENGTH = 500e-3
@@ -174,6 +196,13 @@ def main():
             DEFAULT_RECORD_LENGTH)
     )
 
+    parser.add_argument(
+        "-o", "--enable-ch1-output",
+        action="store_true",
+        dest="enable_ch1_out",
+        help="enable ch1 output"
+    )
+
     args = parser.parse_args()
 
     dwf = DwfLibrary()
@@ -185,6 +214,11 @@ def main():
     try:
         with openDwfDevice(dwf, serial_number_filter=args.serial_number_filter,
                            score_func=maximize_analog_in_buffer_size) as device:
+
+            if args.enable_ch1_out:
+                configure_analog_output(device, 0, frequency=100, amplitude=1.,
+                                        offset=0., symmetry=0.25)
+
             run(device.analogIn, args.sample_frequency, args.record_length)
     except PyDwfError as exception:
         print("PyDwfError:", exception)
