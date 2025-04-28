@@ -1,6 +1,0 @@
-pydwf
-matplotlib
-numpy
-registries
-scipy
-sounddevice
