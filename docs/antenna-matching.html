@@ -7,44 +7,49 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/mathjs@12/lib/browser/math.js"></script>
   <style>body { margin: 0; }</style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useMemo } = React;
+    const { complex, add, subtract, multiply, divide, abs } = math;
+
+    // Helper: create complex from r,x and extract r,x from complex
+    const C = (r, x) => complex(r, x);
+    const re = (z) => z.re;
+    const im = (z) => z.im;
+    const toRX = (z) => ({ r: z.re, x: z.im });
 
     function AntennaMatching() {
       const [mode, setMode] = useState('gamma'); // 'gamma' or 'hairpin'
-      
+
       // Common antenna params
       const [antR, setAntR] = useState(73);
       const [antX, setAntX] = useState(43);
-      
+
       // Gamma match params
       const [tapRatio, setTapRatio] = useState(1.0);
       const [gammaRodX, setGammaRodX] = useState(300);
       const [seriesCapX, setSeriesCapX] = useState(30);
-      
+
       // Hairpin/Beta match params
       const [shortening, setShortening] = useState(15);
       const [hairpinX, setHairpinX] = useState(50);
-      
+
       const size = 440;
       const cx = size / 2;
       const cy = size / 2;
       const radius = size / 2 - 45;
       const Z0 = 50;
 
-      // Convert impedance to reflection coefficient
+      // Convert impedance to reflection coefficient: Γ = (z - 1) / (z + 1)
       const zToGamma = (r, x) => {
         if (r <= 0) r = 0.01;
-        const zn = { r: r / Z0, x: x / Z0 };
-        const denom = (zn.r + 1) ** 2 + zn.x ** 2;
-        return {
-          re: ((zn.r - 1) * (zn.r + 1) + zn.x ** 2) / denom,
-          im: (2 * zn.x) / denom
-        };
+        const zNorm = C(r / Z0, x / Z0);
+        const gamma = divide(subtract(zNorm, 1), add(zNorm, 1));
+        return { re: re(gamma), im: im(gamma) };
       };
 
       const gammaToScreen = (gamma) => ({
@@ -55,32 +60,28 @@
       const zToScreen = (r, x) => gammaToScreen(zToGamma(r, x));
 
       // Gamma match transformations
-      const applyTapRatio = (r, x, ratio) => ({
-        r: r * ratio * ratio,
-        x: x * ratio * ratio
-      });
-
-      const addShuntReactance = (r, x, xShunt) => {
-        if (Math.abs(xShunt) < 0.1) return { r, x };
-        const magSq = r * r + x * x;
-        const g = r / magSq;
-        const b = -x / magSq;
-        const bShunt = -1 / xShunt;
-        const gTotal = g;
-        const bTotal = b + bShunt;
-        const yMagSq = gTotal * gTotal + bTotal * bTotal;
-        return {
-          r: gTotal / yMagSq,
-          x: -bTotal / yMagSq
-        };
+      const applyTapRatio = (r, x, ratio) => {
+        const z = multiply(C(r, x), ratio * ratio);
+        return toRX(z);
       };
 
-      const addSeriesReactance = (r, x, xSeries) => ({
-        r: r,
-        x: x + xSeries
-      });
+      // Add shunt reactance: Y_total = Y + Y_shunt, then Z = 1/Y_total
+      const addShuntReactance = (r, x, xShunt) => {
+        if (Math.abs(xShunt) < 0.1) return { r, x };
+        const z = C(r, x);
+        const y = divide(1, z);                      // Y = 1/Z
+        const yShunt = C(0, -1 / xShunt);            // Y_shunt = -j/X_shunt
+        const yTotal = add(y, yShunt);               // Y_total = Y + Y_shunt
+        const zNew = divide(1, yTotal);              // Z = 1/Y_total
+        return toRX(zNew);
+      };
 
-      // Calculate SWR
+      const addSeriesReactance = (r, x, xSeries) => {
+        const z = add(C(r, x), C(0, xSeries));
+        return toRX(z);
+      };
+
+      // Calculate SWR from reflection coefficient magnitude
       const calcSWR = (r, x) => {
         const gamma = zToGamma(r, x);
         const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
