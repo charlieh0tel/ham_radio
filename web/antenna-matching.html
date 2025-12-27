@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antenna Impedance Matching - Smith Chart</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>body { margin: 0; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    function AntennaMatching() {
+      const [mode, setMode] = useState('gamma'); // 'gamma' or 'hairpin'
+      
+      // Common antenna params
+      const [antR, setAntR] = useState(73);
+      const [antX, setAntX] = useState(43);
+      
+      // Gamma match params
+      const [tapRatio, setTapRatio] = useState(0.83);
+      const [gammaRodX, setGammaRodX] = useState(300);
+      const [seriesCapX, setSeriesCapX] = useState(30);
+      
+      // Hairpin/Beta match params
+      const [shortening, setShortening] = useState(15);
+      const [hairpinX, setHairpinX] = useState(50);
+      
+      const size = 440;
+      const cx = size / 2;
+      const cy = size / 2;
+      const radius = size / 2 - 45;
+      const Z0 = 50;
+
+      // Convert impedance to reflection coefficient
+      const zToGamma = (r, x) => {
+        if (r <= 0) r = 0.01;
+        const zn = { r: r / Z0, x: x / Z0 };
+        const denom = (zn.r + 1) ** 2 + zn.x ** 2;
+        return {
+          re: ((zn.r - 1) * (zn.r + 1) + zn.x ** 2) / denom,
+          im: (2 * zn.x) / denom
+        };
+      };
+
+      const gammaToScreen = (gamma) => ({
+        x: cx + gamma.re * radius,
+        y: cy - gamma.im * radius
+      });
+
+      const zToScreen = (r, x) => gammaToScreen(zToGamma(r, x));
+
+      // Gamma match transformations
+      const applyTapRatio = (r, x, ratio) => ({
+        r: r * ratio * ratio,
+        x: x * ratio * ratio
+      });
+
+      const addShuntReactance = (r, x, xShunt) => {
+        if (Math.abs(xShunt) < 0.1) return { r, x };
+        const magSq = r * r + x * x;
+        const g = r / magSq;
+        const b = -x / magSq;
+        const bShunt = -1 / xShunt;
+        const gTotal = g;
+        const bTotal = b + bShunt;
+        const yMagSq = gTotal * gTotal + bTotal * bTotal;
+        return {
+          r: gTotal / yMagSq,
+          x: -bTotal / yMagSq
+        };
+      };
+
+      const addSeriesReactance = (r, x, xSeries) => ({
+        r: r,
+        x: x + xSeries
+      });
+
+      // Calculate SWR
+      const calcSWR = (r, x) => {
+        const gamma = zToGamma(r, x);
+        const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
+        if (gammaMag >= 1) return 99;
+        return (1 + gammaMag) / (1 - gammaMag);
+      };
+
+      // Gamma match paths
+      const gammaPaths = useMemo(() => {
+        const tapPath = [];
+        for (let i = 0; i <= 50; i++) {
+          const ratio = 1 + (tapRatio - 1) * (i / 50);
+          const z = applyTapRatio(antR, antX, ratio);
+          if (z.r > 0 && z.r < 1000) {
+            tapPath.push(zToScreen(z.r, z.x));
+          }
+        }
+        const afterTap = applyTapRatio(antR, antX, tapRatio);
+
+        const shuntPath = [];
+        const startShuntX = 500;
+        for (let i = 0; i <= 60; i++) {
+          const xL = startShuntX + (gammaRodX - startShuntX) * (i / 60);
+          if (Math.abs(xL) < 1) continue;
+          const z = addShuntReactance(afterTap.r, afterTap.x, xL);
+          if (z.r > 0 && z.r < 1000 && Math.abs(z.x) < 500) {
+            shuntPath.push(zToScreen(z.r, z.x));
+          }
+        }
+        const afterShunt = addShuntReactance(afterTap.r, afterTap.x, gammaRodX);
+
+        const seriesPath = [];
+        for (let i = 0; i <= 40; i++) {
+          const xC = -seriesCapX * (i / 40);
+          const z = addSeriesReactance(afterShunt.r, afterShunt.x, xC);
+          seriesPath.push(zToScreen(z.r, z.x));
+        }
+        const finalZ = addSeriesReactance(afterShunt.r, afterShunt.x, -seriesCapX);
+
+        return {
+          origPt: zToScreen(antR, antX),
+          afterTapPt: zToScreen(afterTap.r, afterTap.x),
+          afterShuntPt: zToScreen(afterShunt.r, afterShunt.x),
+          finalPt: zToScreen(finalZ.r, finalZ.x),
+          afterTap,
+          afterShunt,
+          finalZ,
+          tapPath,
+          shuntPath,
+          seriesPath,
+          swr: calcSWR(finalZ.r, finalZ.x)
+        };
+      }, [antR, antX, tapRatio, gammaRodX, seriesCapX]);
+
+      // Hairpin/Beta match paths
+      const hairpinPaths = useMemo(() => {
+        // For hairpin: we start at antR (resonant), then shorten to add -jX
+        const shortenPath = [];
+        for (let i = 0; i <= 40; i++) {
+          const xVal = -shortening * (i / 40);
+          shortenPath.push(zToScreen(antR, xVal));
+        }
+        const afterShorten = { r: antR, x: -shortening };
+
+        // Hairpin adds parallel inductance
+        const hpPath = [];
+        for (let i = 0; i <= 60; i++) {
+          const xL = 300 + (hairpinX - 300) * (i / 60);
+          if (Math.abs(xL) < 1) continue;
+          const z = addShuntReactance(afterShorten.r, afterShorten.x, xL);
+          if (z.r > 0 && z.r < 500 && Math.abs(z.x) < 500) {
+            hpPath.push(zToScreen(z.r, z.x));
+          }
+        }
+        const finalZ = addShuntReactance(afterShorten.r, afterShorten.x, hairpinX);
+
+        return {
+          origPt: zToScreen(antR, 0),
+          shortenedPt: zToScreen(afterShorten.r, afterShorten.x),
+          finalPt: zToScreen(finalZ.r, finalZ.x),
+          afterShorten,
+          finalZ,
+          shortenPath,
+          hpPath,
+          swr: calcSWR(finalZ.r, finalZ.x)
+        };
+      }, [antR, shortening, hairpinX]);
+
+      // Auto-tune functions
+      const autoTuneGamma = () => {
+        let bestSWR = 999;
+        let bestParams = { tap: 0.83, rod: 300, cap: 30 };
+        
+        for (let tap = 0.5; tap <= 1.8; tap += 0.01) {
+          for (let rod = 20; rod <= 400; rod += 5) {
+            for (let cap = 0; cap <= 100; cap += 1) {
+              const z1 = applyTapRatio(antR, antX, tap);
+              const z2 = addShuntReactance(z1.r, z1.x, rod);
+              const z3 = addSeriesReactance(z2.r, z2.x, -cap);
+              const swr = calcSWR(z3.r, z3.x);
+              if (swr < bestSWR) {
+                bestSWR = swr;
+                bestParams = { tap, rod, cap };
+              }
+            }
+          }
+        }
+        
+        setTapRatio(Math.round(bestParams.tap * 100) / 100);
+        setGammaRodX(bestParams.rod);
+        setSeriesCapX(bestParams.cap);
+      };
+
+      const autoTuneHairpin = () => {
+        let bestSWR = 999;
+        let bestParams = { shorten: 15, hp: 50 };
+        
+        for (let shorten = 1; shorten <= 60; shorten += 1) {
+          for (let hp = 15; hp <= 200; hp += 1) {
+            const z1 = { r: antR, x: -shorten };
+            const z2 = addShuntReactance(z1.r, z1.x, hp);
+            const swr = calcSWR(z2.r, z2.x);
+            if (swr < bestSWR) {
+              bestSWR = swr;
+              bestParams = { shorten, hp };
+            }
+          }
+        }
+        
+        setShortening(bestParams.shorten);
+        setHairpinX(bestParams.hp);
+      };
+
+      // Resistance circles
+      const rCircles = [0, 0.2, 0.5, 1, 2, 5].map(r => ({
+        r,
+        cx: cx + (r / (r + 1)) * radius,
+        radius: radius / (r + 1)
+      }));
+
+      // Reactance arcs
+      const xArcs = [0.2, 0.5, 1, 2, 5].flatMap(x => [x, -x]).map(x => ({
+        x,
+        cx: cx + radius,
+        cy: cy - radius / x,
+        radius: Math.abs(radius / x)
+      }));
+
+      const createXArc = (x, arcCx, arcCy, arcRadius) => {
+        const points = [];
+        const isPositive = x > 0;
+        const startAngle = isPositive ? Math.PI / 2 : -Math.PI / 2;
+        const endAngle = isPositive ? Math.PI : -Math.PI;
+        
+        for (let i = 0; i <= 50; i++) {
+          const t = i / 50;
+          const angle = startAngle + (endAngle - startAngle) * t;
+          const px = arcCx + arcRadius * Math.cos(angle);
+          const py = arcCy + arcRadius * Math.sin(angle);
+          
+          const dx = px - cx;
+          const dy = py - cy;
+          if (dx * dx + dy * dy <= radius * radius * 1.01) {
+            points.push({ x: px, y: py });
+          }
+        }
+        return points;
+      };
+
+      const ArrowHead = ({ x, y, angle, color }) => (
+        <polygon
+          points="-7,-4 0,0 -7,4"
+          fill={color}
+          transform={`translate(${x}, ${y}) rotate(${angle})`}
+        />
+      );
+
+      const getArrowAngle = (path, endPt, offset = 5) => {
+        if (path.length <= offset) return 0;
+        const prev = path[path.length - offset];
+        return Math.atan2(endPt.y - prev.y, endPt.x - prev.x) * 180 / Math.PI;
+      };
+
+      const formatZ = (r, x) => `${r.toFixed(1)} ${x >= 0 ? '+' : '−'} j${Math.abs(x).toFixed(1)}`;
+
+      const colors = {
+        orig: '#ff6b6b',
+        step1: '#ffa94d',
+        step2: '#da77f2',
+        step3: '#66d9e8',
+        final: '#4dabf7'
+      };
+
+      const paths = mode === 'gamma' ? gammaPaths : hairpinPaths;
+      const swr = paths.swr;
+
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: '#0a0a0a',
+          color: '#e0e0e0',
+          fontFamily: '"JetBrains Mono", "SF Mono", Monaco, Consolas, monospace',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '20px'
+        }}>
+          {/* Mode Toggle */}
+          <div style={{ display: 'flex', gap: '8px', background: '#1a1a1a', padding: '6px', borderRadius: '8px' }}>
+            <button
+              onClick={() => setMode('gamma')}
+              style={{
+                padding: '10px 20px',
+                background: mode === 'gamma' ? '#da77f2' : 'transparent',
+                color: mode === 'gamma' ? '#000' : '#888',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '13px',
+                fontWeight: 600,
+                transition: 'all 0.2s'
+              }}
+            >
+              Gamma Match
+            </button>
+            <button
+              onClick={() => setMode('hairpin')}
+              style={{
+                padding: '10px 20px',
+                background: mode === 'hairpin' ? '#00ff88' : 'transparent',
+                color: mode === 'hairpin' ? '#000' : '#888',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '13px',
+                fontWeight: 600,
+                transition: 'all 0.2s'
+              }}
+            >
+              Hairpin (Beta) Match
+            </button>
+          </div>
+
+          <h1 style={{
+            fontSize: '18px',
+            fontWeight: 500,
+            letterSpacing: '0.05em',
+            color: '#fff',
+            margin: 0,
+            textTransform: 'uppercase'
+          }}>
+            {mode === 'gamma' ? 'Gamma Match' : 'Hairpin (Beta) Match'}
+          </h1>
+
+          {/* Presets and Auto-tune */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              onClick={() => { setAntR(73); setAntX(43); }}
+              style={{
+                padding: '8px 14px',
+                background: antR === 73 && antX === 43 ? '#333' : '#1a1a1a',
+                color: antR === 73 && antX === 43 ? '#fff' : '#888',
+                border: '1px solid #333',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px'
+              }}
+            >
+              Dipole (73+j43Ω)
+            </button>
+            <button
+              onClick={() => { setAntR(25); setAntX(0); }}
+              style={{
+                padding: '8px 14px',
+                background: antR === 25 && antX === 0 ? '#333' : '#1a1a1a',
+                color: antR === 25 && antX === 0 ? '#fff' : '#888',
+                border: '1px solid #333',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px'
+              }}
+            >
+              Yagi (25Ω)
+            </button>
+            <button
+              onClick={() => { setAntR(18); setAntX(-10); }}
+              style={{
+                padding: '8px 14px',
+                background: antR === 18 && antX === -10 ? '#333' : '#1a1a1a',
+                color: antR === 18 && antX === -10 ? '#fff' : '#888',
+                border: '1px solid #333',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px'
+              }}
+            >
+              Low-Z Yagi (18−j10Ω)
+            </button>
+            <button
+              onClick={mode === 'gamma' ? autoTuneGamma : autoTuneHairpin}
+              style={{
+                padding: '8px 20px',
+                background: mode === 'gamma' ? '#da77f2' : '#00ff88',
+                color: '#000',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                fontWeight: 600
+              }}
+            >
+              Auto-Tune
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* Smith Chart */}
+            <svg width={size} height={size} style={{ background: '#111', borderRadius: '8px' }}>
+              {/* Outer circle */}
+              <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#333" strokeWidth="2" />
+              
+              {/* Resistance circles */}
+              {rCircles.map(({ r, cx: circCx, radius: circR }) => (
+                <circle key={`r-${r}`} cx={circCx} cy={cy} r={circR} fill="none" stroke="#222" strokeWidth="1" />
+              ))}
+              
+              {/* Reactance arcs */}
+              {xArcs.map(({ x, cx: arcCx, cy: arcCy, radius: arcR }) => {
+                const pts = createXArc(x, arcCx, arcCy, arcR);
+                if (pts.length < 2) return null;
+                const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                return <path key={`x-${x}`} d={d} fill="none" stroke="#222" strokeWidth="1" />;
+              })}
+
+              {/* Center line */}
+              <line x1={cx - radius} y1={cy} x2={cx + radius} y2={cy} stroke="#444" strokeWidth="1" />
+              
+              {/* Labels */}
+              <text x={cx - radius - 8} y={cy + 4} fill="#555" fontSize="10" textAnchor="end">0</text>
+              <text x={cx + radius + 8} y={cy + 4} fill="#555" fontSize="10" textAnchor="start">∞</text>
+              <text x={cx} y={cy - 8} fill="#555" fontSize="9" textAnchor="middle">50Ω</text>
+              <text x={cx} y={cy - radius - 8} fill="#555" fontSize="9" textAnchor="middle">+jX</text>
+              <text x={cx} y={cy + radius + 16} fill="#555" fontSize="9" textAnchor="middle">−jX</text>
+
+              {mode === 'gamma' ? (
+                <>
+                  {/* Gamma: Tap ratio path */}
+                  {gammaPaths.tapPath.length > 1 && (
+                    <path
+                      d={gammaPaths.tapPath.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+                      fill="none" stroke={colors.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
+                    />
+                  )}
+                  {/* Gamma: Shunt inductance path */}
+                  {gammaPaths.shuntPath.length > 1 && (
+                    <path
+                      d={gammaPaths.shuntPath.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+                      fill="none" stroke={colors.step2} strokeWidth="3" strokeLinecap="round"
+                    />
+                  )}
+                  {/* Gamma: Series capacitor path */}
+                  {gammaPaths.seriesPath.length > 1 && (
+                    <path
+                      d={gammaPaths.seriesPath.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+                      fill="none" stroke={colors.step3} strokeWidth="3" strokeLinecap="round"
+                    />
+                  )}
+                  {/* Arrows */}
+                  {gammaPaths.tapPath.length > 3 && (
+                    <ArrowHead x={gammaPaths.afterTapPt.x} y={gammaPaths.afterTapPt.y}
+                      angle={getArrowAngle(gammaPaths.tapPath, gammaPaths.afterTapPt)} color={colors.step1} />
+                  )}
+                  {gammaPaths.shuntPath.length > 3 && (
+                    <ArrowHead x={gammaPaths.afterShuntPt.x} y={gammaPaths.afterShuntPt.y}
+                      angle={getArrowAngle(gammaPaths.shuntPath, gammaPaths.afterShuntPt)} color={colors.step2} />
+                  )}
+                  {gammaPaths.seriesPath.length > 3 && (
+                    <ArrowHead x={gammaPaths.finalPt.x} y={gammaPaths.finalPt.y}
+                      angle={getArrowAngle(gammaPaths.seriesPath, gammaPaths.finalPt)} color={colors.step3} />
+                  )}
+                  {/* Points */}
+                  <circle cx={gammaPaths.origPt.x} cy={gammaPaths.origPt.y} r="10" fill={colors.orig} stroke="#fff" strokeWidth="2" />
+                  <text x={gammaPaths.origPt.x - 14} y={gammaPaths.origPt.y - 14} 
+                    fill={colors.orig} fontSize="11" fontWeight="600" textAnchor="end">
+                    ① {antR}{antX >= 0 ? '+' : ''}j{antX}Ω
+                  </text>
+                  <circle cx={gammaPaths.afterTapPt.x} cy={gammaPaths.afterTapPt.y} r="7" fill={colors.step1} stroke="#fff" strokeWidth="2" />
+                  <circle cx={gammaPaths.afterShuntPt.x} cy={gammaPaths.afterShuntPt.y} r="7" fill={colors.step2} stroke="#fff" strokeWidth="2" />
+                  <circle cx={gammaPaths.finalPt.x} cy={gammaPaths.finalPt.y} r="10" fill={colors.final} stroke="#fff" strokeWidth="2" />
+                  <text x={gammaPaths.finalPt.x + 14} y={gammaPaths.finalPt.y + 4} fill={colors.final} fontSize="11" fontWeight="600">
+                    ④ {gammaPaths.finalZ.r.toFixed(0)}Ω
+                  </text>
+                </>
+              ) : (
+                <>
+                  {/* Hairpin: Shortening path */}
+                  {hairpinPaths.shortenPath.length > 1 && (
+                    <path
+                      d={hairpinPaths.shortenPath.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+                      fill="none" stroke={colors.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
+                    />
+                  )}
+                  {/* Hairpin: Parallel inductor path */}
+                  {hairpinPaths.hpPath.length > 1 && (
+                    <path
+                      d={hairpinPaths.hpPath.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+                      fill="none" stroke="#00ff88" strokeWidth="3" strokeLinecap="round"
+                    />
+                  )}
+                  {/* Arrows */}
+                  {hairpinPaths.shortenPath.length > 3 && (
+                    <ArrowHead x={hairpinPaths.shortenedPt.x} y={hairpinPaths.shortenedPt.y}
+                      angle={getArrowAngle(hairpinPaths.shortenPath, hairpinPaths.shortenedPt)} color={colors.step1} />
+                  )}
+                  {hairpinPaths.hpPath.length > 3 && (
+                    <ArrowHead x={hairpinPaths.finalPt.x} y={hairpinPaths.finalPt.y}
+                      angle={getArrowAngle(hairpinPaths.hpPath, hairpinPaths.finalPt)} color="#00ff88" />
+                  )}
+                  {/* Points */}
+                  <circle cx={hairpinPaths.origPt.x} cy={hairpinPaths.origPt.y} r="10" fill={colors.orig} stroke="#fff" strokeWidth="2" />
+                  <text x={hairpinPaths.origPt.x + 14} y={hairpinPaths.origPt.y + 4} 
+                    fill={colors.orig} fontSize="11" fontWeight="600">
+                    ① {antR}+j0Ω
+                  </text>
+                  <circle cx={hairpinPaths.shortenedPt.x} cy={hairpinPaths.shortenedPt.y} r="7" fill={colors.step1} stroke="#fff" strokeWidth="2" />
+                  <text x={hairpinPaths.shortenedPt.x + 12} y={hairpinPaths.shortenedPt.y - 8} 
+                    fill={colors.step1} fontSize="10">② Shortened</text>
+                  <circle cx={hairpinPaths.finalPt.x} cy={hairpinPaths.finalPt.y} r="10" fill={colors.final} stroke="#fff" strokeWidth="2" />
+                  <text x={hairpinPaths.finalPt.x + 14} y={hairpinPaths.finalPt.y + 4} fill={colors.final} fontSize="11" fontWeight="600">
+                    ③ {hairpinPaths.finalZ.r.toFixed(0)}Ω
+                  </text>
+                </>
+              )}
+
+              {/* 50Ω target */}
+              <circle cx={cx} cy={cy} r="6" fill="none" stroke="#00ff88" strokeWidth="2" strokeDasharray="3,3" />
+
+              {/* Legend */}
+              <g transform={`translate(${cx - radius + 10}, ${cy + radius - 80})`}>
+                {mode === 'gamma' ? (
+                  <>
+                    <line x1="0" y1="0" x2="20" y2="0" stroke={colors.step1} strokeWidth="3" strokeDasharray="6,4" />
+                    <text x="26" y="4" fill={colors.step1} fontSize="9">② Tap ratio</text>
+                    <line x1="0" y1="16" x2="20" y2="16" stroke={colors.step2} strokeWidth="3" />
+                    <text x="26" y="20" fill={colors.step2} fontSize="9">③ Shunt L</text>
+                    <line x1="0" y1="32" x2="20" y2="32" stroke={colors.step3} strokeWidth="3" />
+                    <text x="26" y="36" fill={colors.step3} fontSize="9">④ Series C</text>
+                  </>
+                ) : (
+                  <>
+                    <line x1="0" y1="0" x2="20" y2="0" stroke={colors.step1} strokeWidth="3" strokeDasharray="6,4" />
+                    <text x="26" y="4" fill={colors.step1} fontSize="9">② Shorten</text>
+                    <line x1="0" y1="16" x2="20" y2="16" stroke="#00ff88" strokeWidth="3" />
+                    <text x="26" y="20" fill="#00ff88" fontSize="9">③ Hairpin</text>
+                  </>
+                )}
+              </g>
+            </svg>
+
+            {/* Controls */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '300px' }}>
+              
+              {/* Antenna Impedance */}
+              <div style={{ background: '#1a1a1a', padding: '14px', borderRadius: '8px', border: `1px solid ${colors.orig}` }}>
+                <div style={{ color: colors.orig, fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>
+                  ① ANTENNA IMPEDANCE
+                </div>
+                <label style={{ display: 'block', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#888' }}>Resistance: {antR}Ω</span>
+                  <input type="range" min="10" max="150" value={antR} onChange={(e) => setAntR(Number(e.target.value))}
+                    style={{ width: '100%', marginTop: '4px', accentColor: colors.orig }} />
+                </label>
+                <label style={{ display: 'block' }}>
+                  <span style={{ fontSize: '12px', color: '#888' }}>
+                    Reactance: {antX >= 0 ? '+' : ''}j{antX}Ω {antX > 0 ? '(inductive)' : antX < 0 ? '(capacitive)' : ''}
+                  </span>
+                  <input type="range" min="-100" max="100" value={antX} onChange={(e) => setAntX(Number(e.target.value))}
+                    style={{ width: '100%', marginTop: '4px', accentColor: colors.orig }} />
+                </label>
+                <div style={{ marginTop: '8px', fontSize: '13px', color: '#fff', fontWeight: 500 }}>
+                  Z = {antR} {antX >= 0 ? '+' : '−'} j{Math.abs(antX)} Ω
+                </div>
+              </div>
+
+              {mode === 'gamma' ? (
+                <>
+                  {/* Tap Ratio */}
+                  <div style={{ background: '#1a1a1a', padding: '14px', borderRadius: '8px', border: `1px solid ${colors.step1}` }}>
+                    <div style={{ color: colors.step1, fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>② TAP RATIO</div>
+                    <label style={{ display: 'block' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
+                      <input type="range" min="0.5" max="1.8" step="0.01" value={tapRatio} 
+                        onChange={(e) => setTapRatio(Number(e.target.value))}
+                        style={{ width: '100%', marginTop: '4px', accentColor: colors.step1 }} />
+                    </label>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '6px' }}>
+                      → {formatZ(gammaPaths.afterTap.r, gammaPaths.afterTap.x)} Ω
+                    </div>
+                  </div>
+
+                  {/* Gamma Rod */}
+                  <div style={{ background: '#1a1a1a', padding: '14px', borderRadius: '8px', border: `1px solid ${colors.step2}` }}>
+                    <div style={{ color: colors.step2, fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>③ GAMMA ROD (SHUNT +jX)</div>
+                    <label style={{ display: 'block' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>Rod reactance: +j{gammaRodX}Ω</span>
+                      <input type="range" min="20" max="400" value={gammaRodX} 
+                        onChange={(e) => setGammaRodX(Number(e.target.value))}
+                        style={{ width: '100%', marginTop: '4px', accentColor: colors.step2 }} />
+                    </label>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '6px' }}>
+                      → {formatZ(gammaPaths.afterShunt.r, gammaPaths.afterShunt.x)} Ω
+                    </div>
+                  </div>
+
+                  {/* Series Capacitor */}
+                  <div style={{ background: '#1a1a1a', padding: '14px', borderRadius: '8px', border: `1px solid ${colors.step3}` }}>
+                    <div style={{ color: colors.step3, fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>④ SERIES CAPACITOR</div>
+                    <label style={{ display: 'block' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>Cap reactance: −j{seriesCapX}Ω</span>
+                      <input type="range" min="0" max="100" value={seriesCapX} 
+                        onChange={(e) => setSeriesCapX(Number(e.target.value))}
+                        style={{ width: '100%', marginTop: '4px', accentColor: colors.step3 }} />
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Shortening */}
+                  <div style={{ background: '#1a1a1a', padding: '14px', borderRadius: '8px', border: `1px solid ${colors.step1}` }}>
+                    <div style={{ color: colors.step1, fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>② SHORTEN ELEMENT</div>
+                    <label style={{ display: 'block' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>Capacitive reactance: −j{shortening}Ω</span>
+                      <input type="range" min="1" max="60" value={shortening} 
+                        onChange={(e) => setShortening(Number(e.target.value))}
+                        style={{ width: '100%', marginTop: '4px', accentColor: colors.step1 }} />
+                    </label>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '6px' }}>
+                      → {formatZ(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)} Ω
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
+                      Constant-R circle (series reactance)
+                    </div>
+                  </div>
+
+                  {/* Hairpin */}
+                  <div style={{ background: '#1a1a1a', padding: '14px', borderRadius: '8px', border: '1px solid #00ff88' }}>
+                    <div style={{ color: '#00ff88', fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>③ HAIRPIN (PARALLEL +jX)</div>
+                    <label style={{ display: 'block' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>Inductive reactance: +j{hairpinX}Ω</span>
+                      <input type="range" min="15" max="200" value={hairpinX} 
+                        onChange={(e) => setHairpinX(Number(e.target.value))}
+                        style={{ width: '100%', marginTop: '4px', accentColor: '#00ff88' }} />
+                    </label>
+                    <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+                      Constant-G circle (shunt susceptance)
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Result */}
+              <div style={{ 
+                background: swr < 1.5 ? '#0a1a0a' : '#1a1a1a', 
+                padding: '14px', 
+                borderRadius: '8px', 
+                border: `2px solid ${swr < 1.5 ? '#00ff88' : colors.final}` 
+              }}>
+                <div style={{ color: colors.final, fontSize: '11px', marginBottom: '8px', fontWeight: 600 }}>MATCHED IMPEDANCE</div>
+                <div style={{ fontSize: '18px', color: '#fff', marginBottom: '6px', fontWeight: 600 }}>
+                  Z = {formatZ(paths.finalZ.r, paths.finalZ.x)} Ω
+                </div>
+                <div style={{ 
+                  fontSize: '16px', 
+                  color: swr < 1.2 ? '#00ff88' : swr < 1.5 ? '#4ade80' : swr < 2 ? '#ffd43b' : '#ff6b6b',
+                  fontWeight: 600
+                }}>
+                  SWR = {swr.toFixed(3)} : 1
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Physical diagram */}
+          <div style={{ 
+            background: '#111', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            maxWidth: '650px',
+            width: '100%'
+          }}>
+            <div style={{ color: '#888', fontSize: '11px', marginBottom: '12px', textAlign: 'center', fontWeight: 600 }}>
+              {mode === 'gamma' ? 'GAMMA MATCH PHYSICAL ARRANGEMENT' : 'HAIRPIN (BETA) MATCH PHYSICAL ARRANGEMENT'}
+            </div>
+            {mode === 'gamma' ? (
+              <svg width="100%" viewBox="0 0 450 130" style={{ display: 'block' }}>
+                {/* Driven element */}
+                <line x1="50" y1="65" x2="400" y2="65" stroke="#666" strokeWidth="6" strokeLinecap="round" />
+                <text x="225" y="90" fill="#666" fontSize="10" textAnchor="middle">Driven Element</text>
+                
+                {/* Center point */}
+                <circle cx="225" cy="65" r="3" fill="#888" />
+                
+                {/* Gamma rod */}
+                <line x1="225" y1="40" x2="310" y2="40" stroke={colors.step2} strokeWidth="4" strokeLinecap="round" />
+                <text x="268" y="30" fill={colors.step2} fontSize="9" textAnchor="middle">Gamma Rod (+jX)</text>
+                
+                {/* Tap point connection */}
+                <line x1="310" y1="40" x2="310" y2="65" stroke={colors.step1} strokeWidth="2" />
+                <circle cx="310" cy="65" r="4" fill={colors.step1} />
+                <text x="310" y="115" fill={colors.step1} fontSize="8" textAnchor="middle">tap point</text>
+                
+                {/* Series capacitor */}
+                <line x1="225" y1="40" x2="180" y2="40" stroke="#888" strokeWidth="2" />
+                <rect x="160" y="34" width="20" height="12" fill="none" stroke={colors.step3} strokeWidth="2" rx="2" />
+                <text x="170" y="28" fill={colors.step3} fontSize="9" textAnchor="middle">C</text>
+                
+                {/* Coax connection */}
+                <line x1="160" y1="40" x2="100" y2="40" stroke="#4dabf7" strokeWidth="3" />
+                <line x1="225" y1="65" x2="225" y2="95" stroke="#888" strokeWidth="2" />
+                <line x1="225" y1="95" x2="100" y2="95" stroke="#888" strokeWidth="2" />
+                <line x1="100" y1="40" x2="100" y2="95" stroke="#4dabf7" strokeWidth="3" />
+                <text x="75" y="70" fill="#4dabf7" fontSize="9" textAnchor="middle">50Ω</text>
+              </svg>
+            ) : (
+              <svg width="100%" viewBox="0 0 450 130" style={{ display: 'block' }}>
+                {/* Driven element */}
+                <line x1="50" y1="50" x2="400" y2="50" stroke="#666" strokeWidth="6" strokeLinecap="round" />
+                <text x="225" y="35" fill="#666" fontSize="10" textAnchor="middle">Driven Element (shortened)</text>
+                
+                {/* Center gap */}
+                <rect x="215" y="44" width="20" height="12" fill="#0a0a0a" stroke="#888" strokeWidth="1" />
+                
+                {/* Hairpin */}
+                <path d="M 215 56 L 215 90 Q 215 100 225 100 Q 235 100 235 90 L 235 56" 
+                  fill="none" stroke="#00ff88" strokeWidth="4" strokeLinecap="round" />
+                <text x="225" y="118" fill="#00ff88" fontSize="9" textAnchor="middle">Hairpin (+jX)</text>
+                
+                {/* Coax */}
+                <line x1="215" y1="56" x2="150" y2="56" stroke="#888" strokeWidth="2" />
+                <line x1="235" y1="56" x2="235" y2="70" stroke="#888" strokeWidth="2" />
+                <line x1="235" y1="70" x2="150" y2="70" stroke="#888" strokeWidth="2" />
+                <line x1="150" y1="56" x2="150" y2="70" stroke="#4dabf7" strokeWidth="3" />
+                <line x1="150" y1="63" x2="100" y2="63" stroke="#4dabf7" strokeWidth="3" />
+                <text x="75" y="67" fill="#4dabf7" fontSize="9" textAnchor="middle">50Ω</text>
+              </svg>
+            )}
+          </div>
+
+          {/* Info */}
+          <div style={{ maxWidth: '680px', fontSize: '12px', color: '#666', lineHeight: 1.6, textAlign: 'center' }}>
+            {mode === 'gamma' ? (
+              <>
+                <strong style={{ color: '#aaa' }}>Gamma Match:</strong> Uses tap ratio to scale Z, shunt inductor (gamma rod), and series capacitor. 
+                Works for both high-Z and low-Z antennas by adjusting the tap position.
+              </>
+            ) : (
+              <>
+                <strong style={{ color: '#aaa' }}>Hairpin (Beta) Match:</strong> Shorten the driven element to add capacitive reactance, 
+                then use a parallel inductor (hairpin) to transform up to 50Ω. Best for low-Z antennas like Yagis.
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AntennaMatching />);
+  </script>
+</body>
+</html>
