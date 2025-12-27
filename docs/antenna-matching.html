@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/mathjs@12/lib/browser/math.js"></script>
+  <script src="https://unpkg.com/fmin@0.0.2/build/fmin.min.js"></script>
   <style>
     body { margin: 0; }
 
@@ -631,57 +632,45 @@
     };
 
     /**
-     * Hook for auto-tuning functionality
+     * Hook for auto-tuning functionality using Nelder-Mead optimization
      * @param {number} antR - Antenna resistance
      * @param {number} antX - Antenna reactance
      * @returns {Object} Auto-tune functions
      */
     const useAutoTune = (antR, antX) => {
       const autoTuneGamma = useCallback(() => {
-        let bestSWR = 999;
-        let bestParams = { tap: 1.0, rod: 300, cap: 30 };
-
-        for (let tap = 1; tap <= 2.5; tap += 0.01) {
-          for (let rod = 20; rod <= 400; rod += 5) {
-            for (let cap = 0; cap <= 100; cap += 1) {
-              const z1 = applyTapRatio(antR, antX, tap);
-              const z2 = addShuntReactance(z1.r, z1.x, rod);
-              const z3 = addSeriesReactance(z2.r, z2.x, -cap);
-              const swr = calcSWR(z3.r, z3.x);
-              if (swr < bestSWR) {
-                bestSWR = swr;
-                bestParams = { tap, rod, cap };
-              }
-            }
+        const result = fmin.nelderMead(([tap, rod, cap]) => {
+          // Penalty for out-of-bounds
+          if (tap < 1 || tap > 2.5 || rod < 20 || rod > 400 || cap < 0 || cap > 100) {
+            return 99;
           }
-        }
+          const z1 = applyTapRatio(antR, antX, tap);
+          const z2 = addShuntReactance(z1.r, z1.x, rod);
+          const z3 = addSeriesReactance(z2.r, z2.x, -cap);
+          return calcSWR(z3.r, z3.x);
+        }, [1.5, 200, 50]);  // Initial guess: middle of ranges
 
         return {
-          tapRatio: Math.round(bestParams.tap * 100) / 100,
-          gammaRodX: bestParams.rod,
-          seriesCapX: bestParams.cap
+          tapRatio: Math.round(result.x[0] * 100) / 100,
+          gammaRodX: Math.round(result.x[1]),
+          seriesCapX: Math.round(result.x[2])
         };
       }, [antR, antX]);
 
       const autoTuneHairpin = useCallback(() => {
-        let bestSWR = 999;
-        let bestParams = { shorten: 15, hp: 50 };
-
-        for (let shorten = 1; shorten <= 60; shorten += 1) {
-          for (let hp = 15; hp <= 200; hp += 1) {
-            const z1 = { r: antR, x: antX - shorten };
-            const z2 = addShuntReactance(z1.r, z1.x, hp);
-            const swr = calcSWR(z2.r, z2.x);
-            if (swr < bestSWR) {
-              bestSWR = swr;
-              bestParams = { shorten, hp };
-            }
+        const result = fmin.nelderMead(([shorten, hp]) => {
+          // Penalty for out-of-bounds
+          if (shorten < 1 || shorten > 60 || hp < 15 || hp > 200) {
+            return 99;
           }
-        }
+          const z1 = { r: antR, x: antX - shorten };
+          const z2 = addShuntReactance(z1.r, z1.x, hp);
+          return calcSWR(z2.r, z2.x);
+        }, [30, 100]);  // Initial guess: middle of ranges
 
         return {
-          shortening: bestParams.shorten,
-          hairpinX: bestParams.hp
+          shortening: Math.round(result.x[0]),
+          hairpinX: Math.round(result.x[1])
         };
       }, [antR, antX]);
 
