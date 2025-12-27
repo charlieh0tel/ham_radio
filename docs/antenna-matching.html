@@ -22,7 +22,7 @@
       const [antX, setAntX] = useState(43);
       
       // Gamma match params
-      const [tapRatio, setTapRatio] = useState(0.83);
+      const [tapRatio, setTapRatio] = useState(1.0);
       const [gammaRodX, setGammaRodX] = useState(300);
       const [seriesCapX, setSeriesCapX] = useState(30);
       
@@ -137,13 +137,13 @@
 
       // Hairpin/Beta match paths
       const hairpinPaths = useMemo(() => {
-        // For hairpin: we start at antR (resonant), then shorten to add -jX
+        // For hairpin: we start at antR + jantX, then shorten to add -jX
         const shortenPath = [];
         for (let i = 0; i <= 40; i++) {
-          const xVal = -shortening * (i / 40);
+          const xVal = antX - shortening * (i / 40);
           shortenPath.push(zToScreen(antR, xVal));
         }
-        const afterShorten = { r: antR, x: -shortening };
+        const afterShorten = { r: antR, x: antX - shortening };
 
         // Hairpin adds parallel inductance
         const hpPath = [];
@@ -158,7 +158,7 @@
         const finalZ = addShuntReactance(afterShorten.r, afterShorten.x, hairpinX);
 
         return {
-          origPt: zToScreen(antR, 0),
+          origPt: zToScreen(antR, antX),
           shortenedPt: zToScreen(afterShorten.r, afterShorten.x),
           finalPt: zToScreen(finalZ.r, finalZ.x),
           afterShorten,
@@ -167,14 +167,14 @@
           hpPath,
           swr: calcSWR(finalZ.r, finalZ.x)
         };
-      }, [antR, shortening, hairpinX]);
+      }, [antR, antX, shortening, hairpinX]);
 
       // Auto-tune functions
       const autoTuneGamma = () => {
         let bestSWR = 999;
-        let bestParams = { tap: 0.83, rod: 300, cap: 30 };
+        let bestParams = { tap: 1.0, rod: 300, cap: 30 };
         
-        for (let tap = 0.5; tap <= 1.8; tap += 0.01) {
+        for (let tap = 1; tap <= 2.5; tap += 0.01) {
           for (let rod = 20; rod <= 400; rod += 5) {
             for (let cap = 0; cap <= 100; cap += 1) {
               const z1 = applyTapRatio(antR, antX, tap);
@@ -197,10 +197,10 @@
       const autoTuneHairpin = () => {
         let bestSWR = 999;
         let bestParams = { shorten: 15, hp: 50 };
-        
+
         for (let shorten = 1; shorten <= 60; shorten += 1) {
           for (let hp = 15; hp <= 200; hp += 1) {
-            const z1 = { r: antR, x: -shorten };
+            const z1 = { r: antR, x: antX - shorten };
             const z2 = addShuntReactance(z1.r, z1.x, hp);
             const swr = calcSWR(z2.r, z2.x);
             if (swr < bestSWR) {
@@ -209,7 +209,7 @@
             }
           }
         }
-        
+
         setShortening(bestParams.shorten);
         setHairpinX(bestParams.hp);
       };
@@ -508,9 +508,9 @@
                   )}
                   {/* Points */}
                   <circle cx={hairpinPaths.origPt.x} cy={hairpinPaths.origPt.y} r="10" fill={colors.orig} stroke="#fff" strokeWidth="2" />
-                  <text x={hairpinPaths.origPt.x + 14} y={hairpinPaths.origPt.y + 4} 
+                  <text x={hairpinPaths.origPt.x + 14} y={hairpinPaths.origPt.y + 4}
                     fill={colors.orig} fontSize="11" fontWeight="600">
-                    ① {antR}+j0Ω
+                    ① {antR}{antX >= 0 ? '+' : ''}j{antX}Ω
                   </text>
                   <circle cx={hairpinPaths.shortenedPt.x} cy={hairpinPaths.shortenedPt.y} r="7" fill={colors.step1} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.shortenedPt.x + 12} y={hairpinPaths.shortenedPt.y - 8} 
@@ -579,7 +579,7 @@
                     <div style={{ color: colors.step1, fontSize: '11px', marginBottom: '10px', fontWeight: 600 }}>② TAP RATIO</div>
                     <label style={{ display: 'block' }}>
                       <span style={{ fontSize: '12px', color: '#888' }}>n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
-                      <input type="range" min="0.5" max="1.8" step="0.01" value={tapRatio} 
+                      <input type="range" min="1" max="2.5" step="0.01" value={tapRatio} 
                         onChange={(e) => setTapRatio(Number(e.target.value))}
                         style={{ width: '100%', marginTop: '4px', accentColor: colors.step1 }} />
                     </label>
