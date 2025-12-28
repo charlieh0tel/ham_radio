@@ -1123,11 +1123,12 @@
                 <circle cx="310" cy="50" r="4" fill={COLORS.step1} />
                 <text x="310" y="100" fill={COLORS.step1} fontSize="8" textAnchor="middle">tap point</text>
                 {/* Series capacitor */}
-                <line x1="225" y1="65" x2="190" y2="65" stroke={COLORS.wire} strokeWidth="2" />
-                <rect x="170" y="59" width="20" height="12" fill="none" stroke={COLORS.step3} strokeWidth="2" rx="2" />
+                <line x1="225" y1="65" x2="183" y2="65" stroke={COLORS.wire} strokeWidth="2" />
+                <line x1="183" y1="59" x2="183" y2="71" stroke={COLORS.step3} strokeWidth="2" />
+                <line x1="177" y1="59" x2="177" y2="71" stroke={COLORS.step3} strokeWidth="2" />
+                <line x1="177" y1="65" x2="150" y2="65" stroke={COLORS.wire} strokeWidth="2" />
                 <text x="180" y="84" fill={COLORS.step3} fontSize="9" textAnchor="middle">C</text>
                 {/* Feed lines to coax (hairpin style) */}
-                <line x1="170" y1="65" x2="150" y2="65" stroke={COLORS.wire} strokeWidth="2" />
                 <line x1="225" y1="50" x2="225" y2="56" stroke={COLORS.wire} strokeWidth="2" />
                 <line x1="225" y1="56" x2="150" y2="56" stroke={COLORS.wire} strokeWidth="2" />
                 <line x1="150" y1="56" x2="150" y2="65" stroke={COLORS.coax} strokeWidth="3" />
