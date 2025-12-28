@@ -377,32 +377,17 @@
       .control-text,
       .control-result,
       .control-hint,
-      .physical-hint {
-        color: black;
-      }
-
-      .smith-chart {
-        background: white;
-      }
-
-      .diagram-container {
-        background: white;
-      }
-
-      .diagram-title {
-        color: black;
-      }
-
-      .info {
-        color: black;
-      }
-
-      .info strong {
-        color: black;
-      }
-
+      .physical-hint,
+      .diagram-title,
+      .info,
+      .info strong,
       .title {
         color: black;
+      }
+
+      .smith-chart,
+      .diagram-container {
+        background: white;
       }
 
       .footer {
@@ -1100,6 +1085,7 @@
 
       // Destructure for convenience
       const { mode, antR, antX, tapRatio, gammaRodX, seriesCapX, shortening, hairpinX, freqMHz, elementDiamMm } = p;
+      const isGamma = mode === MODES.GAMMA;
 
       // Update URL when state changes
       useEffect(() => {
@@ -1112,7 +1098,7 @@
         params.set(URL_KEYS.mode, p.mode);
         params.set(URL_KEYS.antR, Math.round(p.antR));
         params.set(URL_KEYS.antX, Math.round(p.antX));
-        if (p.mode === MODES.GAMMA) {
+        if (isGamma) {
           params.set(URL_KEYS.tapRatio, p.tapRatio.toFixed(2));
           params.set(URL_KEYS.gammaRodX, Math.round(p.gammaRodX));
           params.set(URL_KEYS.seriesCapX, Math.round(p.seriesCapX));
@@ -1163,11 +1149,11 @@
         return { lambda, lambdaMm, capPf, tapDistMm, shortenMm, shortenPct };
       }, [freqMHz, elementDiamMm, seriesCapX, shortening, tapRatio]);
 
-      const paths = mode === MODES.GAMMA ? gammaPaths : hairpinPaths;
+      const paths = isGamma ? gammaPaths : hairpinPaths;
       const swr = paths.swr;
 
       const handleAutoTune = () => {
-        if (mode === MODES.GAMMA) {
+        if (isGamma) {
           set(autoTuneGamma());
         } else {
           set(autoTuneHairpin());
@@ -1185,7 +1171,7 @@
           {/* Mode Toggle */}
           <div className="mode-toggle">
             <button
-              className={`btn mode-btn ${mode === MODES.GAMMA ? 'active-gamma' : ''}`}
+              className={`btn mode-btn ${isGamma ? 'active-gamma' : ''}`}
               onClick={() => set({ mode: MODES.GAMMA })}
             >
               Gamma Match
@@ -1199,7 +1185,7 @@
           </div>
 
           <h1 className="title">
-            {mode === MODES.GAMMA ? 'Gamma Match' : 'Beta (Hairpin) Match'}
+            {isGamma ? 'Gamma Match' : 'Beta (Hairpin) Match'}
           </h1>
           <div className="footer" style={{ marginTop: '-12px' }}>By AI6KG &lt;<a href="mailto:ai6kg@arrl.net">ai6kg@arrl.net</a>&gt;</div>
 
@@ -1236,7 +1222,7 @@
                 step="0.1"
               />
             </label>
-            {mode === MODES.HAIRPIN && (
+            {!isGamma && (
               <label>
                 Element ⌀ (mm):
                 <input
@@ -1298,7 +1284,7 @@
               <text x={CX} y={CY - RADIUS - 8} fill={COLORS.label} fontSize="9" textAnchor="middle">+jX</text>
               <text x={CX} y={CY + RADIUS + 16} fill={COLORS.label} fontSize="9" textAnchor="middle">−jX</text>
 
-              {mode === MODES.GAMMA ? (
+              {isGamma ? (
                 <>
                   {/* Tap ratio path */}
                   {gammaPaths.tapPath.length > 1 && (
@@ -1393,7 +1379,7 @@
 
               {/* Legend */}
               <g transform={`translate(${CX - RADIUS + 10}, ${CY + RADIUS - 80})`}>
-                {mode === MODES.GAMMA ? (
+                {isGamma ? (
                   <>
                     <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
                     <text x="26" y="4" fill={COLORS.step1} fontSize="9">② Autotransformer</text>
@@ -1438,7 +1424,7 @@
                 </div>
               </ControlPanel>
 
-              {mode === MODES.GAMMA ? (
+              {isGamma ? (
                 <>
                   {/* Tap Ratio */}
                   <ControlPanel color={COLORS.step1} title="② AUTOTRANSFORMER (TAP RATIO)" tooltip="Impedance step-up via tap position on driven element">
@@ -1532,14 +1518,14 @@
           {/* Physical diagram */}
           <div className="diagram-container">
             <div className="diagram-title">
-              {mode === MODES.GAMMA ? 'GAMMA MATCH PHYSICAL ARRANGEMENT' : 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT'}
+              {isGamma ? 'GAMMA MATCH PHYSICAL ARRANGEMENT' : 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT'}
             </div>
-            {mode === MODES.GAMMA ? <GammaDiagram /> : <HairpinDiagram />}
+            {isGamma ? <GammaDiagram /> : <HairpinDiagram />}
           </div>
 
           {/* Info */}
           <div className="info">
-            {mode === MODES.GAMMA ? (
+            {isGamma ? (
               <>
                 <strong>Gamma Match:</strong> Uses tap ratio to scale Z, shunt inductor (gamma rod), and series capacitor.
                 Works for both high-Z and low-Z antennas by adjusting the tap position.
