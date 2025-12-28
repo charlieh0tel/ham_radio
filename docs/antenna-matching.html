@@ -1172,7 +1172,7 @@
                 </label>
                 <label className="control-label">
                   <span className="control-text">
-                    Reactance: {antX >= 0 ? '+' : ''}j{antX}Ω {antX > 0 ? '(inductive)' : antX < 0 ? '(capacitive)' : ''}
+                    Reactance: {antX >= 0 ? '+' : ''}j{antX}Ω {antX > 0 ? '(L)' : antX < 0 ? '(C)' : ''}
                   </span>
                   <input type="range" min="-100" max="100" value={antX}
                     onChange={(e) => setAntX(Number(e.target.value))}
