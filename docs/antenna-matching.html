@@ -900,52 +900,63 @@
     };
 
     /**
-     * Hook for auto-tuning functionality using Nelder-Mead optimization
+     * Compute optimal gamma match parameters for given impedance
+     * @param {number} r - Resistance
+     * @param {number} x - Reactance
+     * @returns {Object} Optimal { tapRatio, gammaRodX, seriesCapX }
+     */
+    const tuneGamma = (r, x) => {
+      const { tap: t, rod: rd, cap: c } = TUNE_BOUNDS.gamma;
+      const result = fmin.nelderMead(([tap, rod, cap]) => {
+        if (tap < t.min || tap > t.max || rod < rd.min || rod > rd.max || cap < c.min || cap > c.max) {
+          return SWR_MAX;
+        }
+        const z1 = applyTapRatio(r, x, tap);
+        const z2 = addShuntReactance(z1.r, z1.x, rod);
+        const z3 = addSeriesReactance(z2.r, z2.x, -cap);
+        return calcSWR(z3.r, z3.x);
+      }, [(t.min + t.max) / 2, (rd.min + rd.max) / 2, (c.min + c.max) / 2]);
+
+      return {
+        tapRatio: Math.round(result.x[0] * 100) / 100,
+        gammaRodX: Math.round(result.x[1]),
+        seriesCapX: Math.round(result.x[2])
+      };
+    };
+
+    /**
+     * Compute optimal hairpin match parameters for given impedance
+     * @param {number} r - Resistance
+     * @param {number} x - Reactance
+     * @returns {Object} Optimal { shortening, hairpinX }
+     */
+    const tuneHairpin = (r, x) => {
+      const { shorten: s, hp: h } = TUNE_BOUNDS.hairpin;
+      const result = fmin.nelderMead(([shorten, hp]) => {
+        if (shorten < s.min || shorten > s.max || hp < h.min || hp > h.max) {
+          return SWR_MAX;
+        }
+        const z1 = { r, x: x - shorten };
+        const z2 = addShuntReactance(z1.r, z1.x, hp);
+        return calcSWR(z2.r, z2.x);
+      }, [(s.min + s.max) / 2, (h.min + h.max) / 2]);
+
+      return {
+        shortening: Math.round(result.x[0]),
+        hairpinX: Math.round(result.x[1])
+      };
+    };
+
+    /**
+     * Hook providing memoized auto-tune functions for current antenna impedance
      * @param {number} antR - Antenna resistance
      * @param {number} antX - Antenna reactance
-     * @returns {Object} Auto-tune functions
+     * @returns {Object} { autoTuneGamma, autoTuneHairpin }
      */
-    const useAutoTune = (antR, antX) => {
-      const autoTuneGamma = useCallback(() => {
-        const { tap: t, rod: r, cap: c } = TUNE_BOUNDS.gamma;
-        const result = fmin.nelderMead(([tap, rod, cap]) => {
-          // Penalty for out-of-bounds
-          if (tap < t.min || tap > t.max || rod < r.min || rod > r.max || cap < c.min || cap > c.max) {
-            return SWR_MAX;
-          }
-          const z1 = applyTapRatio(antR, antX, tap);
-          const z2 = addShuntReactance(z1.r, z1.x, rod);
-          const z3 = addSeriesReactance(z2.r, z2.x, -cap);
-          return calcSWR(z3.r, z3.x);
-        }, [(t.min + t.max) / 2, (r.min + r.max) / 2, (c.min + c.max) / 2]);
-
-        return {
-          tapRatio: Math.round(result.x[0] * 100) / 100,
-          gammaRodX: Math.round(result.x[1]),
-          seriesCapX: Math.round(result.x[2])
-        };
-      }, [antR, antX]);
-
-      const autoTuneHairpin = useCallback(() => {
-        const { shorten: s, hp: h } = TUNE_BOUNDS.hairpin;
-        const result = fmin.nelderMead(([shorten, hp]) => {
-          // Penalty for out-of-bounds
-          if (shorten < s.min || shorten > s.max || hp < h.min || hp > h.max) {
-            return SWR_MAX;
-          }
-          const z1 = { r: antR, x: antX - shorten };
-          const z2 = addShuntReactance(z1.r, z1.x, hp);
-          return calcSWR(z2.r, z2.x);
-        }, [(s.min + s.max) / 2, (h.min + h.max) / 2]);
-
-        return {
-          shortening: Math.round(result.x[0]),
-          hairpinX: Math.round(result.x[1])
-        };
-      }, [antR, antX]);
-
-      return { autoTuneGamma, autoTuneHairpin };
-    };
+    const useAutoTune = (antR, antX) => ({
+      autoTuneGamma: useCallback(() => tuneGamma(antR, antX), [antR, antX]),
+      autoTuneHairpin: useCallback(() => tuneHairpin(antR, antX), [antR, antX])
+    });
 
     // ============================================================
     // Sub-Components
@@ -1209,7 +1220,8 @@
       };
 
       const handlePreset = (preset) => {
-        set({ antR: preset.r, antX: preset.x });
+        const tuned = isGamma ? tuneGamma(preset.r, preset.x) : tuneHairpin(preset.r, preset.x);
+        set({ antR: preset.r, antX: preset.x, ...tuned });
       };
 
       const isPresetActive = (preset) => antR === preset.r && antX === preset.x;
