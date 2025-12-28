@@ -349,6 +349,66 @@
       z-index: 100;
       margin-bottom: 4px;
     }
+
+    /* Print styles */
+    @media print {
+      .app {
+        background: white;
+        color: black;
+        padding: 0;
+      }
+
+      .mode-toggle,
+      .presets,
+      .physical-params,
+      input[type="range"],
+      .footer a {
+        display: none;
+      }
+
+      .control-panel,
+      .result-panel {
+        background: white;
+        border: 1px solid #999;
+        break-inside: avoid;
+      }
+
+      .control-header,
+      .control-text,
+      .control-result,
+      .control-hint,
+      .physical-hint {
+        color: black;
+      }
+
+      .smith-chart {
+        background: white;
+      }
+
+      .diagram-container {
+        background: white;
+      }
+
+      .diagram-title {
+        color: black;
+      }
+
+      .info {
+        color: black;
+      }
+
+      .info strong {
+        color: black;
+      }
+
+      .title {
+        color: black;
+      }
+
+      .footer {
+        color: #666;
+      }
+    }
   </style>
 </head>
 <body>
