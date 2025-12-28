@@ -985,7 +985,7 @@
                 {mode === 'gamma' ? (
                   <>
                     <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
-                    <text x="26" y="4" fill={COLORS.step1} fontSize="9">② Tap ratio</text>
+                    <text x="26" y="4" fill={COLORS.step1} fontSize="9">② Autotransformer</text>
                     <line x1="0" y1="16" x2="20" y2="16" stroke={COLORS.step2} strokeWidth="3" />
                     <text x="26" y="20" fill={COLORS.step2} fontSize="9">③ Shunt L</text>
                     <line x1="0" y1="32" x2="20" y2="32" stroke={COLORS.step3} strokeWidth="3" />
@@ -1030,7 +1030,7 @@
                 <>
                   {/* Tap Ratio */}
                   <div className="control-panel" style={{ borderColor: COLORS.step1 }}>
-                    <div className="control-header" style={{ color: COLORS.step1 }}>② TAP RATIO</div>
+                    <div className="control-header" style={{ color: COLORS.step1 }}>② AUTOTRANSFORMER (TAP RATIO)</div>
                     <label className="control-label">
                       <span className="control-text">n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
                       <input type="range" min="1" max="2.5" step="0.01" value={tapRatio}
