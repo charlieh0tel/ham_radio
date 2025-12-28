@@ -289,7 +289,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useCallback } = React;
+    const { useState, useMemo, useCallback, useEffect } = React;
     const { complex, add, subtract, multiply, divide } = math;
 
     /**
@@ -798,28 +798,88 @@
     };
 
     // ============================================================
+    // URL Parameter Utilities
+    // ============================================================
+
+    /**
+     * Parse float from URL param with default
+     * @param {string|null} val - URL parameter value
+     * @param {number} def - Default value
+     * @returns {number}
+     */
+    const parseParam = (val, def) => {
+      if (val === null) return def;
+      const n = parseFloat(val);
+      return isNaN(n) ? def : n;
+    };
+
+    /**
+     * Read initial state from URL parameters
+     * @returns {Object} Initial state values from URL
+     */
+    const getUrlParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const modeParam = params.get('mode');
+      return {
+        mode: (modeParam === 'gamma' || modeParam === 'hairpin') ? modeParam : 'gamma',
+        antR: parseParam(params.get('r'), 73),
+        antX: parseParam(params.get('x'), 43),
+        tapRatio: parseParam(params.get('tap'), 1.0),
+        gammaRodX: parseParam(params.get('rod'), 300),
+        seriesCapX: parseParam(params.get('cap'), 30),
+        shortening: parseParam(params.get('short'), 15),
+        hairpinX: parseParam(params.get('hp'), 50),
+        freqMHz: params.get('freq') || '',
+        elementDiamMm: params.get('diam') || ''
+      };
+    };
+
+    const initialParams = getUrlParams();
+
+    // ============================================================
     // Main Component
     // ============================================================
 
     function AntennaMatching() {
-      const [mode, setMode] = useState('gamma');
+      const [mode, setMode] = useState(initialParams.mode);
 
       // Antenna params
-      const [antR, setAntR] = useState(73);
-      const [antX, setAntX] = useState(43);
+      const [antR, setAntR] = useState(initialParams.antR);
+      const [antX, setAntX] = useState(initialParams.antX);
 
       // Gamma match params
-      const [tapRatio, setTapRatio] = useState(1.0);
-      const [gammaRodX, setGammaRodX] = useState(300);
-      const [seriesCapX, setSeriesCapX] = useState(30);
+      const [tapRatio, setTapRatio] = useState(initialParams.tapRatio);
+      const [gammaRodX, setGammaRodX] = useState(initialParams.gammaRodX);
+      const [seriesCapX, setSeriesCapX] = useState(initialParams.seriesCapX);
 
       // Hairpin match params
-      const [shortening, setShortening] = useState(15);
-      const [hairpinX, setHairpinX] = useState(50);
+      const [shortening, setShortening] = useState(initialParams.shortening);
+      const [hairpinX, setHairpinX] = useState(initialParams.hairpinX);
 
       // Physical params (optional)
-      const [freqMHz, setFreqMHz] = useState('');
-      const [elementDiamMm, setElementDiamMm] = useState('');
+      const [freqMHz, setFreqMHz] = useState(initialParams.freqMHz);
+      const [elementDiamMm, setElementDiamMm] = useState(initialParams.elementDiamMm);
+
+      // Update URL when state changes
+      useEffect(() => {
+        const params = new URLSearchParams();
+        params.set('mode', mode);
+        params.set('r', Math.round(antR));
+        params.set('x', Math.round(antX));
+        if (mode === 'gamma') {
+          params.set('tap', tapRatio.toFixed(2));
+          params.set('rod', Math.round(gammaRodX));
+          params.set('cap', Math.round(seriesCapX));
+        } else {
+          params.set('short', Math.round(shortening));
+          params.set('hp', Math.round(hairpinX));
+        }
+        if (freqMHz) params.set('freq', freqMHz);
+        if (elementDiamMm) params.set('diam', elementDiamMm);
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState(null, '', newUrl);
+      }, [mode, antR, antX, tapRatio, gammaRodX, seriesCapX, shortening, hairpinX, freqMHz, elementDiamMm]);
 
       // Hooks
       const { rCircles, xArcs, createXArc } = useSmithChart();
