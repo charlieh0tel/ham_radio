@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Antenna Impedance Matching - Smith Chart</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/mathjs@12/lib/browser/math.js"></script>
   <script src="https://unpkg.com/fmin@0.0.2/build/fmin.min.js"></script>
@@ -481,6 +481,9 @@
     /** @type {number} Speed of light in m/s */
     const C_SPEED = 299792458;
 
+    /** @type {number} Number of points for path generation */
+    const PATH_STEPS = 50;
+
     /** @type {Object} Match mode constants */
     const MODES = Object.freeze({
       GAMMA: 'gamma',
@@ -527,8 +530,7 @@
      * @returns {ReflectionCoefficient}
      */
     const zToGamma = (r, x) => {
-      const rSafe = r <= 0 ? 0.01 : r;
-      const zNorm = C(rSafe / Z0, x / Z0);
+      const zNorm = C(r / Z0, x / Z0);
       const gamma = divide(subtract(zNorm, 1), add(zNorm, 1));
       return { re: gamma.re, im: gamma.im };
     };
@@ -683,8 +685,8 @@
 
           // Generate arc points
           const points = [{ x: p1x, y: p1y }];  // Start exactly at infinity point
-          for (let i = 1; i < 60; i++) {
-            const angle = angle1 + (endAngle - angle1) * i / 60;
+          for (let i = 1; i < PATH_STEPS; i++) {
+            const angle = angle1 + (endAngle - angle1) * i / PATH_STEPS;
             points.push({
               x: arcCx + arcRadius * Math.cos(angle),
               y: arcCy + arcRadius * Math.sin(angle)
@@ -713,8 +715,8 @@
       return useMemo(() => {
         // Tap ratio path
         const tapPath = [];
-        for (let i = 0; i <= 50; i++) {
-          const ratio = 1 + (tapRatio - 1) * (i / 50);
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const ratio = 1 + (tapRatio - 1) * (i / PATH_STEPS);
           const z = applyTapRatio(antR, antX, ratio);
           if (z.r > 0 && z.r < 1000) {
             tapPath.push(zToScreen(z.r, z.x));
@@ -725,8 +727,8 @@
         // Shunt inductance path
         const shuntPath = [];
         const startShuntX = 500;
-        for (let i = 0; i <= 60; i++) {
-          const xL = startShuntX + (gammaRodX - startShuntX) * (i / 60);
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const xL = startShuntX + (gammaRodX - startShuntX) * (i / PATH_STEPS);
           if (Math.abs(xL) < 1) continue;
           const z = addShuntReactance(afterTap.r, afterTap.x, xL);
           if (z.r > 0 && z.r < 1000 && Math.abs(z.x) < 500) {
@@ -737,8 +739,8 @@
 
         // Series capacitor path
         const seriesPath = [];
-        for (let i = 0; i <= 40; i++) {
-          const xC = -seriesCapX * (i / 40);
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const xC = -seriesCapX * (i / PATH_STEPS);
           const z = addSeriesReactance(afterShunt.r, afterShunt.x, xC);
           seriesPath.push(zToScreen(z.r, z.x));
         }
@@ -774,16 +776,16 @@
       return useMemo(() => {
         // Shortening path
         const shortenPath = [];
-        for (let i = 0; i <= 40; i++) {
-          const xVal = antX - shortening * (i / 40);
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const xVal = antX - shortening * (i / PATH_STEPS);
           shortenPath.push(zToScreen(antR, xVal));
         }
         const afterShorten = { r: antR, x: antX - shortening };
 
         // Hairpin inductance path
         const hpPath = [];
-        for (let i = 0; i <= 60; i++) {
-          const xL = 300 + (hairpinX - 300) * (i / 60);
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const xL = 300 + (hairpinX - 300) * (i / PATH_STEPS);
           if (Math.abs(xL) < 1) continue;
           const z = addShuntReactance(afterShorten.r, afterShorten.x, xL);
           if (z.r > 0 && z.r < 500 && Math.abs(z.x) < 500) {
@@ -884,6 +886,21 @@
       return Math.atan2(endPt.y - prev.y, endPt.x - prev.x) * 180 / Math.PI;
     };
 
+    /**
+     * Control panel wrapper component
+     * @param {Object} props
+     * @param {string} props.color - Border and header color
+     * @param {string} props.title - Panel header text
+     * @param {string} [props.tooltip] - Tooltip text
+     * @param {React.ReactNode} props.children - Panel content
+     */
+    const ControlPanel = ({ color, title, tooltip, children }) => (
+      <div className="control-panel" style={{ borderColor: color }} data-tooltip={tooltip}>
+        <div className="control-header" style={{ color }}>{title}</div>
+        {children}
+      </div>
+    );
+
     // ============================================================
     // URL Parameter Utilities
     // ============================================================
@@ -930,7 +947,7 @@
       const params = new URLSearchParams(window.location.search);
       const modeParam = params.get(URL_KEYS.mode);
       return {
-        mode: (modeParam === MODES.GAMMA || modeParam === MODES.HAIRPIN) ? modeParam : DEFAULTS.mode,
+        mode: Object.values(MODES).includes(modeParam) ? modeParam : DEFAULTS.mode,
         antR: parseParam(params.get(URL_KEYS.antR), DEFAULTS.antR),
         antX: parseParam(params.get(URL_KEYS.antX), DEFAULTS.antX),
         tapRatio: parseParam(params.get(URL_KEYS.tapRatio), DEFAULTS.tapRatio),
@@ -1283,12 +1300,12 @@
             {/* Controls */}
             <div className="controls">
               {/* Antenna Impedance */}
-              <div className="control-panel" style={{ borderColor: COLORS.orig }} data-tooltip="Starting impedance of the antenna feedpoint">
-                <div className="control-header" style={{ color: COLORS.orig }}>① ANTENNA IMPEDANCE</div>
+              <ControlPanel color={COLORS.orig} title="① ANTENNA IMPEDANCE" tooltip="Starting impedance of the antenna feedpoint">
                 <label className="control-label">
                   <span className="control-text">Resistance: {antR}Ω</span>
                   <input type="range" min="10" max="150" value={antR}
                     onChange={setNum('antR')}
+                    aria-label="Antenna resistance"
                     className="control-slider" style={{ accentColor: COLORS.orig }} />
                 </label>
                 <label className="control-label">
@@ -1297,65 +1314,66 @@
                   </span>
                   <input type="range" min="-100" max="100" value={antX}
                     onChange={setNum('antX')}
+                    aria-label="Antenna reactance"
                     className="control-slider" style={{ accentColor: COLORS.orig }} />
                 </label>
                 <div className="impedance-display">
                   Z = {antR} {antX >= 0 ? '+' : '−'} j{Math.abs(antX)} Ω
                 </div>
-              </div>
+              </ControlPanel>
 
               {mode === MODES.GAMMA ? (
                 <>
                   {/* Tap Ratio */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step1 }} data-tooltip="Impedance step-up via tap position on driven element">
-                    <div className="control-header" style={{ color: COLORS.step1 }}>② AUTOTRANSFORMER (TAP RATIO)</div>
+                  <ControlPanel color={COLORS.step1} title="② AUTOTRANSFORMER (TAP RATIO)" tooltip="Impedance step-up via tap position on driven element">
                     <label className="control-label">
                       <span className="control-text">n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
                       <input type="range" min="1" max="2.5" step="0.01" value={tapRatio}
                         onChange={setNum('tapRatio')}
+                        aria-label="Tap ratio"
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
                     <div className="control-result">→ {formatZ(gammaPaths.afterTap.r, gammaPaths.afterTap.x)} Ω</div>
                     {physical && (
                       <div className="physical-hint">≈ {Math.round(physical.tapDistMm)} mm from center</div>
                     )}
-                  </div>
+                  </ControlPanel>
 
                   {/* Gamma Rod */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step2 }} data-tooltip="Parallel inductance from gamma rod coupling">
-                    <div className="control-header" style={{ color: COLORS.step2 }}>③ GAMMA ROD (SHUNT +jX)</div>
+                  <ControlPanel color={COLORS.step2} title="③ GAMMA ROD (SHUNT +jX)" tooltip="Parallel inductance from gamma rod coupling">
                     <label className="control-label">
                       <span className="control-text">Rod reactance: +j{gammaRodX}Ω</span>
                       <input type="range" min="20" max="400" value={gammaRodX}
                         onChange={setNum('gammaRodX')}
+                        aria-label="Gamma rod reactance"
                         className="control-slider" style={{ accentColor: COLORS.step2 }} />
                     </label>
                     <div className="control-result">→ {formatZ(gammaPaths.afterShunt.r, gammaPaths.afterShunt.x)} Ω</div>
-                  </div>
+                  </ControlPanel>
 
                   {/* Series Capacitor */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step3 }} data-tooltip="Cancels inductive reactance to reach 50Ω">
-                    <div className="control-header" style={{ color: COLORS.step3 }}>④ SERIES CAPACITOR</div>
+                  <ControlPanel color={COLORS.step3} title="④ SERIES CAPACITOR" tooltip="Cancels inductive reactance to reach 50Ω">
                     <label className="control-label">
                       <span className="control-text">Cap reactance: −j{seriesCapX}Ω</span>
                       <input type="range" min="0" max="100" value={seriesCapX}
                         onChange={setNum('seriesCapX')}
+                        aria-label="Series capacitor reactance"
                         className="control-slider" style={{ accentColor: COLORS.step3 }} />
                     </label>
                     {physical && physical.capPf && (
                       <div className="physical-hint">≈ {Math.round(physical.capPf)} pF at {freqMHz} MHz</div>
                     )}
-                  </div>
+                  </ControlPanel>
                 </>
               ) : (
                 <>
                   {/* Shortening */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step1 }} data-tooltip="Capacitive reactance from shortened driven element">
-                    <div className="control-header" style={{ color: COLORS.step1 }}>② SHORTEN ELEMENT</div>
+                  <ControlPanel color={COLORS.step1} title="② SHORTEN ELEMENT" tooltip="Capacitive reactance from shortened driven element">
                     <label className="control-label">
                       <span className="control-text">Capacitive reactance: −j{shortening}Ω</span>
                       <input type="range" min="0" max="60" value={shortening}
                         onChange={setNum('shortening')}
+                        aria-label="Element shortening reactance"
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
                     <div className="control-result">→ {formatZ(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)} Ω</div>
@@ -1366,25 +1384,26 @@
                     ) : (
                       <div className="control-hint">Constant-R circle (series reactance)</div>
                     )}
-                  </div>
+                  </ControlPanel>
 
                   {/* Hairpin */}
-                  <div className="control-panel" style={{ borderColor: COLORS.hairpin }} data-tooltip="Shunt inductor transforms impedance up to 50Ω">
-                    <div className="control-header" style={{ color: COLORS.hairpin }}>③ HAIRPIN (PARALLEL +jX)</div>
+                  <ControlPanel color={COLORS.hairpin} title="③ HAIRPIN (PARALLEL +jX)" tooltip="Shunt inductor transforms impedance up to 50Ω">
                     <label className="control-label">
                       <span className="control-text">Inductive reactance: +j{hairpinX}Ω</span>
                       <input type="range" min="15" max="200" value={hairpinX}
                         onChange={setNum('hairpinX')}
+                        aria-label="Hairpin reactance"
                         className="control-slider" style={{ accentColor: COLORS.hairpin }} />
                     </label>
                     <div className="control-hint">Constant-G circle (shunt susceptance)</div>
-                  </div>
+                  </ControlPanel>
                 </>
               )}
 
               {/* Result */}
               <div className={`result-panel ${swr < 1.5 ? 'good' : 'normal'}`}
-                style={{ borderColor: swr < 1.5 ? COLORS.hairpin : COLORS.final }}>
+                style={{ borderColor: swr < 1.5 ? COLORS.hairpin : COLORS.final }}
+                aria-live="polite">
                 <div className="control-header" style={{ color: COLORS.final }}>MATCHED IMPEDANCE</div>
                 <div className="result-z">Z = {formatZ(paths.finalZ.r, paths.finalZ.x)} Ω</div>
                 <div className={`result-swr ${getSWRClass(swr)}`}>
