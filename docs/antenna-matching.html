@@ -1220,6 +1220,13 @@
         }
       };
 
+      // Auto-tune on initial load if no URL parameters provided
+      useEffect(() => {
+        if (!window.location.search) {
+          handleAutoTune();
+        }
+      }, []);
+
       const handlePreset = (preset) => {
         const tuned = isGamma ? tuneGamma(preset.r, preset.x) : tuneHairpin(preset.r, preset.x);
         set({ antR: preset.r, antX: preset.x, ...tuned });
