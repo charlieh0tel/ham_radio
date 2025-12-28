@@ -505,30 +505,57 @@
 
         /**
          * Create points for a reactance arc clipped to the Smith chart
-         * @param {number} x - Reactance value
-         * @param {number} arcCx - Arc center X
-         * @param {number} arcCy - Arc center Y
-         * @param {number} arcRadius - Arc radius
+         *
+         * Constant-x arcs are circles with center at Γ = (1, 1/x) and radius 1/|x|.
+         * They intersect the unit circle at (1, 0) and ((x²-1)/(1+x²), 2x/(1+x²)).
+         *
+         * @param {number} x - Normalized reactance value
+         * @param {number} arcCx - Arc center X (screen coords)
+         * @param {number} arcCy - Arc center Y (screen coords)
+         * @param {number} arcRadius - Arc radius (screen coords)
          * @returns {ScreenPoint[]}
          */
         const createXArc = (x, arcCx, arcCy, arcRadius) => {
-          const points = [];
-          const isPositive = x > 0;
-          const startAngle = isPositive ? Math.PI / 2 : -Math.PI / 2;
-          const endAngle = isPositive ? Math.PI : -Math.PI;
+          const x2 = x * x;
+          const denom = 1 + x2;
 
-          for (let i = 0; i <= 50; i++) {
-            const t = i / 50;
-            const angle = startAngle + (endAngle - startAngle) * t;
-            const px = arcCx + arcRadius * Math.cos(angle);
-            const py = arcCy + arcRadius * Math.sin(angle);
+          // Exact intersection points on unit circle (screen coords)
+          const p1x = CX + RADIUS;  // Infinity point (1, 0)
+          const p1y = CY;
+          const p2x = CX + (x2 - 1) / denom * RADIUS;
+          const p2y = CY - 2 * x / denom * RADIUS;
 
-            const dx = px - CX;
-            const dy = py - CY;
-            if (dx * dx + dy * dy <= RADIUS * RADIUS * 1.01) {
-              points.push({ x: px, y: py });
-            }
+          // Angles from arc center to each intersection
+          const angle1 = Math.atan2(p1y - arcCy, p1x - arcCx);
+          const angle2 = Math.atan2(p2y - arcCy, p2x - arcCx);
+
+          // Determine sweep direction: we want to stay inside unit circle
+          // Test midpoint of both possible paths
+          const midAngleDirect = (angle1 + angle2) / 2;
+          const midAngleAlt = midAngleDirect + (midAngleDirect > 0 ? -Math.PI : Math.PI);
+
+          const testMid = (angle) => {
+            const gx = (arcCx + arcRadius * Math.cos(angle) - CX) / RADIUS;
+            const gy = (CY - (arcCy + arcRadius * Math.sin(angle))) / RADIUS;
+            return gx * gx + gy * gy;
+          };
+
+          // Choose path where midpoint is inside unit circle (|Γ|² < 1)
+          const goLongWay = testMid(midAngleDirect) > testMid(midAngleAlt);
+          const endAngle = goLongWay
+            ? angle2 + (angle2 > angle1 ? -2 : 2) * Math.PI
+            : angle2;
+
+          // Generate arc points
+          const points = [{ x: p1x, y: p1y }];  // Start exactly at infinity point
+          for (let i = 1; i < 60; i++) {
+            const angle = angle1 + (endAngle - angle1) * i / 60;
+            points.push({
+              x: arcCx + arcRadius * Math.cos(angle),
+              y: arcCy + arcRadius * Math.sin(angle)
+            });
           }
+          points.push({ x: p2x, y: p2y });  // End exactly at intersection
           return points;
         };
 
