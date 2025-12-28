@@ -841,6 +841,9 @@
         // Capacitor value: C = 1/(2πfXc)
         const capPf = seriesCapX > 0 ? 1e12 / (2 * Math.PI * freq * 1e6 * seriesCapX) : null;
 
+        // Tap point distance from center: d = (λ/2π) * arccos(1/n)
+        const tapDistMm = (lambdaMm / (2 * Math.PI)) * Math.acos(1 / tapRatio);
+
         // Element shortening (requires diameter)
         let shortenMm = null;
         let shortenPct = null;
@@ -853,8 +856,8 @@
           shortenPct = (deltaLOverLambda / 0.5) * 100; // as % of λ/2
         }
 
-        return { lambda, lambdaMm, halfWaveMm, capPf, shortenMm, shortenPct };
-      }, [freqMHz, elementDiamMm, seriesCapX, shortening]);
+        return { lambda, lambdaMm, halfWaveMm, capPf, tapDistMm, shortenMm, shortenPct };
+      }, [freqMHz, elementDiamMm, seriesCapX, shortening, tapRatio]);
 
       const paths = mode === 'gamma' ? gammaPaths : hairpinPaths;
       const swr = paths.swr;
@@ -1132,6 +1135,9 @@
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
                     <div className="control-result">→ {formatZ(gammaPaths.afterTap.r, gammaPaths.afterTap.x)} Ω</div>
+                    {physical && (
+                      <div className="physical-hint">≈ {Math.round(physical.tapDistMm)} mm from center</div>
+                    )}
                   </div>
 
                   {/* Gamma Rod */}
