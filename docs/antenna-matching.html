@@ -248,6 +248,42 @@
     .footer a {
       color: #888;
     }
+
+    /* Physical params */
+    .physical-params {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .physical-params label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .physical-params input {
+      width: 60px;
+      padding: 4px 6px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #aaa;
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    .physical-params input:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    .physical-hint {
+      font-size: 10px;
+      color: #888;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -781,11 +817,44 @@
       const [shortening, setShortening] = useState(15);
       const [hairpinX, setHairpinX] = useState(50);
 
+      // Physical params (optional)
+      const [freqMHz, setFreqMHz] = useState('');
+      const [elementDiamMm, setElementDiamMm] = useState('');
+
       // Hooks
       const { rCircles, xArcs, createXArc } = useSmithChart();
       const gammaPaths = useGammaMatch(antR, antX, tapRatio, gammaRodX, seriesCapX);
       const hairpinPaths = useHairpinMatch(antR, antX, shortening, hairpinX);
       const { autoTuneGamma, autoTuneHairpin } = useAutoTune(antR, antX);
+
+      // Physical calculations (when freq/diameter are provided)
+      const physical = useMemo(() => {
+        const freq = parseFloat(freqMHz);
+        const diam = parseFloat(elementDiamMm);
+        if (!freq || freq <= 0) return null;
+
+        const c = 299792458; // m/s
+        const lambda = c / (freq * 1e6); // wavelength in meters
+        const lambdaMm = lambda * 1000;
+        const halfWaveMm = lambdaMm / 2;
+
+        // Capacitor value: C = 1/(2πfXc)
+        const capPf = seriesCapX > 0 ? 1e12 / (2 * Math.PI * freq * 1e6 * seriesCapX) : null;
+
+        // Element shortening (requires diameter)
+        let shortenMm = null;
+        let shortenPct = null;
+        if (diam && diam > 0) {
+          // Characteristic impedance: Z0 ≈ 276 * log10(λ/(2*d))
+          const z0Ant = 276 * Math.log10(lambdaMm / (2 * diam));
+          // ΔX ≈ -Z0 * π * Δ(L/λ), so Δ(L/λ) ≈ -ΔX / (Z0 * π)
+          const deltaLOverLambda = shortening / (z0Ant * Math.PI);
+          shortenMm = deltaLOverLambda * lambdaMm / 2; // per side (quarter wave each side)
+          shortenPct = (deltaLOverLambda / 0.5) * 100; // as % of λ/2
+        }
+
+        return { lambda, lambdaMm, halfWaveMm, capPf, shortenMm, shortenPct };
+      }, [freqMHz, elementDiamMm, seriesCapX, shortening]);
 
       const paths = mode === 'gamma' ? gammaPaths : hairpinPaths;
       const swr = paths.swr;
@@ -857,6 +926,31 @@
             >
               Auto-Tune
             </button>
+          </div>
+
+          {/* Physical Parameters (optional) */}
+          <div className="physical-params">
+            <label>
+              Freq (MHz):
+              <input
+                type="number"
+                value={freqMHz}
+                onChange={(e) => setFreqMHz(e.target.value)}
+              />
+            </label>
+            {mode === 'hairpin' && (
+              <label>
+                Element ⌀ (mm):
+                <input
+                  type="number"
+                  value={elementDiamMm}
+                  onChange={(e) => setElementDiamMm(e.target.value)}
+                />
+              </label>
+            )}
+            <span style={{ color: '#555', alignSelf: 'center', minWidth: '90px' }}>
+              {physical ? `λ = ${(physical.lambdaMm / 1000).toFixed(2)}m` : ''}
+            </span>
           </div>
 
           <div className="main-content">
@@ -1061,6 +1155,9 @@
                         onChange={(e) => setSeriesCapX(Number(e.target.value))}
                         className="control-slider" style={{ accentColor: COLORS.step3 }} />
                     </label>
+                    {physical && physical.capPf && (
+                      <div className="physical-hint">≈ {Math.round(physical.capPf)} pF at {freqMHz} MHz</div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -1075,7 +1172,13 @@
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
                     <div className="control-result">→ {formatZ(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)} Ω</div>
-                    <div className="control-hint">Constant-R circle (series reactance)</div>
+                    {physical && physical.shortenMm !== null ? (
+                      <div className="physical-hint">
+                        ≈ {physical.shortenMm.toFixed(1)} mm per side ({physical.shortenPct.toFixed(1)}% of λ/2)
+                      </div>
+                    ) : (
+                      <div className="control-hint">Constant-R circle (series reactance)</div>
+                    )}
                   </div>
 
                   {/* Hairpin */}
