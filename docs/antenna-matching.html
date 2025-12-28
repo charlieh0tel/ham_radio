@@ -481,6 +481,12 @@
     /** @type {number} Speed of light in m/s */
     const C_SPEED = 299792458;
 
+    /** @type {Object} Match mode constants */
+    const MODES = Object.freeze({
+      GAMMA: 'gamma',
+      HAIRPIN: 'hairpin'
+    });
+
     /** @type {Object} URL parameter keys */
     const URL_KEYS = Object.freeze({
       mode: 'mode',
@@ -896,7 +902,7 @@
 
     /** @type {Object} Default parameter values */
     const DEFAULTS = Object.freeze({
-      mode: 'gamma',
+      mode: MODES.GAMMA,
       antR: 73,
       antX: 43,
       tapRatio: 1.0,
@@ -924,7 +930,7 @@
       const params = new URLSearchParams(window.location.search);
       const modeParam = params.get(URL_KEYS.mode);
       return {
-        mode: (modeParam === 'gamma' || modeParam === 'hairpin') ? modeParam : DEFAULTS.mode,
+        mode: (modeParam === MODES.GAMMA || modeParam === MODES.HAIRPIN) ? modeParam : DEFAULTS.mode,
         antR: parseParam(params.get(URL_KEYS.antR), DEFAULTS.antR),
         antX: parseParam(params.get(URL_KEYS.antX), DEFAULTS.antX),
         tapRatio: parseParam(params.get(URL_KEYS.tapRatio), DEFAULTS.tapRatio),
@@ -979,7 +985,7 @@
         params.set(URL_KEYS.mode, p.mode);
         params.set(URL_KEYS.antR, Math.round(p.antR));
         params.set(URL_KEYS.antX, Math.round(p.antX));
-        if (p.mode === 'gamma') {
+        if (p.mode === MODES.GAMMA) {
           params.set(URL_KEYS.tapRatio, p.tapRatio.toFixed(2));
           params.set(URL_KEYS.gammaRodX, Math.round(p.gammaRodX));
           params.set(URL_KEYS.seriesCapX, Math.round(p.seriesCapX));
@@ -1030,11 +1036,11 @@
         return { lambda, lambdaMm, capPf, tapDistMm, shortenMm, shortenPct };
       }, [freqMHz, elementDiamMm, seriesCapX, shortening, tapRatio]);
 
-      const paths = mode === 'gamma' ? gammaPaths : hairpinPaths;
+      const paths = mode === MODES.GAMMA ? gammaPaths : hairpinPaths;
       const swr = paths.swr;
 
       const handleAutoTune = () => {
-        if (mode === 'gamma') {
+        if (mode === MODES.GAMMA) {
           set(autoTuneGamma());
         } else {
           set(autoTuneHairpin());
@@ -1052,21 +1058,21 @@
           {/* Mode Toggle */}
           <div className="mode-toggle">
             <button
-              className={`btn mode-btn ${mode === 'gamma' ? 'active-gamma' : ''}`}
-              onClick={() => set({ mode: 'gamma' })}
+              className={`btn mode-btn ${mode === MODES.GAMMA ? 'active-gamma' : ''}`}
+              onClick={() => set({ mode: MODES.GAMMA })}
             >
               Gamma Match
             </button>
             <button
-              className={`btn mode-btn ${mode === 'hairpin' ? 'active-hairpin' : ''}`}
-              onClick={() => set({ mode: 'hairpin' })}
+              className={`btn mode-btn ${mode === MODES.HAIRPIN ? 'active-hairpin' : ''}`}
+              onClick={() => set({ mode: MODES.HAIRPIN })}
             >
               Beta (Hairpin) Match
             </button>
           </div>
 
           <h1 className="title">
-            {mode === 'gamma' ? 'Gamma Match' : 'Beta (Hairpin) Match'}
+            {mode === MODES.GAMMA ? 'Gamma Match' : 'Beta (Hairpin) Match'}
           </h1>
           <div className="footer" style={{ marginTop: '-12px' }}>By AI6KG &lt;<a href="mailto:ai6kg@arrl.net">ai6kg@arrl.net</a>&gt;</div>
 
@@ -1100,7 +1106,7 @@
                 onChange={setStr('freqMHz')}
               />
             </label>
-            {mode === 'hairpin' && (
+            {mode === MODES.HAIRPIN && (
               <label>
                 Element ⌀ (mm):
                 <input
@@ -1159,7 +1165,7 @@
               <text x={CX} y={CY - RADIUS - 8} fill={COLORS.label} fontSize="9" textAnchor="middle">+jX</text>
               <text x={CX} y={CY + RADIUS + 16} fill={COLORS.label} fontSize="9" textAnchor="middle">−jX</text>
 
-              {mode === 'gamma' ? (
+              {mode === MODES.GAMMA ? (
                 <>
                   {/* Tap ratio path */}
                   {gammaPaths.tapPath.length > 1 && (
@@ -1254,7 +1260,7 @@
 
               {/* Legend */}
               <g transform={`translate(${CX - RADIUS + 10}, ${CY + RADIUS - 80})`}>
-                {mode === 'gamma' ? (
+                {mode === MODES.GAMMA ? (
                   <>
                     <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
                     <text x="26" y="4" fill={COLORS.step1} fontSize="9">② Autotransformer</text>
@@ -1298,7 +1304,7 @@
                 </div>
               </div>
 
-              {mode === 'gamma' ? (
+              {mode === MODES.GAMMA ? (
                 <>
                   {/* Tap Ratio */}
                   <div className="control-panel" style={{ borderColor: COLORS.step1 }} data-tooltip="Impedance step-up via tap position on driven element">
@@ -1391,9 +1397,9 @@
           {/* Physical diagram */}
           <div className="diagram-container">
             <div className="diagram-title">
-              {mode === 'gamma' ? 'GAMMA MATCH PHYSICAL ARRANGEMENT' : 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT'}
+              {mode === MODES.GAMMA ? 'GAMMA MATCH PHYSICAL ARRANGEMENT' : 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT'}
             </div>
-            {mode === 'gamma' ? (
+            {mode === MODES.GAMMA ? (
               <svg viewBox="0 0 450 130" className="diagram-svg">
                 {/* Driven element */}
                 <line x1="50" y1="50" x2="400" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
@@ -1441,7 +1447,7 @@
 
           {/* Info */}
           <div className="info">
-            {mode === 'gamma' ? (
+            {mode === MODES.GAMMA ? (
               <>
                 <strong>Gamma Match:</strong> Uses tap ratio to scale Z, shunt inductor (gamma rod), and series capacitor.
                 Works for both high-Z and low-Z antennas by adjusting the tap position.
