@@ -822,9 +822,13 @@
         const afterTap = applyTapRatio(antR, antX, tapRatio);
 
         // Shunt inductance path - start exactly at afterTap point
+        // Interpolate in susceptance (B = -1/X) space for even spacing on Smith chart
         const shuntPath = [zToScreen(afterTap.r, afterTap.x)];
+        const bStart = -1 / SHUNT_X_START;
+        const bEnd = -1 / gammaRodX;
         for (let i = 1; i <= PATH_STEPS; i++) {
-          const xL = SHUNT_X_START + (gammaRodX - SHUNT_X_START) * (i / PATH_STEPS);
+          const b = bStart + (bEnd - bStart) * (i / PATH_STEPS);
+          const xL = -1 / b;
           const z = addShuntReactance(afterTap.r, afterTap.x, xL);
           if (z.r > 0 && z.r < PATH_R_MAX && Math.abs(z.x) < PATH_X_MAX) {
             shuntPath.push(zToScreen(z.r, z.x));
@@ -878,9 +882,13 @@
         const afterShorten = { r: antR, x: antX - shortening };
 
         // Hairpin inductance path - start exactly at shortened point
+        // Interpolate in susceptance (B = -1/X) space for even spacing on Smith chart
         const hpPath = [zToScreen(afterShorten.r, afterShorten.x)];
+        const bStart = -1 / SHUNT_X_START;
+        const bEnd = -1 / hairpinX;
         for (let i = 1; i <= PATH_STEPS; i++) {
-          const xL = SHUNT_X_START + (hairpinX - SHUNT_X_START) * (i / PATH_STEPS);
+          const b = bStart + (bEnd - bStart) * (i / PATH_STEPS);
+          const xL = -1 / b;
           const z = addShuntReactance(afterShorten.r, afterShorten.x, xL);
           if (z.r > 0 && z.r < PATH_R_MAX && Math.abs(z.x) < PATH_X_MAX) {
             hpPath.push(zToScreen(z.r, z.x));
