@@ -236,6 +236,18 @@
     .info strong {
       color: #aaa;
     }
+
+    /* Footer */
+    .footer {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .footer a {
+      color: #888;
+    }
   </style>
 </head>
 <body>
@@ -826,6 +838,7 @@
           <h1 className="title">
             {mode === 'gamma' ? 'Gamma Match' : 'Hairpin (Beta) Match'}
           </h1>
+          <div className="footer" style={{ marginTop: '-12px' }}>By AI6KG &lt;<a href="mailto:ai6kg@arrl.net">ai6kg@arrl.net</a>&gt;</div>
 
           {/* Presets */}
           <div className="presets">
@@ -1146,6 +1159,12 @@
                 then use a parallel inductor (hairpin) to transform up to 50Ω. Best for low-Z antennas like Yagis.
               </>
             )}
+          </div>
+
+          {/* Footer */}
+          <div className="footer">
+            © 2025 Christopher Hoover. <a href="https://github.com/charlieh0tel/ham_radio/blob/master/LICENSE">MIT License</a>.{' '}
+            <a href="https://github.com/charlieh0tel/ham_radio">GitHub</a>
           </div>
         </div>
       );
