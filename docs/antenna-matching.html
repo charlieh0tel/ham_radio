@@ -301,6 +301,7 @@
         width: 100%;
         max-width: 400px;
         height: auto;
+        aspect-ratio: 1;
       }
 
       .controls {
@@ -1211,7 +1212,7 @@
 
           <div className="main-content">
             {/* Smith Chart */}
-            <svg width={SIZE} height={SIZE} className="smith-chart">
+            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="smith-chart">
               {/* Outer circle */}
               <circle cx={CX} cy={CY} r={RADIUS} fill="none" stroke={COLORS.gridOuter} strokeWidth="2" />
 
