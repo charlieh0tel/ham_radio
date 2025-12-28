@@ -478,6 +478,23 @@
     /** @type {number[]} Normalized reactance values for Smith chart arcs */
     const X_VALUES = Object.freeze([0.2, 0.5, 1, 2, 5]);
 
+    /** @type {number} Speed of light in m/s */
+    const C_SPEED = 299792458;
+
+    /** @type {Object} URL parameter keys */
+    const URL_KEYS = Object.freeze({
+      mode: 'mode',
+      antR: 'r',
+      antX: 'x',
+      tapRatio: 'tap',
+      gammaRodX: 'rod',
+      seriesCapX: 'cap',
+      shortening: 'short',
+      hairpinX: 'hp',
+      freqMHz: 'freq',
+      elementDiamMm: 'diam'
+    });
+
     // ============================================================
     // Impedance Math Utilities
     // ============================================================
@@ -905,22 +922,34 @@
      */
     const getUrlParams = () => {
       const params = new URLSearchParams(window.location.search);
-      const modeParam = params.get('mode');
+      const modeParam = params.get(URL_KEYS.mode);
       return {
         mode: (modeParam === 'gamma' || modeParam === 'hairpin') ? modeParam : DEFAULTS.mode,
-        antR: parseParam(params.get('r'), DEFAULTS.antR),
-        antX: parseParam(params.get('x'), DEFAULTS.antX),
-        tapRatio: parseParam(params.get('tap'), DEFAULTS.tapRatio),
-        gammaRodX: parseParam(params.get('rod'), DEFAULTS.gammaRodX),
-        seriesCapX: parseParam(params.get('cap'), DEFAULTS.seriesCapX),
-        shortening: parseParam(params.get('short'), DEFAULTS.shortening),
-        hairpinX: parseParam(params.get('hp'), DEFAULTS.hairpinX),
-        freqMHz: params.get('freq') || DEFAULTS.freqMHz,
-        elementDiamMm: params.get('diam') || DEFAULTS.elementDiamMm
+        antR: parseParam(params.get(URL_KEYS.antR), DEFAULTS.antR),
+        antX: parseParam(params.get(URL_KEYS.antX), DEFAULTS.antX),
+        tapRatio: parseParam(params.get(URL_KEYS.tapRatio), DEFAULTS.tapRatio),
+        gammaRodX: parseParam(params.get(URL_KEYS.gammaRodX), DEFAULTS.gammaRodX),
+        seriesCapX: parseParam(params.get(URL_KEYS.seriesCapX), DEFAULTS.seriesCapX),
+        shortening: parseParam(params.get(URL_KEYS.shortening), DEFAULTS.shortening),
+        hairpinX: parseParam(params.get(URL_KEYS.hairpinX), DEFAULTS.hairpinX),
+        freqMHz: params.get(URL_KEYS.freqMHz) || DEFAULTS.freqMHz,
+        elementDiamMm: params.get(URL_KEYS.elementDiamMm) || DEFAULTS.elementDiamMm
       };
     };
 
     const initialParams = getUrlParams();
+
+    /**
+     * Get CSS class for SWR value
+     * @param {number} swr - Standing wave ratio
+     * @returns {string} CSS class name
+     */
+    const getSWRClass = (swr) => {
+      if (swr < 1.2) return 'swr-excellent';
+      if (swr < 1.5) return 'swr-good';
+      if (swr < 2) return 'swr-ok';
+      return 'swr-poor';
+    };
 
     // ============================================================
     // Main Component
@@ -929,6 +958,12 @@
     function AntennaMatching() {
       const [p, setP] = useState(initialParams);
       const set = (updates) => setP(prev => ({ ...prev, ...updates }));
+
+      /** Helper for numeric input onChange handlers */
+      const setNum = (key) => (e) => set({ [key]: Number(e.target.value) });
+
+      /** Helper for string input onChange handlers */
+      const setStr = (key) => (e) => set({ [key]: e.target.value });
 
       // Destructure for convenience
       const { mode, antR, antX, tapRatio, gammaRodX, seriesCapX, shortening, hairpinX, freqMHz, elementDiamMm } = p;
@@ -941,19 +976,19 @@
         }
 
         const params = new URLSearchParams();
-        params.set('mode', p.mode);
-        params.set('r', Math.round(p.antR));
-        params.set('x', Math.round(p.antX));
+        params.set(URL_KEYS.mode, p.mode);
+        params.set(URL_KEYS.antR, Math.round(p.antR));
+        params.set(URL_KEYS.antX, Math.round(p.antX));
         if (p.mode === 'gamma') {
-          params.set('tap', p.tapRatio.toFixed(2));
-          params.set('rod', Math.round(p.gammaRodX));
-          params.set('cap', Math.round(p.seriesCapX));
+          params.set(URL_KEYS.tapRatio, p.tapRatio.toFixed(2));
+          params.set(URL_KEYS.gammaRodX, Math.round(p.gammaRodX));
+          params.set(URL_KEYS.seriesCapX, Math.round(p.seriesCapX));
         } else {
-          params.set('short', Math.round(p.shortening));
-          params.set('hp', Math.round(p.hairpinX));
+          params.set(URL_KEYS.shortening, Math.round(p.shortening));
+          params.set(URL_KEYS.hairpinX, Math.round(p.hairpinX));
         }
-        if (p.freqMHz) params.set('freq', p.freqMHz);
-        if (p.elementDiamMm && p.elementDiamMm !== DEFAULTS.elementDiamMm) params.set('diam', p.elementDiamMm);
+        if (p.freqMHz) params.set(URL_KEYS.freqMHz, p.freqMHz);
+        if (p.elementDiamMm && p.elementDiamMm !== DEFAULTS.elementDiamMm) params.set(URL_KEYS.elementDiamMm, p.elementDiamMm);
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
         window.history.replaceState(null, '', newUrl);
@@ -971,10 +1006,8 @@
         const diam = parseFloat(elementDiamMm);
         if (!freq || freq <= 0) return null;
 
-        const c = 299792458; // m/s
-        const lambda = c / (freq * 1e6); // wavelength in meters
+        const lambda = C_SPEED / (freq * 1e6); // wavelength in meters
         const lambdaMm = lambda * 1000;
-        const halfWaveMm = lambdaMm / 2;
 
         // Capacitor value: C = 1/(2πfXc)
         const capPf = seriesCapX > 0 ? 1e12 / (2 * Math.PI * freq * 1e6 * seriesCapX) : null;
@@ -994,7 +1027,7 @@
           shortenPct = (deltaLOverLambda / 0.5) * 100; // as % of λ/2
         }
 
-        return { lambda, lambdaMm, halfWaveMm, capPf, tapDistMm, shortenMm, shortenPct };
+        return { lambda, lambdaMm, capPf, tapDistMm, shortenMm, shortenPct };
       }, [freqMHz, elementDiamMm, seriesCapX, shortening, tapRatio]);
 
       const paths = mode === 'gamma' ? gammaPaths : hairpinPaths;
@@ -1013,13 +1046,6 @@
       };
 
       const isPresetActive = (preset) => antR === preset.r && antX === preset.x;
-
-      const getSWRClass = () => {
-        if (swr < 1.2) return 'swr-excellent';
-        if (swr < 1.5) return 'swr-good';
-        if (swr < 2) return 'swr-ok';
-        return 'swr-poor';
-      };
 
       return (
         <div className="app">
@@ -1071,7 +1097,7 @@
               <input
                 type="number"
                 value={freqMHz}
-                onChange={(e) => set({ freqMHz: e.target.value })}
+                onChange={setStr('freqMHz')}
               />
             </label>
             {mode === 'hairpin' && (
@@ -1080,7 +1106,7 @@
                 <input
                   type="number"
                   value={elementDiamMm}
-                  onChange={(e) => set({ elementDiamMm: e.target.value })}
+                  onChange={setStr('elementDiamMm')}
                 />
               </label>
             )}
@@ -1256,7 +1282,7 @@
                 <label className="control-label">
                   <span className="control-text">Resistance: {antR}Ω</span>
                   <input type="range" min="10" max="150" value={antR}
-                    onChange={(e) => set({ antR: Number(e.target.value) })}
+                    onChange={setNum('antR')}
                     className="control-slider" style={{ accentColor: COLORS.orig }} />
                 </label>
                 <label className="control-label">
@@ -1264,7 +1290,7 @@
                     Reactance: {antX >= 0 ? '+' : ''}j{antX}Ω {antX > 0 ? '(L)' : antX < 0 ? '(C)' : ''}
                   </span>
                   <input type="range" min="-100" max="100" value={antX}
-                    onChange={(e) => set({ antX: Number(e.target.value) })}
+                    onChange={setNum('antX')}
                     className="control-slider" style={{ accentColor: COLORS.orig }} />
                 </label>
                 <div className="impedance-display">
@@ -1280,7 +1306,7 @@
                     <label className="control-label">
                       <span className="control-text">n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
                       <input type="range" min="1" max="2.5" step="0.01" value={tapRatio}
-                        onChange={(e) => set({ tapRatio: Number(e.target.value) })}
+                        onChange={setNum('tapRatio')}
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
                     <div className="control-result">→ {formatZ(gammaPaths.afterTap.r, gammaPaths.afterTap.x)} Ω</div>
@@ -1295,7 +1321,7 @@
                     <label className="control-label">
                       <span className="control-text">Rod reactance: +j{gammaRodX}Ω</span>
                       <input type="range" min="20" max="400" value={gammaRodX}
-                        onChange={(e) => set({ gammaRodX: Number(e.target.value) })}
+                        onChange={setNum('gammaRodX')}
                         className="control-slider" style={{ accentColor: COLORS.step2 }} />
                     </label>
                     <div className="control-result">→ {formatZ(gammaPaths.afterShunt.r, gammaPaths.afterShunt.x)} Ω</div>
@@ -1307,7 +1333,7 @@
                     <label className="control-label">
                       <span className="control-text">Cap reactance: −j{seriesCapX}Ω</span>
                       <input type="range" min="0" max="100" value={seriesCapX}
-                        onChange={(e) => set({ seriesCapX: Number(e.target.value) })}
+                        onChange={setNum('seriesCapX')}
                         className="control-slider" style={{ accentColor: COLORS.step3 }} />
                     </label>
                     {physical && physical.capPf && (
@@ -1323,7 +1349,7 @@
                     <label className="control-label">
                       <span className="control-text">Capacitive reactance: −j{shortening}Ω</span>
                       <input type="range" min="0" max="60" value={shortening}
-                        onChange={(e) => set({ shortening: Number(e.target.value) })}
+                        onChange={setNum('shortening')}
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
                     <div className="control-result">→ {formatZ(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)} Ω</div>
@@ -1342,7 +1368,7 @@
                     <label className="control-label">
                       <span className="control-text">Inductive reactance: +j{hairpinX}Ω</span>
                       <input type="range" min="15" max="200" value={hairpinX}
-                        onChange={(e) => set({ hairpinX: Number(e.target.value) })}
+                        onChange={setNum('hairpinX')}
                         className="control-slider" style={{ accentColor: COLORS.hairpin }} />
                     </label>
                     <div className="control-hint">Constant-G circle (shunt susceptance)</div>
@@ -1355,7 +1381,7 @@
                 style={{ borderColor: swr < 1.5 ? COLORS.hairpin : COLORS.final }}>
                 <div className="control-header" style={{ color: COLORS.final }}>MATCHED IMPEDANCE</div>
                 <div className="result-z">Z = {formatZ(paths.finalZ.r, paths.finalZ.x)} Ω</div>
-                <div className={`result-swr ${getSWRClass()}`}>
+                <div className={`result-swr ${getSWRClass(swr)}`}>
                   SWR = {swr.toFixed(3)} : 1
                 </div>
               </div>
