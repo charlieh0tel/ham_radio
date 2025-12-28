@@ -284,6 +284,70 @@
       color: #888;
       margin-top: 4px;
     }
+
+    /* Mobile responsive */
+    @media (max-width: 800px) {
+      .app {
+        padding: 16px;
+        gap: 16px;
+      }
+
+      .main-content {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .smith-chart {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+      }
+
+      .controls {
+        min-width: unset;
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .physical-params {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .mode-toggle {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .presets {
+        justify-content: center;
+      }
+
+      .diagram-container {
+        max-width: 100%;
+      }
+    }
+
+    /* Tooltips */
+    [data-tooltip] {
+      position: relative;
+    }
+
+    [data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      z-index: 100;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
@@ -986,6 +1050,7 @@
             <button
               className={`btn auto-tune-btn ${mode}`}
               onClick={handleAutoTune}
+              data-tooltip="Find optimal match parameters"
             >
               Auto-Tune
             </button>
@@ -1018,6 +1083,7 @@
               className="btn preset-btn"
               onClick={() => navigator.clipboard.writeText(window.location.href)}
               style={{ alignSelf: 'center' }}
+              data-tooltip="Copy shareable link to clipboard"
             >
               Copy URL
             </button>
@@ -1025,6 +1091,7 @@
               className="btn preset-btn"
               onClick={() => window.location.href = window.location.pathname}
               style={{ alignSelf: 'center' }}
+              data-tooltip="Reset all parameters to defaults"
             >
               Reset
             </button>
@@ -1176,7 +1243,7 @@
             {/* Controls */}
             <div className="controls">
               {/* Antenna Impedance */}
-              <div className="control-panel" style={{ borderColor: COLORS.orig }}>
+              <div className="control-panel" style={{ borderColor: COLORS.orig }} data-tooltip="Starting impedance of the antenna feedpoint">
                 <div className="control-header" style={{ color: COLORS.orig }}>① ANTENNA IMPEDANCE</div>
                 <label className="control-label">
                   <span className="control-text">Resistance: {antR}Ω</span>
@@ -1200,7 +1267,7 @@
               {mode === 'gamma' ? (
                 <>
                   {/* Tap Ratio */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step1 }}>
+                  <div className="control-panel" style={{ borderColor: COLORS.step1 }} data-tooltip="Impedance step-up via tap position on driven element">
                     <div className="control-header" style={{ color: COLORS.step1 }}>② AUTOTRANSFORMER (TAP RATIO)</div>
                     <label className="control-label">
                       <span className="control-text">n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
@@ -1215,7 +1282,7 @@
                   </div>
 
                   {/* Gamma Rod */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step2 }}>
+                  <div className="control-panel" style={{ borderColor: COLORS.step2 }} data-tooltip="Parallel inductance from gamma rod coupling">
                     <div className="control-header" style={{ color: COLORS.step2 }}>③ GAMMA ROD (SHUNT +jX)</div>
                     <label className="control-label">
                       <span className="control-text">Rod reactance: +j{gammaRodX}Ω</span>
@@ -1227,7 +1294,7 @@
                   </div>
 
                   {/* Series Capacitor */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step3 }}>
+                  <div className="control-panel" style={{ borderColor: COLORS.step3 }} data-tooltip="Cancels inductive reactance to reach 50Ω">
                     <div className="control-header" style={{ color: COLORS.step3 }}>④ SERIES CAPACITOR</div>
                     <label className="control-label">
                       <span className="control-text">Cap reactance: −j{seriesCapX}Ω</span>
@@ -1243,7 +1310,7 @@
               ) : (
                 <>
                   {/* Shortening */}
-                  <div className="control-panel" style={{ borderColor: COLORS.step1 }}>
+                  <div className="control-panel" style={{ borderColor: COLORS.step1 }} data-tooltip="Capacitive reactance from shortened driven element">
                     <div className="control-header" style={{ color: COLORS.step1 }}>② SHORTEN ELEMENT</div>
                     <label className="control-label">
                       <span className="control-text">Capacitive reactance: −j{shortening}Ω</span>
@@ -1262,7 +1329,7 @@
                   </div>
 
                   {/* Hairpin */}
-                  <div className="control-panel" style={{ borderColor: COLORS.hairpin }}>
+                  <div className="control-panel" style={{ borderColor: COLORS.hairpin }} data-tooltip="Shunt inductor transforms impedance up to 50Ω">
                     <div className="control-header" style={{ color: COLORS.hairpin }}>③ HAIRPIN (PARALLEL +jX)</div>
                     <label className="control-label">
                       <span className="control-text">Inductive reactance: +j{hairpinX}Ω</span>
