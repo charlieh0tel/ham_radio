@@ -530,6 +530,47 @@
     /** @type {number} Number of points for path generation */
     const PATH_STEPS = 50;
 
+    /**
+     * Starting reactance for shunt path animations.
+     * High value ≈ open circuit (no shunt effect), so path visually starts
+     * at the previous transformation point and sweeps along constant-G circle.
+     * @type {number}
+     */
+    const SHUNT_X_START = 10000;
+
+    /**
+     * Path filtering limits - impedances outside these bounds are clipped
+     * to keep paths within reasonable Smith chart region.
+     */
+    const PATH_R_MAX = 1000;
+    const PATH_X_MAX = 500;
+
+    /** Threshold below which shunt reactance is treated as zero (open circuit) */
+    const SHUNT_X_MIN = 0.1;
+
+    /** Maximum displayable SWR (returned when reflection coefficient >= 1) */
+    const SWR_MAX = 99;
+
+    /** @type {Object} SWR thresholds for color coding */
+    const SWR_THRESHOLDS = Object.freeze({
+      excellent: 1.2,
+      good: 1.5,
+      ok: 2.0
+    });
+
+    /** @type {Object} Auto-tune parameter bounds */
+    const TUNE_BOUNDS = Object.freeze({
+      gamma: {
+        tap: { min: 1, max: 2.5 },
+        rod: { min: 20, max: 400 },
+        cap: { min: 0, max: 100 }
+      },
+      hairpin: {
+        shorten: { min: 0, max: 60 },
+        hp: { min: 15, max: 200 }
+      }
+    });
+
     /** @type {Object} Match mode constants */
     const MODES = Object.freeze({
       GAMMA: 'gamma',
@@ -601,7 +642,7 @@
      * @returns {Impedance}
      */
     const addShuntReactance = (r, x, xShunt) => {
-      if (Math.abs(xShunt) < 0.1) return { r, x };
+      if (Math.abs(xShunt) < SHUNT_X_MIN) return { r, x };
       const z = C(r, x);
       const y = divide(1, z);
       const yShunt = C(0, -1 / xShunt);
@@ -631,7 +672,7 @@
     const calcSWR = (r, x) => {
       const gamma = zToGamma(r, x);
       const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
-      if (gammaMag >= 1) return 99;
+      if (gammaMag >= 1) return SWR_MAX;
       return (1 + gammaMag) / (1 - gammaMag);
     };
 
@@ -764,20 +805,18 @@
         for (let i = 0; i <= PATH_STEPS; i++) {
           const ratio = 1 + (tapRatio - 1) * (i / PATH_STEPS);
           const z = applyTapRatio(antR, antX, ratio);
-          if (z.r > 0 && z.r < 1000) {
+          if (z.r > 0 && z.r < PATH_R_MAX) {
             tapPath.push(zToScreen(z.r, z.x));
           }
         }
         const afterTap = applyTapRatio(antR, antX, tapRatio);
 
-        // Shunt inductance path
-        const shuntPath = [];
-        const startShuntX = 500;
-        for (let i = 0; i <= PATH_STEPS; i++) {
-          const xL = startShuntX + (gammaRodX - startShuntX) * (i / PATH_STEPS);
-          if (Math.abs(xL) < 1) continue;
+        // Shunt inductance path - start exactly at afterTap point
+        const shuntPath = [zToScreen(afterTap.r, afterTap.x)];
+        for (let i = 1; i <= PATH_STEPS; i++) {
+          const xL = SHUNT_X_START + (gammaRodX - SHUNT_X_START) * (i / PATH_STEPS);
           const z = addShuntReactance(afterTap.r, afterTap.x, xL);
-          if (z.r > 0 && z.r < 1000 && Math.abs(z.x) < 500) {
+          if (z.r > 0 && z.r < PATH_R_MAX && Math.abs(z.x) < PATH_X_MAX) {
             shuntPath.push(zToScreen(z.r, z.x));
           }
         }
@@ -828,13 +867,12 @@
         }
         const afterShorten = { r: antR, x: antX - shortening };
 
-        // Hairpin inductance path
-        const hpPath = [];
-        for (let i = 0; i <= PATH_STEPS; i++) {
-          const xL = 300 + (hairpinX - 300) * (i / PATH_STEPS);
-          if (Math.abs(xL) < 1) continue;
+        // Hairpin inductance path - start exactly at shortened point
+        const hpPath = [zToScreen(afterShorten.r, afterShorten.x)];
+        for (let i = 1; i <= PATH_STEPS; i++) {
+          const xL = SHUNT_X_START + (hairpinX - SHUNT_X_START) * (i / PATH_STEPS);
           const z = addShuntReactance(afterShorten.r, afterShorten.x, xL);
-          if (z.r > 0 && z.r < 500 && Math.abs(z.x) < 500) {
+          if (z.r > 0 && z.r < PATH_R_MAX && Math.abs(z.x) < PATH_X_MAX) {
             hpPath.push(zToScreen(z.r, z.x));
           }
         }
@@ -861,16 +899,17 @@
      */
     const useAutoTune = (antR, antX) => {
       const autoTuneGamma = useCallback(() => {
+        const { tap: t, rod: r, cap: c } = TUNE_BOUNDS.gamma;
         const result = fmin.nelderMead(([tap, rod, cap]) => {
           // Penalty for out-of-bounds
-          if (tap < 1 || tap > 2.5 || rod < 20 || rod > 400 || cap < 0 || cap > 100) {
-            return 99;
+          if (tap < t.min || tap > t.max || rod < r.min || rod > r.max || cap < c.min || cap > c.max) {
+            return SWR_MAX;
           }
           const z1 = applyTapRatio(antR, antX, tap);
           const z2 = addShuntReactance(z1.r, z1.x, rod);
           const z3 = addSeriesReactance(z2.r, z2.x, -cap);
           return calcSWR(z3.r, z3.x);
-        }, [1.5, 200, 50]);  // Initial guess: middle of ranges
+        }, [(t.min + t.max) / 2, (r.min + r.max) / 2, (c.min + c.max) / 2]);
 
         return {
           tapRatio: Math.round(result.x[0] * 100) / 100,
@@ -880,15 +919,16 @@
       }, [antR, antX]);
 
       const autoTuneHairpin = useCallback(() => {
+        const { shorten: s, hp: h } = TUNE_BOUNDS.hairpin;
         const result = fmin.nelderMead(([shorten, hp]) => {
           // Penalty for out-of-bounds
-          if (shorten < 0 || shorten > 60 || hp < 15 || hp > 200) {
-            return 99;
+          if (shorten < s.min || shorten > s.max || hp < h.min || hp > h.max) {
+            return SWR_MAX;
           }
           const z1 = { r: antR, x: antX - shorten };
           const z2 = addShuntReactance(z1.r, z1.x, hp);
           return calcSWR(z2.r, z2.x);
-        }, [30, 100]);  // Initial guess: middle of ranges
+        }, [(s.min + s.max) / 2, (h.min + h.max) / 2]);
 
         return {
           shortening: Math.round(result.x[0]),
@@ -1063,9 +1103,9 @@
      * @returns {string} CSS class name
      */
     const getSWRClass = (swr) => {
-      if (swr < 1.2) return 'swr-excellent';
-      if (swr < 1.5) return 'swr-good';
-      if (swr < 2) return 'swr-ok';
+      if (swr < SWR_THRESHOLDS.excellent) return 'swr-excellent';
+      if (swr < SWR_THRESHOLDS.good) return 'swr-good';
+      if (swr < SWR_THRESHOLDS.ok) return 'swr-ok';
       return 'swr-poor';
     };
 
