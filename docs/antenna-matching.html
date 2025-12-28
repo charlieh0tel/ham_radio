@@ -684,6 +684,14 @@
      */
     const formatZ = (r, x) => `${r.toFixed(1)} ${x >= 0 ? '+' : '−'} j${Math.abs(x).toFixed(1)}`;
 
+    /**
+     * Format impedance for chart labels (compact)
+     * @param {number} r - Resistance
+     * @param {number} x - Reactance
+     * @returns {string} Formatted string like "50+j25Ω"
+     */
+    const formatZLabel = (r, x) => `${Math.round(r)}${x >= 0 ? '+' : ''}j${Math.round(x)}Ω`;
+
     // ============================================================
     // Custom Hooks
     // ============================================================
@@ -1364,13 +1372,21 @@
                   <circle cx={gammaPaths.origPt.x} cy={gammaPaths.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
                   <text x={gammaPaths.origPt.x - 14} y={gammaPaths.origPt.y - 14}
                     fill={COLORS.orig} fontSize="11" fontWeight="600" textAnchor="end">
-                    ① {antR}{antX >= 0 ? '+' : ''}j{antX}Ω
+                    ① {formatZLabel(antR, antX)}
                   </text>
                   <circle cx={gammaPaths.afterTapPt.x} cy={gammaPaths.afterTapPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
+                  <text x={gammaPaths.afterTapPt.x + 12} y={gammaPaths.afterTapPt.y - 8}
+                    fill={COLORS.step1} fontSize="10" fontWeight="600">
+                    ② {formatZLabel(gammaPaths.afterTap.r, gammaPaths.afterTap.x)}
+                  </text>
                   <circle cx={gammaPaths.afterShuntPt.x} cy={gammaPaths.afterShuntPt.y} r="7" fill={COLORS.step2} stroke="#fff" strokeWidth="2" />
+                  <text x={gammaPaths.afterShuntPt.x + 12} y={gammaPaths.afterShuntPt.y - 8}
+                    fill={COLORS.step2} fontSize="10" fontWeight="600">
+                    ③ {formatZLabel(gammaPaths.afterShunt.r, gammaPaths.afterShunt.x)}
+                  </text>
                   <circle cx={gammaPaths.finalPt.x} cy={gammaPaths.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
                   <text x={gammaPaths.finalPt.x + 14} y={gammaPaths.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
-                    ④ {gammaPaths.finalZ.r.toFixed(0)}Ω
+                    ④ {formatZLabel(gammaPaths.finalZ.r, gammaPaths.finalZ.x)}
                   </text>
                 </>
               ) : (
@@ -1402,14 +1418,16 @@
                   <circle cx={hairpinPaths.origPt.x} cy={hairpinPaths.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.origPt.x + 14} y={hairpinPaths.origPt.y + 4}
                     fill={COLORS.orig} fontSize="11" fontWeight="600">
-                    ① {antR}{antX >= 0 ? '+' : ''}j{antX}Ω
+                    ① {formatZLabel(antR, antX)}
                   </text>
                   <circle cx={hairpinPaths.shortenedPt.x} cy={hairpinPaths.shortenedPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.shortenedPt.x + 12} y={hairpinPaths.shortenedPt.y - 8}
-                    fill={COLORS.step1} fontSize="10">② Shortened</text>
+                    fill={COLORS.step1} fontSize="10" fontWeight="600">
+                    ② {formatZLabel(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)}
+                  </text>
                   <circle cx={hairpinPaths.finalPt.x} cy={hairpinPaths.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.finalPt.x + 14} y={hairpinPaths.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
-                    ③ {hairpinPaths.finalZ.r.toFixed(0)}Ω
+                    ③ {formatZLabel(hairpinPaths.finalZ.r, hairpinPaths.finalZ.x)}
                   </text>
                 </>
               )}
