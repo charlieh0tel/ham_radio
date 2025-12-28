@@ -1014,6 +1014,20 @@
             <span style={{ color: '#555', alignSelf: 'center', minWidth: '90px' }}>
               {physical ? `λ = ${(physical.lambdaMm / 1000).toFixed(2)}m` : ''}
             </span>
+            <button
+              className="btn preset-btn"
+              onClick={() => navigator.clipboard.writeText(window.location.href)}
+              style={{ alignSelf: 'center' }}
+            >
+              Copy URL
+            </button>
+            <button
+              className="btn preset-btn"
+              onClick={() => window.location.href = window.location.pathname}
+              style={{ alignSelf: 'center' }}
+            >
+              Reset
+            </button>
           </div>
 
           <div className="main-content">
