@@ -747,7 +747,7 @@
       const autoTuneHairpin = useCallback(() => {
         const result = fmin.nelderMead(([shorten, hp]) => {
           // Penalty for out-of-bounds
-          if (shorten < 1 || shorten > 60 || hp < 15 || hp > 200) {
+          if (shorten < 0 || shorten > 60 || hp < 15 || hp > 200) {
             return 99;
           }
           const z1 = { r: antR, x: antX - shorten };
@@ -1233,7 +1233,7 @@
                     <div className="control-header" style={{ color: COLORS.step1 }}>② SHORTEN ELEMENT</div>
                     <label className="control-label">
                       <span className="control-text">Capacitive reactance: −j{shortening}Ω</span>
-                      <input type="range" min="1" max="60" value={shortening}
+                      <input type="range" min="0" max="60" value={shortening}
                         onChange={(e) => setShortening(Number(e.target.value))}
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
