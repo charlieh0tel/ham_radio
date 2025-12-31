@@ -11,8 +11,7 @@ from pathlib import Path
 
 
 def get_wav_info(wav_file):
-    """Get information about a WAV file."""
-    with wave.open(wav_file, 'rb') as wav:
+    with wave.open(wav_file, "rb") as wav:
         params = wav.getparams()
         n_channels = params.nchannels
         sampwidth = params.sampwidth
@@ -46,32 +45,30 @@ def split_wav_by_duration(input_file, segment_duration, output_dir=None):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    with wave.open(str(input_path), 'rb') as wav:
+    with wave.open(str(input_path), "rb") as wav:
         params = wav.getparams()
         framerate = params.framerate
         n_frames = params.nframes
 
         frames_per_segment = int(segment_duration * framerate)
-        total_segments = (n_frames + frames_per_segment -
-                          1) // frames_per_segment
+        total_segments = (n_frames + frames_per_segment - 1) // frames_per_segment
 
-        print(f"\nSplitting into {total_segments} segments of {
-              segment_duration}s each...")
+        print(
+            f"\nSplitting into {total_segments} segments of"
+            f"{segment_duration}s each..."
+        )
 
         for i in range(total_segments):
             start_frame = i * frames_per_segment
             wav.setpos(start_frame)
 
-            # Read frames for this segment
             frames_to_read = min(frames_per_segment, n_frames - start_frame)
             frames = wav.readframes(frames_to_read)
 
-            # Create output filename
             base_name = input_path.stem
             output_file = output_dir / f"{base_name}_part{i+1:03d}.wav"
 
-            # Write segment
-            with wave.open(str(output_file), 'wb') as output_wav:
+            with wave.open(str(output_file), "wb") as output_wav:
                 output_wav.setparams(params)
                 output_wav.writeframes(frames)
 
@@ -95,7 +92,7 @@ def split_wav_by_count(input_file, num_parts, output_dir=None):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    with wave.open(str(input_path), 'rb') as wav:
+    with wave.open(str(input_path), "rb") as wav:
         params = wav.getparams()
         framerate = params.framerate
         n_frames = params.nframes
@@ -108,7 +105,6 @@ def split_wav_by_count(input_file, num_parts, output_dir=None):
             start_frame = i * frames_per_part
             wav.setpos(start_frame)
 
-            # Last part gets any remaining frames
             if i == num_parts - 1:
                 frames_to_read = n_frames - start_frame
             else:
@@ -116,12 +112,10 @@ def split_wav_by_count(input_file, num_parts, output_dir=None):
 
             frames = wav.readframes(frames_to_read)
 
-            # Create output filename
             base_name = input_path.stem
             output_file = output_dir / f"{base_name}_part{i+1:03d}.wav"
 
-            # Write segment
-            with wave.open(str(output_file), 'wb') as output_wav:
+            with wave.open(str(output_file), "wb") as output_wav:
                 output_wav.setparams(params)
                 output_wav.writeframes(frames)
 
@@ -131,7 +125,7 @@ def split_wav_by_count(input_file, num_parts, output_dir=None):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Split WAV audio files into multiple segments',
+        description="Split WAV audio files into multiple segments",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -146,18 +140,24 @@ Examples:
   
   # Show file info only
   python wav_splitter.py input.wav -i
-        """
+        """,
     )
 
-    parser.add_argument('input_file', help='Input WAV file to split')
-    parser.add_argument('-d', '--duration', type=float,
-                        help='Duration of each segment in seconds')
-    parser.add_argument('-n', '--num-parts', type=int,
-                        help='Number of parts to split into')
-    parser.add_argument('-o', '--output-dir',
-                        help='Output directory for split files (default: same as input)')
-    parser.add_argument('-i', '--info', action='store_true',
-                        help='Show file info only, do not split')
+    parser.add_argument("input_file", help="Input WAV file to split")
+    parser.add_argument(
+        "-d", "--duration", type=float, help="Duration of each segment in seconds"
+    )
+    parser.add_argument(
+        "-n", "--num-parts", type=int, help="Number of parts to split into"
+    )
+    parser.add_argument(
+        "-o",
+        "--output-dir",
+        help="Output directory for split files (default: same as input)",
+    )
+    parser.add_argument(
+        "-i", "--info", action="store_true", help="Show file info only, do not split"
+    )
 
     args = parser.parse_args()
 
@@ -165,13 +165,11 @@ Examples:
         print(f"Error: File '{args.input_file}' not found")
         return 1
 
-    # Show file info
     params, duration = get_wav_info(args.input_file)
 
     if args.info:
         return 0
 
-    # Validate split options
     if not args.duration and not args.num_parts:
         print("\nError: Must specify either --duration (-d) or --num-parts (-n)")
         parser.print_help()
@@ -181,7 +179,6 @@ Examples:
         print("\nError: Cannot specify both --duration and --num-parts")
         return 1
 
-    # Perform split
     if args.duration:
         if args.duration <= 0:
             print("Error: Duration must be positive")
@@ -193,9 +190,8 @@ Examples:
             return 1
         split_wav_by_count(args.input_file, args.num_parts, args.output_dir)
 
-    print("\nSplit complete!")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())
