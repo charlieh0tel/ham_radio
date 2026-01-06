@@ -412,6 +412,35 @@
     const pointsToPath = (points) =>
       points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
+    /**
+     * Create SVG arc path along a constant-G (conductance) circle
+     * @param {ScreenPoint} start - Start point in screen coordinates
+     * @param {ScreenPoint} end - End point in screen coordinates
+     * @param {number} g - Normalized conductance value
+     * @returns {string} SVG path string with arc command
+     */
+    const constGArcPath = (start, end, g) => {
+      // Constant-G circle in Gamma plane: center at (-g/(g+1), 0), radius 1/(g+1)
+      const circleRadius = RADIUS / (g + 1);
+
+      // Determine sweep direction: we need to check if we're going clockwise or counter-clockwise
+      // For shunt inductance (adding +jB), we move in the -im direction in Gamma plane (downward on screen)
+      // Use cross product to determine direction
+      const circleCx = CX - (g / (g + 1)) * RADIUS;
+      const circleCy = CY;
+
+      // Vectors from circle center to start and end
+      const v1x = start.x - circleCx, v1y = start.y - circleCy;
+      const v2x = end.x - circleCx, v2y = end.y - circleCy;
+
+      // Cross product determines direction (positive = counter-clockwise)
+      const cross = v1x * v2y - v1y * v2x;
+      const sweepFlag = cross > 0 ? 1 : 0;
+
+      // For Smith chart arcs, we always want the minor arc (large-arc-flag = 0)
+      return `M ${start.x} ${start.y} A ${circleRadius} ${circleRadius} 0 0 ${sweepFlag} ${end.x} ${end.y}`;
+    };
+
     // ============================================================
     // JSDoc Type Definitions
     // ============================================================
@@ -821,9 +850,17 @@
         }
         const afterTap = applyTapRatio(antR, antX, tapRatio);
 
-        // Shunt inductance path - start exactly at afterTap point
-        // Interpolate in susceptance (B = -1/X) space for even spacing on Smith chart
-        const shuntPath = [zToScreen(afterTap.r, afterTap.x)];
+        // Shunt inductance path - use SVG arc for perfect circle
+        const afterShunt = addShuntReactance(afterTap.r, afterTap.x, gammaRodX);
+        const afterTapPt = zToScreen(afterTap.r, afterTap.x);
+        const afterShuntPt = zToScreen(afterShunt.r, afterShunt.x);
+
+        // Normalized conductance g = G * Z0 = Z0 * R / (R² + X²)
+        const gNorm = Z0 * afterTap.r / (afterTap.r ** 2 + afterTap.x ** 2);
+        const shuntArcPath = constGArcPath(afterTapPt, afterShuntPt, gNorm);
+
+        // Keep polyline path for arrow angle calculation
+        const shuntPath = [afterTapPt];
         const bStart = -1 / SHUNT_X_START;
         const bEnd = -1 / gammaRodX;
         for (let i = 1; i <= PATH_STEPS; i++) {
@@ -834,7 +871,6 @@
             shuntPath.push(zToScreen(z.r, z.x));
           }
         }
-        const afterShunt = addShuntReactance(afterTap.r, afterTap.x, gammaRodX);
 
         // Series capacitor path
         const seriesPath = [];
@@ -847,14 +883,15 @@
 
         return {
           origPt: zToScreen(antR, antX),
-          afterTapPt: zToScreen(afterTap.r, afterTap.x),
-          afterShuntPt: zToScreen(afterShunt.r, afterShunt.x),
+          afterTapPt,
+          afterShuntPt,
           finalPt: zToScreen(finalZ.r, finalZ.x),
           afterTap,
           afterShunt,
           finalZ,
           tapPath,
           shuntPath,
+          shuntArcPath,
           seriesPath,
           swr: calcSWR(finalZ.r, finalZ.x)
         };
@@ -881,9 +918,17 @@
         }
         const afterShorten = { r: antR, x: antX - shortening };
 
-        // Hairpin inductance path - start exactly at shortened point
-        // Interpolate in susceptance (B = -1/X) space for even spacing on Smith chart
-        const hpPath = [zToScreen(afterShorten.r, afterShorten.x)];
+        // Hairpin inductance path - use SVG arc for perfect circle
+        const finalZ = addShuntReactance(afterShorten.r, afterShorten.x, hairpinX);
+        const shortenedPt = zToScreen(afterShorten.r, afterShorten.x);
+        const finalPt = zToScreen(finalZ.r, finalZ.x);
+
+        // Normalized conductance g = G * Z0 = Z0 * R / (R² + X²)
+        const gNorm = Z0 * afterShorten.r / (afterShorten.r ** 2 + afterShorten.x ** 2);
+        const hpArcPath = constGArcPath(shortenedPt, finalPt, gNorm);
+
+        // Keep polyline path for arrow angle calculation
+        const hpPath = [shortenedPt];
         const bStart = -1 / SHUNT_X_START;
         const bEnd = -1 / hairpinX;
         for (let i = 1; i <= PATH_STEPS; i++) {
@@ -894,16 +939,16 @@
             hpPath.push(zToScreen(z.r, z.x));
           }
         }
-        const finalZ = addShuntReactance(afterShorten.r, afterShorten.x, hairpinX);
 
         return {
           origPt: zToScreen(antR, antX),
-          shortenedPt: zToScreen(afterShorten.r, afterShorten.x),
-          finalPt: zToScreen(finalZ.r, finalZ.x),
+          shortenedPt,
+          finalPt,
           afterShorten,
           finalZ,
           shortenPath,
           hpPath,
+          hpArcPath,
           swr: calcSWR(finalZ.r, finalZ.x)
         };
       }, [antR, antX, shortening, hairpinX, zToScreen]);
@@ -1370,13 +1415,11 @@
                       fill="none" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
                     />
                   )}
-                  {/* Shunt inductance path */}
-                  {gammaPaths.shuntPath.length > 1 && (
-                    <path
-                      d={pointsToPath(gammaPaths.shuntPath)}
-                      fill="none" stroke={COLORS.step2} strokeWidth="3" strokeLinecap="round"
-                    />
-                  )}
+                  {/* Shunt inductance path - true arc */}
+                  <path
+                    d={gammaPaths.shuntArcPath}
+                    fill="none" stroke={COLORS.step2} strokeWidth="3" strokeLinecap="round"
+                  />
                   {/* Series capacitor path */}
                   {gammaPaths.seriesPath.length > 1 && (
                     <path
@@ -1427,13 +1470,11 @@
                       fill="none" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
                     />
                   )}
-                  {/* Hairpin path */}
-                  {hairpinPaths.hpPath.length > 1 && (
-                    <path
-                      d={pointsToPath(hairpinPaths.hpPath)}
-                      fill="none" stroke={COLORS.hairpin} strokeWidth="3" strokeLinecap="round"
-                    />
-                  )}
+                  {/* Hairpin path - true arc */}
+                  <path
+                    d={hairpinPaths.hpArcPath}
+                    fill="none" stroke={COLORS.hairpin} strokeWidth="3" strokeLinecap="round"
+                  />
                   {/* Arrows */}
                   {hairpinPaths.shortenPath.length > 3 && (
                     <ArrowHead x={hairpinPaths.shortenedPt.x} y={hairpinPaths.shortenedPt.y}
