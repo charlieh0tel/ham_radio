@@ -401,7 +401,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useCallback, useEffect } = React;
+    const { useState, useMemo, useCallback, useEffect, useRef } = React;
     const { complex, add, subtract, multiply, divide } = math;
 
     /**
@@ -1182,6 +1182,7 @@
       const gammaPaths = useGammaMatch(antR, antX, tapRatio, gammaRodX, seriesCapX);
       const hairpinPaths = useHairpinMatch(antR, antX, shortening, hairpinX);
       const { autoTuneGamma, autoTuneHairpin } = useAutoTune(antR, antX);
+      const didAutoTune = useRef(false);
 
       // Physical calculations (when freq/diameter are provided)
       const physical = useMemo(() => {
@@ -1226,10 +1227,11 @@
 
       // Auto-tune on initial load if no URL parameters provided
       useEffect(() => {
-        if (!window.location.search) {
+        if (!didAutoTune.current && !window.location.search) {
+          didAutoTune.current = true;
           handleAutoTune();
         }
-      }, []);
+      }, [handleAutoTune]);
 
       const handlePreset = (preset) => {
         const z = Z(preset.r, preset.x);
