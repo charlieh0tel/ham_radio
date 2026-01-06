@@ -414,19 +414,18 @@
 
     /**
      * Calculate shunt arc path and arrow angle along constant-G circle
-     * @param {number} r - Starting resistance
-     * @param {number} x - Starting reactance
+     * @param {Impedance} z - Starting impedance
      * @param {number} shuntX - Shunt reactance to add
      * @param {function} zToScreen - Impedance to screen coordinate converter
-     * @returns {{startPt: ScreenPoint, endPt: ScreenPoint, arcPath: string, arrowAngle: number}}
+     * @returns {{startPt: ScreenPoint, endPt: ScreenPoint, endZ: Impedance, arcPath: string, arrowAngle: number}}
      */
-    const calcShuntArc = (r, x, shuntX, zToScreen) => {
-      const startPt = zToScreen(r, x);
-      const endZ = addShuntReactance(r, x, shuntX);
-      const endPt = zToScreen(endZ.r, endZ.x);
+    const calcShuntArc = (z, shuntX, zToScreen) => {
+      const startPt = zToScreen(z);
+      const endZ = addShuntReactance(z, shuntX);
+      const endPt = zToScreen(endZ);
 
       // Normalized conductance g = G * Z0 = Z0 * R / (R² + X²)
-      const g = Z0 * r / (r ** 2 + x ** 2);
+      const g = Z0 * z.r / (z.r ** 2 + z.x ** 2);
 
       // Constant-G circle: center at (-g/(g+1), 0) in Gamma, radius 1/(g+1)
       const circleRadius = RADIUS / (g + 1);
@@ -634,47 +633,56 @@
     const C = (r, x) => complex(r, x);
 
     /**
+     * Create impedance object with formatting methods
+     * @param {number} r - Resistance
+     * @param {number} x - Reactance
+     * @returns {Impedance}
+     */
+    const Z = (r, x) => ({
+      r, x,
+      format() { return `${this.r.toFixed(1)} ${this.x >= 0 ? '+' : '−'} j${Math.abs(this.x).toFixed(1)}`; },
+      formatLabel() { return `${Math.round(this.r)}${this.x >= 0 ? '+' : ''}j${Math.round(this.x)}Ω`; }
+    });
+
+    /**
      * Convert complex number to impedance object
      * @param {Object} z - Complex number
      * @returns {Impedance}
      */
-    const toRX = (z) => ({ r: z.re, x: z.im });
+    const toRX = (z) => Z(z.re, z.im);
 
     /**
      * Convert impedance to reflection coefficient: Γ = (z - 1) / (z + 1)
-     * @param {number} r - Resistance in ohms
-     * @param {number} x - Reactance in ohms
+     * @param {Impedance} z - Impedance
      * @returns {ReflectionCoefficient}
      */
-    const zToGamma = (r, x) => {
-      const zNorm = C(r / Z0, x / Z0);
+    const zToGamma = (z) => {
+      const zNorm = C(z.r / Z0, z.x / Z0);
       const gamma = divide(subtract(zNorm, 1), add(zNorm, 1));
       return { re: gamma.re, im: gamma.im };
     };
 
     /**
      * Apply tap ratio transformation: Z_new = Z × n²
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
+     * @param {Impedance} z - Impedance
      * @param {number} ratio - Tap ratio (n)
      * @returns {Impedance}
      */
-    const applyTapRatio = (r, x, ratio) => {
-      const z = multiply(C(r, x), ratio * ratio);
-      return toRX(z);
+    const applyTapRatio = (z, ratio) => {
+      const n2 = ratio * ratio;
+      return Z(z.r * n2, z.x * n2);
     };
 
     /**
      * Add shunt reactance: Y_total = Y + Y_shunt, Z = 1/Y_total
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
+     * @param {Impedance} z - Impedance
      * @param {number} xShunt - Shunt reactance value
      * @returns {Impedance}
      */
-    const addShuntReactance = (r, x, xShunt) => {
-      if (Math.abs(xShunt) < SHUNT_X_MIN) return { r, x };
-      const z = C(r, x);
-      const y = divide(1, z);
+    const addShuntReactance = (z, xShunt) => {
+      if (Math.abs(xShunt) < SHUNT_X_MIN) return z;
+      const zc = C(z.r, z.x);
+      const y = divide(1, zc);
       const yShunt = C(0, -1 / xShunt);
       const yTotal = add(y, yShunt);
       const zNew = divide(1, yTotal);
@@ -683,44 +691,23 @@
 
     /**
      * Add series reactance: Z_new = Z + jX_series
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
+     * @param {Impedance} z - Impedance
      * @param {number} xSeries - Series reactance to add
      * @returns {Impedance}
      */
-    const addSeriesReactance = (r, x, xSeries) => {
-      const z = add(C(r, x), C(0, xSeries));
-      return toRX(z);
-    };
+    const addSeriesReactance = (z, xSeries) => Z(z.r, z.x + xSeries);
 
     /**
      * Calculate SWR from impedance
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
+     * @param {Impedance} z - Impedance
      * @returns {number} SWR value
      */
-    const calcSWR = (r, x) => {
-      const gamma = zToGamma(r, x);
+    const calcSWR = (z) => {
+      const gamma = zToGamma(z);
       const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
       if (gammaMag >= 1) return SWR_MAX;
       return (1 + gammaMag) / (1 - gammaMag);
     };
-
-    /**
-     * Format impedance for display
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
-     * @returns {string} Formatted string like "50.0 + j25.0"
-     */
-    const formatZ = (r, x) => `${r.toFixed(1)} ${x >= 0 ? '+' : '−'} j${Math.abs(x).toFixed(1)}`;
-
-    /**
-     * Format impedance for chart labels (compact)
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
-     * @returns {string} Formatted string like "50+j25Ω"
-     */
-    const formatZLabel = (r, x) => `${Math.round(r)}${x >= 0 ? '+' : ''}j${Math.round(x)}Ω`;
 
     // ============================================================
     // Custom Hooks
@@ -744,11 +731,10 @@
 
         /**
          * Convert impedance to screen coordinates
-         * @param {number} r - Resistance
-         * @param {number} x - Reactance
+         * @param {Impedance} z - Impedance
          * @returns {ScreenPoint}
          */
-        const zToScreen = (r, x) => gammaToScreen(zToGamma(r, x));
+        const zToScreen = (z) => gammaToScreen(zToGamma(z));
 
         /** Constant resistance circles */
         const rCircles = R_VALUES.map(r => ({
@@ -838,41 +824,43 @@
       const { zToScreen } = useSmithChart();
 
       return useMemo(() => {
+        const antZ = Z(antR, antX);
+
         // Tap ratio path
         const tapPath = [];
         for (let i = 0; i <= PATH_STEPS; i++) {
           const ratio = 1 + (tapRatio - 1) * (i / PATH_STEPS);
-          const z = applyTapRatio(antR, antX, ratio);
+          const z = applyTapRatio(antZ, ratio);
           if (z.r > 0 && z.r < PATH_R_MAX) {
-            tapPath.push(zToScreen(z.r, z.x));
+            tapPath.push(zToScreen(z));
           }
         }
-        const afterTap = applyTapRatio(antR, antX, tapRatio);
+        const afterTap = applyTapRatio(antZ, tapRatio);
 
         // Shunt inductance arc along constant-G circle
-        const shuntArc = calcShuntArc(afterTap.r, afterTap.x, gammaRodX, zToScreen);
+        const shuntArc = calcShuntArc(afterTap, gammaRodX, zToScreen);
 
         // Series capacitor path
         const seriesPath = [];
         for (let i = 0; i <= PATH_STEPS; i++) {
           const xC = -seriesCapX * (i / PATH_STEPS);
-          const z = addSeriesReactance(shuntArc.endZ.r, shuntArc.endZ.x, xC);
-          seriesPath.push(zToScreen(z.r, z.x));
+          const z = addSeriesReactance(shuntArc.endZ, xC);
+          seriesPath.push(zToScreen(z));
         }
-        const finalZ = addSeriesReactance(shuntArc.endZ.r, shuntArc.endZ.x, -seriesCapX);
+        const finalZ = addSeriesReactance(shuntArc.endZ, -seriesCapX);
 
         return {
-          origPt: zToScreen(antR, antX),
-          afterTapPt: zToScreen(afterTap.r, afterTap.x),
+          origPt: zToScreen(antZ),
+          afterTapPt: zToScreen(afterTap),
           afterShuntPt: shuntArc.endPt,
-          finalPt: zToScreen(finalZ.r, finalZ.x),
+          finalPt: zToScreen(finalZ),
           afterTap,
           afterShunt: shuntArc.endZ,
           finalZ,
           tapPath,
           shuntArc,
           seriesPath,
-          swr: calcSWR(finalZ.r, finalZ.x)
+          swr: calcSWR(finalZ)
         };
       }, [antR, antX, tapRatio, gammaRodX, seriesCapX, zToScreen]);
     };
@@ -889,46 +877,47 @@
       const { zToScreen } = useSmithChart();
 
       return useMemo(() => {
+        const antZ = Z(antR, antX);
+
         // Shortening path
         const shortenPath = [];
         for (let i = 0; i <= PATH_STEPS; i++) {
-          const xVal = antX - shortening * (i / PATH_STEPS);
-          shortenPath.push(zToScreen(antR, xVal));
+          const z = Z(antR, antX - shortening * (i / PATH_STEPS));
+          shortenPath.push(zToScreen(z));
         }
-        const afterShorten = { r: antR, x: antX - shortening };
+        const afterShorten = Z(antR, antX - shortening);
 
         // Hairpin inductance arc along constant-G circle
-        const hpArc = calcShuntArc(afterShorten.r, afterShorten.x, hairpinX, zToScreen);
+        const hpArc = calcShuntArc(afterShorten, hairpinX, zToScreen);
 
         return {
-          origPt: zToScreen(antR, antX),
-          shortenedPt: zToScreen(afterShorten.r, afterShorten.x),
+          origPt: zToScreen(antZ),
+          shortenedPt: zToScreen(afterShorten),
           finalPt: hpArc.endPt,
           afterShorten,
           finalZ: hpArc.endZ,
           shortenPath,
           hpArc,
-          swr: calcSWR(hpArc.endZ.r, hpArc.endZ.x)
+          swr: calcSWR(hpArc.endZ)
         };
       }, [antR, antX, shortening, hairpinX, zToScreen]);
     };
 
     /**
      * Compute optimal gamma match parameters for given impedance
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
+     * @param {Impedance} z - Antenna impedance
      * @returns {Object} Optimal { tapRatio, gammaRodX, seriesCapX }
      */
-    const tuneGamma = (r, x) => {
+    const tuneGamma = (z) => {
       const { tap: t, rod: rd, cap: c } = TUNE_BOUNDS.gamma;
       const result = fmin.nelderMead(([tap, rod, cap]) => {
         if (tap < t.min || tap > t.max || rod < rd.min || rod > rd.max || cap < c.min || cap > c.max) {
           return SWR_MAX;
         }
-        const z1 = applyTapRatio(r, x, tap);
-        const z2 = addShuntReactance(z1.r, z1.x, rod);
-        const z3 = addSeriesReactance(z2.r, z2.x, -cap);
-        return calcSWR(z3.r, z3.x);
+        const z1 = applyTapRatio(z, tap);
+        const z2 = addShuntReactance(z1, rod);
+        const z3 = addSeriesReactance(z2, -cap);
+        return calcSWR(z3);
       }, [(t.min + t.max) / 2, (rd.min + rd.max) / 2, (c.min + c.max) / 2]);
 
       return {
@@ -940,19 +929,18 @@
 
     /**
      * Compute optimal hairpin match parameters for given impedance
-     * @param {number} r - Resistance
-     * @param {number} x - Reactance
+     * @param {Impedance} z - Antenna impedance
      * @returns {Object} Optimal { shortening, hairpinX }
      */
-    const tuneHairpin = (r, x) => {
+    const tuneHairpin = (z) => {
       const { shorten: s, hp: h } = TUNE_BOUNDS.hairpin;
       const result = fmin.nelderMead(([shorten, hp]) => {
         if (shorten < s.min || shorten > s.max || hp < h.min || hp > h.max) {
           return SWR_MAX;
         }
-        const z1 = { r, x: x - shorten };
-        const z2 = addShuntReactance(z1.r, z1.x, hp);
-        return calcSWR(z2.r, z2.x);
+        const z1 = Z(z.r, z.x - shorten);
+        const z2 = addShuntReactance(z1, hp);
+        return calcSWR(z2);
       }, [(s.min + s.max) / 2, (h.min + h.max) / 2]);
 
       return {
@@ -967,10 +955,13 @@
      * @param {number} antX - Antenna reactance
      * @returns {Object} { autoTuneGamma, autoTuneHairpin }
      */
-    const useAutoTune = (antR, antX) => ({
-      autoTuneGamma: useCallback(() => tuneGamma(antR, antX), [antR, antX]),
-      autoTuneHairpin: useCallback(() => tuneHairpin(antR, antX), [antR, antX])
-    });
+    const useAutoTune = (antR, antX) => {
+      const antZ = Z(antR, antX);
+      return {
+        autoTuneGamma: useCallback(() => tuneGamma(antZ), [antR, antX]),
+        autoTuneHairpin: useCallback(() => tuneHairpin(antZ), [antR, antX])
+      };
+    };
 
     // ============================================================
     // Sub-Components
@@ -1241,7 +1232,8 @@
       }, []);
 
       const handlePreset = (preset) => {
-        const tuned = isGamma ? tuneGamma(preset.r, preset.x) : tuneHairpin(preset.r, preset.x);
+        const z = Z(preset.r, preset.x);
+        const tuned = isGamma ? tuneGamma(z) : tuneHairpin(z);
         set({ antR: preset.r, antX: preset.x, ...tuned });
       };
 
@@ -1401,21 +1393,21 @@
                   <circle cx={gammaPaths.origPt.x} cy={gammaPaths.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
                   <text x={gammaPaths.origPt.x - 14} y={gammaPaths.origPt.y - 14}
                     fill={COLORS.orig} fontSize="11" fontWeight="600" textAnchor="end">
-                    ① {formatZLabel(antR, antX)}
+                    ① {Z(antR, antX).formatLabel()}
                   </text>
                   <circle cx={gammaPaths.afterTapPt.x} cy={gammaPaths.afterTapPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
                   <text x={gammaPaths.afterTapPt.x + 12} y={gammaPaths.afterTapPt.y - 8}
                     fill={COLORS.step1} fontSize="10" fontWeight="600">
-                    ② {formatZLabel(gammaPaths.afterTap.r, gammaPaths.afterTap.x)}
+                    ② {gammaPaths.afterTap.formatLabel()}
                   </text>
                   <circle cx={gammaPaths.afterShuntPt.x} cy={gammaPaths.afterShuntPt.y} r="7" fill={COLORS.step2} stroke="#fff" strokeWidth="2" />
                   <text x={gammaPaths.afterShuntPt.x + 12} y={gammaPaths.afterShuntPt.y - 8}
                     fill={COLORS.step2} fontSize="10" fontWeight="600">
-                    ③ {formatZLabel(gammaPaths.afterShunt.r, gammaPaths.afterShunt.x)}
+                    ③ {gammaPaths.afterShunt.formatLabel()}
                   </text>
                   <circle cx={gammaPaths.finalPt.x} cy={gammaPaths.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
                   <text x={gammaPaths.finalPt.x + 14} y={gammaPaths.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
-                    ④ {formatZLabel(gammaPaths.finalZ.r, gammaPaths.finalZ.x)}
+                    ④ {gammaPaths.finalZ.formatLabel()}
                   </text>
                 </>
               ) : (
@@ -1443,16 +1435,16 @@
                   <circle cx={hairpinPaths.origPt.x} cy={hairpinPaths.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.origPt.x + 14} y={hairpinPaths.origPt.y + 4}
                     fill={COLORS.orig} fontSize="11" fontWeight="600">
-                    ① {formatZLabel(antR, antX)}
+                    ① {Z(antR, antX).formatLabel()}
                   </text>
                   <circle cx={hairpinPaths.shortenedPt.x} cy={hairpinPaths.shortenedPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.shortenedPt.x + 12} y={hairpinPaths.shortenedPt.y - 8}
                     fill={COLORS.step1} fontSize="10" fontWeight="600">
-                    ② {formatZLabel(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)}
+                    ② {hairpinPaths.afterShorten.formatLabel()}
                   </text>
                   <circle cx={hairpinPaths.finalPt.x} cy={hairpinPaths.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
                   <text x={hairpinPaths.finalPt.x + 14} y={hairpinPaths.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
-                    ③ {formatZLabel(hairpinPaths.finalZ.r, hairpinPaths.finalZ.x)}
+                    ③ {hairpinPaths.finalZ.formatLabel()}
                   </text>
                 </>
               )}
@@ -1518,7 +1510,7 @@
                         aria-label="Tap ratio"
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
-                    <div className="control-result">→ {formatZ(gammaPaths.afterTap.r, gammaPaths.afterTap.x)} Ω</div>
+                    <div className="control-result">→ {gammaPaths.afterTap.format()} Ω</div>
                     {physical && (
                       <div className="physical-hint">≈ {Math.round(physical.tapDistMm)} mm from center</div>
                     )}
@@ -1533,7 +1525,7 @@
                         aria-label="Gamma rod reactance"
                         className="control-slider" style={{ accentColor: COLORS.step2 }} />
                     </label>
-                    <div className="control-result">→ {formatZ(gammaPaths.afterShunt.r, gammaPaths.afterShunt.x)} Ω</div>
+                    <div className="control-result">→ {gammaPaths.afterShunt.format()} Ω</div>
                   </ControlPanel>
 
                   {/* Series Capacitor */}
@@ -1561,7 +1553,7 @@
                         aria-label="Element shortening reactance"
                         className="control-slider" style={{ accentColor: COLORS.step1 }} />
                     </label>
-                    <div className="control-result">→ {formatZ(hairpinPaths.afterShorten.r, hairpinPaths.afterShorten.x)} Ω</div>
+                    <div className="control-result">→ {hairpinPaths.afterShorten.format()} Ω</div>
                     {physical && physical.shortenMm !== null ? (
                       <div className="physical-hint">
                         ≈ {physical.shortenMm.toFixed(1)} mm per side ({physical.shortenPct.toFixed(1)}% of λ/2)
@@ -1590,7 +1582,7 @@
                 style={{ borderColor: swr < 1.5 ? COLORS.hairpin : COLORS.final }}
                 aria-live="polite">
                 <div className="control-header" style={{ color: COLORS.final }}>MATCHED IMPEDANCE</div>
-                <div className="result-z">Z = {formatZ(paths.finalZ.r, paths.finalZ.x)} Ω</div>
+                <div className="result-z">Z = {paths.finalZ.format()} Ω</div>
                 <div className={`result-swr ${getSWRClass(swr)}`}>
                   SWR = {swr.toFixed(3)} : 1
                 </div>
