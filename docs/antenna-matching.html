@@ -404,53 +404,6 @@
     const { useState, useMemo, useCallback, useEffect, useRef } = React;
     const { complex, add, subtract, multiply, divide } = math;
 
-    /**
-     * Convert array of points to SVG path string
-     * @param {ScreenPoint[]} points
-     * @returns {string}
-     */
-    const pointsToPath = (points) =>
-      points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-
-    /**
-     * Calculate shunt arc path and arrow angle along constant-G circle
-     * @param {Impedance} z - Starting impedance
-     * @param {number} shuntX - Shunt reactance to add
-     * @param {function} zToScreen - Impedance to screen coordinate converter
-     * @returns {{startPt: ScreenPoint, endPt: ScreenPoint, endZ: Impedance, arcPath: string, arrowAngle: number}}
-     */
-    const calcShuntArc = (z, shuntX, zToScreen) => {
-      const startPt = zToScreen(z);
-      const endZ = addShuntReactance(z, shuntX);
-      const endPt = zToScreen(endZ);
-
-      // Normalized conductance g = G * Z0 = Z0 * R / (R² + X²)
-      const g = Z0 * z.r / (z.r ** 2 + z.x ** 2);
-
-      // Constant-G circle: center at (-g/(g+1), 0) in Gamma, radius 1/(g+1)
-      const circleRadius = RADIUS / (g + 1);
-      const circleCx = CX - (g / (g + 1)) * RADIUS;
-      const circleCy = CY;
-
-      // Vectors from circle center to start and end
-      const v1x = startPt.x - circleCx, v1y = startPt.y - circleCy;
-      const v2x = endPt.x - circleCx, v2y = endPt.y - circleCy;
-
-      // Cross product determines sweep direction (positive = counter-clockwise)
-      const cross = v1x * v2y - v1y * v2x;
-      const sweepFlag = cross > 0 ? 1 : 0;
-
-      // SVG arc path (large-arc-flag = 0 for minor arc)
-      const arcPath = `M ${startPt.x} ${startPt.y} A ${circleRadius} ${circleRadius} 0 0 ${sweepFlag} ${endPt.x} ${endPt.y}`;
-
-      // Arrow angle: tangent to circle at endpoint
-      // Tangent is perpendicular to radius; direction depends on sweep
-      const radialAngle = Math.atan2(endPt.y - circleCy, endPt.x - circleCx);
-      const arrowAngle = (radialAngle + (sweepFlag ? Math.PI / 2 : -Math.PI / 2)) * 180 / Math.PI;
-
-      return { startPt, endPt, endZ, arcPath, arrowAngle };
-    };
-
     // ============================================================
     // JSDoc Type Definitions
     // ============================================================
@@ -707,6 +660,57 @@
       const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
       if (gammaMag >= 1) return SWR_MAX;
       return (1 + gammaMag) / (1 - gammaMag);
+    };
+
+    // ============================================================
+    // SVG Path Utilities
+    // ============================================================
+
+    /**
+     * Convert array of points to SVG path string
+     * @param {ScreenPoint[]} points
+     * @returns {string}
+     */
+    const pointsToPath = (points) =>
+      points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+    /**
+     * Calculate shunt arc path and arrow angle along constant-G circle
+     * @param {Impedance} z - Starting impedance
+     * @param {number} shuntX - Shunt reactance to add
+     * @param {function} zToScreen - Impedance to screen coordinate converter
+     * @returns {{startPt: ScreenPoint, endPt: ScreenPoint, endZ: Impedance, arcPath: string, arrowAngle: number}}
+     */
+    const calcShuntArc = (z, shuntX, zToScreen) => {
+      const startPt = zToScreen(z);
+      const endZ = addShuntReactance(z, shuntX);
+      const endPt = zToScreen(endZ);
+
+      // Normalized conductance g = G * Z0 = Z0 * R / (R² + X²)
+      const g = Z0 * z.r / (z.r ** 2 + z.x ** 2);
+
+      // Constant-G circle: center at (-g/(g+1), 0) in Gamma, radius 1/(g+1)
+      const circleRadius = RADIUS / (g + 1);
+      const circleCx = CX - (g / (g + 1)) * RADIUS;
+      const circleCy = CY;
+
+      // Vectors from circle center to start and end
+      const v1x = startPt.x - circleCx, v1y = startPt.y - circleCy;
+      const v2x = endPt.x - circleCx, v2y = endPt.y - circleCy;
+
+      // Cross product determines sweep direction (positive = counter-clockwise)
+      const cross = v1x * v2y - v1y * v2x;
+      const sweepFlag = cross > 0 ? 1 : 0;
+
+      // SVG arc path (large-arc-flag = 0 for minor arc)
+      const arcPath = `M ${startPt.x} ${startPt.y} A ${circleRadius} ${circleRadius} 0 0 ${sweepFlag} ${endPt.x} ${endPt.y}`;
+
+      // Arrow angle: tangent to circle at endpoint
+      // Tangent is perpendicular to radius; direction depends on sweep
+      const radialAngle = Math.atan2(endPt.y - circleCy, endPt.x - circleCx);
+      const arrowAngle = (radialAngle + (sweepFlag ? Math.PI / 2 : -Math.PI / 2)) * 180 / Math.PI;
+
+      return { startPt, endPt, endZ, arcPath, arrowAngle };
     };
 
     // ============================================================
@@ -1217,13 +1221,7 @@
       const paths = isGamma ? gammaPaths : hairpinPaths;
       const swr = paths.swr;
 
-      const handleAutoTune = () => {
-        if (isGamma) {
-          set(autoTuneGamma());
-        } else {
-          set(autoTuneHairpin());
-        }
-      };
+      const handleAutoTune = () => set(isGamma ? autoTuneGamma() : autoTuneHairpin());
 
       // Auto-tune on initial load if no URL parameters provided
       useEffect(() => {
@@ -1252,7 +1250,7 @@
               Gamma Match
             </button>
             <button
-              className={`btn mode-btn ${mode === MODES.HAIRPIN ? 'active-hairpin' : ''}`}
+              className={`btn mode-btn ${!isGamma ? 'active-hairpin' : ''}`}
               onClick={() => set({ mode: MODES.HAIRPIN })}
             >
               Beta (Hairpin) Match
