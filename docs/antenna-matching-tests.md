@@ -115,7 +115,11 @@ These must hold after every parameter change.
 - Click the Hairpin mode button
 - **Expected:** `.title` text is "Beta (Hairpin) Match"
 
-### 6.3 Antenna Impedance Preserved
+### 6.3 OCFD Mode Title
+- Click the OCFD mode button
+- **Expected:** `.title` text is "Off-Center Fed Doublet"
+
+### 6.4 Antenna Impedance Preserved
 - Set R=40 and X=−20, switch from Gamma to Hairpin and back
 - **Expected:** R and X values are the same after round-trip
 
@@ -178,3 +182,31 @@ These must hold after every parameter change.
 ### 10.2 Reactance Slider Updates Display
 - Move the reactance slider to a new value
 - **Expected:** The impedance display updates to show the new X
+
+---
+
+## 11. OCFD Mode
+
+### 11.1 OCFD Mode Title
+- Click the OCFD mode button
+- **Expected:** Title is "Off-Center Fed Doublet"
+
+### 11.2 Feed Offset Slider Changes Results
+- In OCFD mode, move feed offset slider (`aria-label="Feed offset"`)
+- **Expected:** Feed impedance display changes
+
+### 11.3 Center Impedance at Zero Offset
+- Set offset to 0%
+- **Expected:** Feed Z ≈ center Z (within rounding)
+
+### 11.4 Impedance Increases With Offset
+- Record feed Z resistance at offset 0%, then at 20%
+- **Expected:** Resistance at 20% > resistance at 0%
+
+### 11.5 Multiple SWR Values Displayed
+- In OCFD mode, check `.swr-table`
+- **Expected:** SWR shown for 50Ω, 300Ω, and 450Ω feedlines
+
+### 11.6 OCFD URL Round-Trip
+- Load with `?mode=ocfd&ocr=73&ocx=0&off=33`
+- **Expected:** Mode is OCFD, center R=73, center X=0, offset=33

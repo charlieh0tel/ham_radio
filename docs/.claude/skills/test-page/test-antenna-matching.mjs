@@ -105,9 +105,17 @@ async function autoTune(page) {
   await wait(page, 300);
 }
 
-/** Click a mode button (1 = Gamma, 2 = Hairpin) */
-async function switchMode(page, n) {
-  await page.click(`.mode-btn:nth-child(${n})`);
+/** Click a mode button by name ('gamma', 'hairpin', or 'ocfd') */
+async function switchMode(page, modeName) {
+  const labels = { gamma: 'Gamma Match', hairpin: 'Beta (Hairpin) Match', ocfd: 'OCFD' };
+  const label = labels[modeName];
+  if (!label) throw new Error(`Unknown mode: ${modeName}`);
+  await page.evaluate((lbl) => {
+    const btn = [...document.querySelectorAll('.mode-btn')]
+      .find(b => b.textContent.trim() === lbl);
+    if (!btn) throw new Error(`Mode button "${lbl}" not found`);
+    btn.click();
+  }, label);
   await wait(page, 300);
 }
 
@@ -246,7 +254,7 @@ async function run() {
     // ----------------------------------------------------------
     console.log('\n4. Hairpin Match Controls');
 
-    await switchMode(page, 2); // switch to Hairpin
+    await switchMode(page, 'hairpin'); // switch to Hairpin
 
     await test('4.1 Shortening slider changes results', async () => {
       await autoTune(page);
@@ -274,7 +282,7 @@ async function run() {
     // ----------------------------------------------------------
     console.log('\n5. Presets');
 
-    await switchMode(page, 1); // back to Gamma
+    await switchMode(page, 'gamma'); // back to Gamma
 
     const presetLabels = await page.$$eval('.preset-btn', btns =>
       btns.map(b => b.textContent)
@@ -322,25 +330,108 @@ async function run() {
     console.log('\n6. Mode Switching');
 
     await test('6.1 Gamma mode title', async () => {
-      await switchMode(page, 1);
+      await switchMode(page, 'gamma');
       const title = await page.$eval('.title', el => el.textContent);
       assert(title === 'Gamma Match', `Title is "${title}"`);
     });
 
     await test('6.2 Hairpin mode title', async () => {
-      await switchMode(page, 2);
+      await switchMode(page, 'hairpin');
       const title = await page.$eval('.title', el => el.textContent);
       assert(title === 'Beta (Hairpin) Match', `Title is "${title}"`);
     });
 
-    await test('6.3 Antenna impedance preserved across mode switch', async () => {
-      await switchMode(page, 1); // Gamma
+    await test('6.3 OCFD mode title', async () => {
+      await switchMode(page, 'ocfd');
+      const title = await page.evaluate(() =>
+        document.querySelector('.title').textContent
+      );
+      assert(title === 'Off-Center Fed Doublet', `Title is "${title}"`);
+    });
+
+    await test('6.4 Diagram changes with each mode', async () => {
+      await switchMode(page, 'gamma'); // Gamma
+      await wait(page, 200);
+      const gammaDiag = await page.evaluate(() => ({
+        svg: document.querySelector('.diagram-svg').innerHTML,
+        title: document.querySelector('.diagram-title').textContent,
+      }));
+      await switchMode(page, 'hairpin'); // Hairpin
+      await wait(page, 200);
+      const hairpinDiag = await page.evaluate(() => ({
+        svg: document.querySelector('.diagram-svg').innerHTML,
+        title: document.querySelector('.diagram-title').textContent,
+      }));
+      await switchMode(page, 'ocfd'); // OCFD
+      await wait(page, 200);
+      const ocfdDiag = await page.evaluate(() => ({
+        svg: document.querySelector('.diagram-svg').innerHTML,
+        title: document.querySelector('.diagram-title').textContent,
+      }));
+      assert(gammaDiag.svg !== hairpinDiag.svg,
+        'Gamma and Hairpin diagrams have identical SVG');
+      assert(hairpinDiag.svg !== ocfdDiag.svg,
+        'Hairpin and OCFD diagrams have identical SVG');
+      assert(gammaDiag.svg !== ocfdDiag.svg,
+        'Gamma and OCFD diagrams have identical SVG');
+      assert(gammaDiag.title !== hairpinDiag.title,
+        'Gamma and Hairpin diagram titles are identical');
+      assert(hairpinDiag.title !== ocfdDiag.title,
+        'Hairpin and OCFD diagram titles are identical');
+    });
+
+    await test('6.5 Smith chart overlay changes with each mode', async () => {
+      await switchMode(page, 'gamma');
+      await wait(page, 200);
+      const gammaSmith = await page.evaluate(() =>
+        document.querySelector('.smith-chart').innerHTML
+      );
+      await switchMode(page, 'hairpin');
+      await wait(page, 200);
+      const hairpinSmith = await page.evaluate(() =>
+        document.querySelector('.smith-chart').innerHTML
+      );
+      await switchMode(page, 'ocfd');
+      await wait(page, 200);
+      const ocfdSmith = await page.evaluate(() =>
+        document.querySelector('.smith-chart').innerHTML
+      );
+      assert(gammaSmith !== hairpinSmith,
+        'Smith chart identical in Gamma and Hairpin modes');
+      assert(hairpinSmith !== ocfdSmith,
+        'Smith chart identical in Hairpin and OCFD modes');
+    });
+
+    await test('6.6 Controls change with each mode', async () => {
+      await switchMode(page, 'gamma');
+      await wait(page, 200);
+      const gammaCtrl = await page.evaluate(() =>
+        document.querySelector('.controls').innerHTML
+      );
+      await switchMode(page, 'hairpin');
+      await wait(page, 200);
+      const hairpinCtrl = await page.evaluate(() =>
+        document.querySelector('.controls').innerHTML
+      );
+      await switchMode(page, 'ocfd');
+      await wait(page, 200);
+      const ocfdCtrl = await page.evaluate(() =>
+        document.querySelector('.controls').innerHTML
+      );
+      assert(gammaCtrl !== hairpinCtrl,
+        'Controls identical in Gamma and Hairpin modes');
+      assert(hairpinCtrl !== ocfdCtrl,
+        'Controls identical in Hairpin and OCFD modes');
+    });
+
+    await test('6.7 Antenna impedance preserved across mode switch', async () => {
+      await switchMode(page, 'gamma'); // Gamma
       await setSlider(page, 'Antenna resistance', 40);
       await setSlider(page, 'Antenna reactance', -20);
       const r1 = await getSliderValue(page, 'Antenna resistance');
       const x1 = await getSliderValue(page, 'Antenna reactance');
-      await switchMode(page, 2); // Hairpin
-      await switchMode(page, 1); // back to Gamma
+      await switchMode(page, 'hairpin'); // Hairpin
+      await switchMode(page, 'gamma'); // back to Gamma
       const r2 = await getSliderValue(page, 'Antenna resistance');
       const x2 = await getSliderValue(page, 'Antenna reactance');
       assert(r1 === r2, `R changed: ${r1} → ${r2}`);
@@ -416,14 +507,14 @@ async function run() {
     });
 
     await test('8.2 Capacitor pF shown in Gamma mode', async () => {
-      await switchMode(page, 1);
+      await switchMode(page, 'gamma');
       await wait(page, 200);
       const text = await page.$eval('body', body => body.innerText);
       assert(text.includes('pF'), 'pF not shown in Gamma mode with frequency set');
     });
 
     await test('8.3 Shortening mm/% shown in Hairpin mode', async () => {
-      await switchMode(page, 2);
+      await switchMode(page, 'hairpin');
       await wait(page, 200);
       const text = await page.$eval('body', body => body.innerText);
       assert(text.includes('mm per side'), 'Shortening mm not shown');

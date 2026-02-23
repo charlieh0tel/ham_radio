@@ -52,10 +52,10 @@
     }
 
     .mode-btn {
-      padding: 10px 20px;
+      padding: 14px 28px;
       background: transparent;
       color: #888;
-      font-size: 13px;
+      font-size: 16px;
     }
 
     .mode-btn.active-gamma {
@@ -68,9 +68,14 @@
       color: #000;
     }
 
+    .mode-btn.active-ocfd {
+      background: #ffd43b;
+      color: #000;
+    }
+
     /* Title */
     .title {
-      font-size: 18px;
+      font-size: 26px;
       font-weight: 500;
       letter-spacing: 0.05em;
       color: #fff;
@@ -87,11 +92,11 @@
     }
 
     .preset-btn {
-      padding: 8px 14px;
+      padding: 10px 18px;
       background: #1a1a1a;
       color: #888;
       border: 1px solid #333;
-      font-size: 11px;
+      font-size: 14px;
       font-weight: 400;
     }
 
@@ -101,13 +106,14 @@
     }
 
     .auto-tune-btn {
-      padding: 8px 20px;
+      padding: 10px 26px;
       color: #000;
-      font-size: 11px;
+      font-size: 14px;
     }
 
     .auto-tune-btn.gamma { background: #da77f2; }
     .auto-tune-btn.hairpin { background: #00ff88; }
+    .auto-tune-btn.ocfd { background: #ffd43b; }
 
     /* Smith Chart */
     .smith-chart {
@@ -122,19 +128,19 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      min-width: 300px;
+      min-width: 420px;
     }
 
     .control-panel {
       background: #1a1a1a;
-      padding: 14px;
+      padding: 18px;
       border-radius: 8px;
       border: 1px solid #333;
     }
 
     .control-header {
-      font-size: 11px;
-      margin-bottom: 10px;
+      font-size: 14px;
+      margin-bottom: 12px;
       font-weight: 600;
     }
 
@@ -148,7 +154,7 @@
     }
 
     .control-text {
-      font-size: 12px;
+      font-size: 15px;
       color: #888;
     }
 
@@ -158,27 +164,27 @@
     }
 
     .control-result {
-      font-size: 11px;
+      font-size: 14px;
       color: #aaa;
       margin-top: 6px;
     }
 
     .control-hint {
-      font-size: 10px;
+      font-size: 13px;
       color: #666;
       margin-top: 2px;
     }
 
     .impedance-display {
       margin-top: 8px;
-      font-size: 13px;
+      font-size: 17px;
       color: #fff;
       font-weight: 500;
     }
 
     /* Result Panel */
     .result-panel {
-      padding: 14px;
+      padding: 18px;
       border-radius: 8px;
       border-width: 2px;
       border-style: solid;
@@ -188,14 +194,14 @@
     .result-panel.normal { background: #1a1a1a; }
 
     .result-z {
-      font-size: 18px;
+      font-size: 22px;
       color: #fff;
       margin-bottom: 6px;
       font-weight: 600;
     }
 
     .result-swr {
-      font-size: 16px;
+      font-size: 20px;
       font-weight: 600;
     }
 
@@ -204,18 +210,52 @@
     .swr-ok { color: #ffd43b; }
     .swr-poor { color: #ff6b6b; }
 
+    .swr-table {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .swr-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+    }
+
+    .swr-row-label {
+      color: #888;
+      font-size: 15px;
+    }
+
+    .swr-row-value {
+      font-weight: 600;
+    }
+
+    .feedline-selector {
+      display: flex;
+      gap: 6px;
+    }
+
+    .swr-row-best {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
     /* Physical Diagram */
     .diagram-container {
       background: #111;
       padding: 20px;
       border-radius: 8px;
-      max-width: 650px;
+      max-width: 900px;
       width: 100%;
     }
 
     .diagram-title {
       color: #888;
-      font-size: 11px;
+      font-size: 14px;
       margin-bottom: 12px;
       text-align: center;
       font-weight: 600;
@@ -228,8 +268,8 @@
 
     /* Info */
     .info {
-      max-width: 680px;
-      font-size: 12px;
+      max-width: 900px;
+      font-size: 15px;
       color: #666;
       line-height: 1.6;
       text-align: center;
@@ -241,7 +281,7 @@
 
     /* Footer */
     .footer {
-      font-size: 11px;
+      font-size: 14px;
       color: #555;
       text-align: center;
       margin-top: 12px;
@@ -255,7 +295,7 @@
     .physical-params {
       display: flex;
       gap: 16px;
-      font-size: 11px;
+      font-size: 14px;
       color: #666;
     }
 
@@ -266,14 +306,14 @@
     }
 
     .physical-params input {
-      width: 60px;
-      padding: 4px 6px;
+      width: 80px;
+      padding: 6px 8px;
       background: #1a1a1a;
       border: 1px solid #333;
       border-radius: 4px;
       color: #aaa;
       font-family: inherit;
-      font-size: 11px;
+      font-size: 14px;
     }
 
     .physical-params input:focus {
@@ -282,7 +322,7 @@
     }
 
     .physical-hint {
-      font-size: 10px;
+      font-size: 13px;
       color: #888;
       margin-top: 4px;
     }
@@ -476,7 +516,7 @@
     const Z0 = 50;
 
     /** @type {number} Smith chart size in pixels */
-    const SIZE = 520;
+    const SIZE = 780;
 
     /** @type {number} Smith chart center X */
     const CX = SIZE / 2;
@@ -495,6 +535,7 @@
       step3: '#66d9e8',
       final: '#4dabf7',
       hairpin: '#00ff88',
+      ocfd: '#ffd43b',
       coax: '#4dabf7',
       // Grid colors (dark to light)
       grid: '#444',
@@ -505,11 +546,27 @@
       wire: '#888'
     });
 
-    /** @type {Preset[]} Antenna presets */
-    const PRESETS = Object.freeze([
+    /** @type {number[]} Feedline impedances for OCFD SWR calculations */
+    const FEEDLINE_IMPEDANCES = Object.freeze([50, 300, 450]);
+
+    /** @type {Preset[]} Gamma match antenna presets */
+    const GAMMA_PRESETS = Object.freeze([
       { label: 'Dipole (73+j43Ω)', r: 73, x: 43 },
       { label: 'Yagi (25Ω)', r: 25, x: 0 },
-      { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 }
+      { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 },
+    ]);
+
+    /** @type {Preset[]} Hairpin match antenna presets */
+    const HAIRPIN_PRESETS = Object.freeze([
+      { label: 'Yagi (25Ω)', r: 25, x: 0 },
+      { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 },
+      { label: 'Dipole (73Ω)', r: 73, x: 0 },
+    ]);
+
+    /** @type {Preset[]} OCFD center impedance presets (includes feedOffset) */
+    const OCFD_PRESETS = Object.freeze([
+      { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, feedOffset: 33 },
+      { label: 'Low Height (~λ/4 AGL)', r: 55, x: 0, feedOffset: 33 },
     ]);
 
     /** @type {number[]} Normalized resistance values for Smith chart circles */
@@ -540,23 +597,11 @@
       ok: 2.0
     });
 
-    /** @type {Object} Auto-tune parameter bounds */
-    const TUNE_BOUNDS = Object.freeze({
-      gamma: {
-        tap: { min: 1, max: 2.5 },
-        rod: { min: 20, max: 400 },
-        cap: { min: 0, max: 100 }
-      },
-      hairpin: {
-        shorten: { min: 0, max: 60 },
-        hp: { min: 15, max: 200 }
-      }
-    });
-
     /** @type {Object} Match mode constants */
     const MODES = Object.freeze({
       GAMMA: 'gamma',
-      HAIRPIN: 'hairpin'
+      HAIRPIN: 'hairpin',
+      OCFD: 'ocfd'
     });
 
     /** @type {Object} URL parameter keys */
@@ -570,7 +615,11 @@
       shortening: 'short',
       hairpinX: 'hp',
       freqMHz: 'freq',
-      elementDiamMm: 'diam'
+      elementDiamMm: 'diam',
+      ocfdR: 'ocr',
+      ocfdX: 'ocx',
+      feedOffset: 'off',
+      feedlineZ0: 'z0'
     });
 
     // ============================================================
@@ -578,7 +627,9 @@
     // ============================================================
 
     /**
-     * Create complex number from resistance and reactance
+     * Create complex number from resistance and reactance.
+     * Intentionally short name — used heavily in impedance math expressions
+     * where verbosity would hurt readability.
      * @param {number} r - Resistance
      * @param {number} x - Reactance
      * @returns {Object} Complex number
@@ -651,12 +702,27 @@
     const addSeriesReactance = (z, xSeries) => Z(z.r, z.x + xSeries);
 
     /**
-     * Calculate SWR from impedance
+     * Calculate SWR from impedance (relative to Z0=50Ω)
      * @param {Impedance} z - Impedance
      * @returns {number} SWR value
      */
     const calcSWR = (z) => {
       const gamma = zToGamma(z);
+      const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
+      if (gammaMag >= 1) return SWR_MAX;
+      return (1 + gammaMag) / (1 - gammaMag);
+    };
+
+    /**
+     * Calculate SWR for arbitrary feedline impedance Z₀
+     * Γ = (Z_feed − Z₀) / (Z_feed + Z₀), SWR = (1+|Γ|) / (1−|Γ|)
+     * @param {Impedance} z - Feed impedance
+     * @param {number} z0 - Feedline characteristic impedance
+     * @returns {number} SWR value
+     */
+    const calcSWRForZ0 = (z, z0) => {
+      const zc = C(z.r, z.x);
+      const gamma = divide(subtract(zc, z0), add(zc, z0));
       const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
       if (gammaMag >= 1) return SWR_MAX;
       return (1 + gammaMag) / (1 - gammaMag);
@@ -815,158 +881,6 @@
       }, []);
     };
 
-    /**
-     * Hook for gamma match calculations
-     * @param {number} antR - Antenna resistance
-     * @param {number} antX - Antenna reactance
-     * @param {number} tapRatio - Tap ratio
-     * @param {number} gammaRodX - Gamma rod reactance
-     * @param {number} seriesCapX - Series capacitor reactance
-     * @returns {GammaMatchResult}
-     */
-    const useGammaMatch = (antR, antX, tapRatio, gammaRodX, seriesCapX) => {
-      const { zToScreen } = useSmithChart();
-
-      return useMemo(() => {
-        const antZ = Z(antR, antX);
-
-        // Tap ratio path
-        const tapPath = [];
-        for (let i = 0; i <= PATH_STEPS; i++) {
-          const ratio = 1 + (tapRatio - 1) * (i / PATH_STEPS);
-          const z = applyTapRatio(antZ, ratio);
-          if (z.r > 0 && z.r < PATH_R_MAX) {
-            tapPath.push(zToScreen(z));
-          }
-        }
-        const afterTap = applyTapRatio(antZ, tapRatio);
-
-        // Shunt inductance arc along constant-G circle
-        const shuntArc = calcShuntArc(afterTap, gammaRodX, zToScreen);
-
-        // Series capacitor path
-        const seriesPath = [];
-        for (let i = 0; i <= PATH_STEPS; i++) {
-          const xC = -seriesCapX * (i / PATH_STEPS);
-          const z = addSeriesReactance(shuntArc.endZ, xC);
-          seriesPath.push(zToScreen(z));
-        }
-        const finalZ = addSeriesReactance(shuntArc.endZ, -seriesCapX);
-
-        return {
-          origPt: zToScreen(antZ),
-          afterTapPt: zToScreen(afterTap),
-          afterShuntPt: shuntArc.endPt,
-          finalPt: zToScreen(finalZ),
-          afterTap,
-          afterShunt: shuntArc.endZ,
-          finalZ,
-          tapPath,
-          shuntArc,
-          seriesPath,
-          swr: calcSWR(finalZ)
-        };
-      }, [antR, antX, tapRatio, gammaRodX, seriesCapX, zToScreen]);
-    };
-
-    /**
-     * Hook for hairpin/beta match calculations
-     * @param {number} antR - Antenna resistance
-     * @param {number} antX - Antenna reactance
-     * @param {number} shortening - Shortening reactance
-     * @param {number} hairpinX - Hairpin reactance
-     * @returns {HairpinMatchResult}
-     */
-    const useHairpinMatch = (antR, antX, shortening, hairpinX) => {
-      const { zToScreen } = useSmithChart();
-
-      return useMemo(() => {
-        const antZ = Z(antR, antX);
-
-        // Shortening path
-        const shortenPath = [];
-        for (let i = 0; i <= PATH_STEPS; i++) {
-          const z = Z(antR, antX - shortening * (i / PATH_STEPS));
-          shortenPath.push(zToScreen(z));
-        }
-        const afterShorten = Z(antR, antX - shortening);
-
-        // Hairpin inductance arc along constant-G circle
-        const hpArc = calcShuntArc(afterShorten, hairpinX, zToScreen);
-
-        return {
-          origPt: zToScreen(antZ),
-          shortenedPt: zToScreen(afterShorten),
-          finalPt: hpArc.endPt,
-          afterShorten,
-          finalZ: hpArc.endZ,
-          shortenPath,
-          hpArc,
-          swr: calcSWR(hpArc.endZ)
-        };
-      }, [antR, antX, shortening, hairpinX, zToScreen]);
-    };
-
-    /**
-     * Compute optimal gamma match parameters for given impedance
-     * @param {Impedance} z - Antenna impedance
-     * @returns {Object} Optimal { tapRatio, gammaRodX, seriesCapX }
-     */
-    const tuneGamma = (z) => {
-      const { tap: t, rod: rd, cap: c } = TUNE_BOUNDS.gamma;
-      const result = fmin.nelderMead(([tap, rod, cap]) => {
-        if (tap < t.min || tap > t.max || rod < rd.min || rod > rd.max || cap < c.min || cap > c.max) {
-          return SWR_MAX;
-        }
-        const z1 = applyTapRatio(z, tap);
-        const z2 = addShuntReactance(z1, rod);
-        const z3 = addSeriesReactance(z2, -cap);
-        return calcSWR(z3);
-      }, [(t.min + t.max) / 2, (rd.min + rd.max) / 2, (c.min + c.max) / 2]);
-
-      return {
-        tapRatio: Math.round(result.x[0] * 100) / 100,
-        gammaRodX: Math.round(result.x[1]),
-        seriesCapX: Math.round(result.x[2])
-      };
-    };
-
-    /**
-     * Compute optimal hairpin match parameters for given impedance
-     * @param {Impedance} z - Antenna impedance
-     * @returns {Object} Optimal { shortening, hairpinX }
-     */
-    const tuneHairpin = (z) => {
-      const { shorten: s, hp: h } = TUNE_BOUNDS.hairpin;
-      const result = fmin.nelderMead(([shorten, hp]) => {
-        if (shorten < s.min || shorten > s.max || hp < h.min || hp > h.max) {
-          return SWR_MAX;
-        }
-        const z1 = Z(z.r, z.x - shorten);
-        const z2 = addShuntReactance(z1, hp);
-        return calcSWR(z2);
-      }, [(s.min + s.max) / 2, (h.min + h.max) / 2]);
-
-      return {
-        shortening: Math.round(result.x[0]),
-        hairpinX: Math.round(result.x[1])
-      };
-    };
-
-    /**
-     * Hook providing memoized auto-tune functions for current antenna impedance
-     * @param {number} antR - Antenna resistance
-     * @param {number} antX - Antenna reactance
-     * @returns {Object} { autoTuneGamma, autoTuneHairpin }
-     */
-    const useAutoTune = (antR, antX) => {
-      const antZ = Z(antR, antX);
-      return {
-        autoTuneGamma: useCallback(() => tuneGamma(antZ), [antR, antX]),
-        autoTuneHairpin: useCallback(() => tuneHairpin(antZ), [antR, antX])
-      };
-    };
-
     // ============================================================
     // Sub-Components
     // ============================================================
@@ -1015,54 +929,750 @@
       </div>
     );
 
-    /** Gamma match physical arrangement diagram */
-    const GammaDiagram = () => (
-      <svg viewBox="0 0 450 130" className="diagram-svg">
-        {/* Driven element */}
-        <line x1="50" y1="50" x2="400" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
-        <circle cx="225" cy="50" r="3" fill="#333" />
-        <text x="225" y="35" fill={COLORS.element} fontSize="10" textAnchor="middle">Driven Element ≈ λ/2</text>
-        {/* Gamma rod */}
-        <line x1="225" y1="65" x2="310" y2="65" stroke={COLORS.step2} strokeWidth="4" strokeLinecap="round" />
-        <text x="268" y="80" fill={COLORS.step2} fontSize="9" textAnchor="middle">Gamma Rod (+jX)</text>
-        {/* Tap point connection */}
-        <line x1="310" y1="50" x2="310" y2="65" stroke={COLORS.step1} strokeWidth="2" />
-        <circle cx="310" cy="50" r="4" fill={COLORS.step1} />
-        <text x="310" y="100" fill={COLORS.step1} fontSize="8" textAnchor="middle">tap point</text>
-        {/* Series capacitor */}
-        <line x1="225" y1="65" x2="183" y2="65" stroke={COLORS.wire} strokeWidth="2" />
-        <line x1="183" y1="59" x2="183" y2="71" stroke={COLORS.step3} strokeWidth="2" />
-        <line x1="177" y1="59" x2="177" y2="71" stroke={COLORS.step3} strokeWidth="2" />
-        <line x1="177" y1="65" x2="150" y2="65" stroke={COLORS.wire} strokeWidth="2" />
-        <text x="180" y="84" fill={COLORS.step3} fontSize="9" textAnchor="middle">C</text>
-        {/* Feed lines to coax */}
-        <line x1="225" y1="50" x2="225" y2="56" stroke={COLORS.wire} strokeWidth="2" />
-        <line x1="225" y1="56" x2="150" y2="56" stroke={COLORS.wire} strokeWidth="2" />
-        <line x1="150" y1="56" x2="150" y2="65" stroke={COLORS.coax} strokeWidth="3" />
-        <line x1="150" y1="60" x2="100" y2="60" stroke={COLORS.coax} strokeWidth="3" />
-        <text x="75" y="64" fill={COLORS.coax} fontSize="9" textAnchor="middle">50Ω</text>
-      </svg>
-    );
+    // ============================================================
+    // Per-Mode Definitions
+    // ============================================================
 
-    /** Hairpin/beta match physical arrangement diagram */
-    const HairpinDiagram = () => (
-      <svg viewBox="0 0 450 130" className="diagram-svg">
-        {/* Driven element - split with gap */}
-        <line x1="50" y1="50" x2="212" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
-        <line x1="238" y1="50" x2="400" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
-        <text x="131" y="35" fill={COLORS.element} fontSize="10" textAnchor="middle">&lt; λ/4</text>
-        <text x="319" y="35" fill={COLORS.element} fontSize="10" textAnchor="middle">&lt; λ/4</text>
-        <path d="M 215 56 L 215 90 Q 215 100 225 100 Q 235 100 235 90 L 235 56"
-          fill="none" stroke={COLORS.hairpin} strokeWidth="4" strokeLinecap="round" />
-        <text x="225" y="118" fill={COLORS.hairpin} fontSize="9" textAnchor="middle">Hairpin (+jX)</text>
-        <line x1="215" y1="56" x2="150" y2="56" stroke={COLORS.wire} strokeWidth="2" />
-        <line x1="235" y1="56" x2="235" y2="70" stroke={COLORS.wire} strokeWidth="2" />
-        <line x1="235" y1="70" x2="150" y2="70" stroke={COLORS.wire} strokeWidth="2" />
-        <line x1="150" y1="56" x2="150" y2="70" stroke={COLORS.coax} strokeWidth="3" />
-        <line x1="150" y1="63" x2="100" y2="63" stroke={COLORS.coax} strokeWidth="3" />
-        <text x="75" y="67" fill={COLORS.coax} fontSize="9" textAnchor="middle">50Ω</text>
-      </svg>
-    );
+    /** Gamma match mode — all mode-specific behavior in one object */
+    const gammaMode = {
+      key: 'gamma',
+      title: 'Gamma Match',
+      buttonLabel: 'Gamma Match',
+      activeClass: 'active-gamma',
+      diagramTitle: 'GAMMA MATCH PHYSICAL ARRANGEMENT',
+      hasAutoTune: true,
+      showElementDiam: false,
+      presets: GAMMA_PRESETS,
+      impedanceKeys: { r: 'antR', x: 'antX' },
+
+      serializeUrl(p) {
+        return {
+          [URL_KEYS.antR]: Math.round(p.antR),
+          [URL_KEYS.antX]: Math.round(p.antX),
+          [URL_KEYS.tapRatio]: p.tapRatio.toFixed(2),
+          [URL_KEYS.gammaRodX]: Math.round(p.gammaRodX),
+          [URL_KEYS.seriesCapX]: Math.round(p.seriesCapX),
+        };
+      },
+
+      tune(z) {
+        const bounds = {
+          tap: { min: 1, max: 2.5 },
+          rod: { min: 20, max: 400 },
+          cap: { min: 0, max: 100 }
+        };
+        const { tap: t, rod: rd, cap: c } = bounds;
+        const result = fmin.nelderMead(([tap, rod, cap]) => {
+          if (tap < t.min || tap > t.max || rod < rd.min || rod > rd.max || cap < c.min || cap > c.max) {
+            return SWR_MAX;
+          }
+          const z1 = applyTapRatio(z, tap);
+          const z2 = addShuntReactance(z1, rod);
+          const z3 = addSeriesReactance(z2, -cap);
+          return calcSWR(z3);
+        }, [(t.min + t.max) / 2, (rd.min + rd.max) / 2, (c.min + c.max) / 2]);
+        return {
+          tapRatio: Math.round(result.x[0] * 100) / 100,
+          gammaRodX: Math.round(result.x[1]),
+          seriesCapX: Math.round(result.x[2])
+        };
+      },
+
+      calc(p, zToScreen) {
+        const antZ = Z(p.antR, p.antX);
+        // Tap ratio path
+        const tapPath = [];
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const ratio = 1 + (p.tapRatio - 1) * (i / PATH_STEPS);
+          const z = applyTapRatio(antZ, ratio);
+          if (z.r > 0 && z.r < PATH_R_MAX) {
+            tapPath.push(zToScreen(z));
+          }
+        }
+        const afterTap = applyTapRatio(antZ, p.tapRatio);
+        // Shunt inductance arc along constant-G circle
+        const shuntArc = calcShuntArc(afterTap, p.gammaRodX, zToScreen);
+        // Series capacitor path
+        const seriesPath = [];
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const xC = -p.seriesCapX * (i / PATH_STEPS);
+          const z = addSeriesReactance(shuntArc.endZ, xC);
+          seriesPath.push(zToScreen(z));
+        }
+        const finalZ = addSeriesReactance(shuntArc.endZ, -p.seriesCapX);
+        return {
+          origPt: zToScreen(antZ),
+          afterTapPt: zToScreen(afterTap),
+          afterShuntPt: shuntArc.endPt,
+          finalPt: zToScreen(finalZ),
+          afterTap,
+          afterShunt: shuntArc.endZ,
+          finalZ,
+          tapPath,
+          shuntArc,
+          seriesPath,
+          swr: calcSWR(finalZ)
+        };
+      },
+
+      physical(p, base) {
+        const capPf = p.seriesCapX > 0
+          ? 1e12 / (2 * Math.PI * parseFloat(p.freqMHz) * 1e6 * p.seriesCapX)
+          : null;
+        const tapDistMm = (base.lambdaMm / (2 * Math.PI)) * Math.acos(1 / p.tapRatio);
+        return { capPf, tapDistMm };
+      },
+
+      SmithOverlay: ({ result, state }) => (
+        <>
+          {/* Tap ratio path */}
+          {result.tapPath.length > 1 && (
+            <path
+              d={pointsToPath(result.tapPath)}
+              fill="none" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
+            />
+          )}
+          {/* Shunt inductance path - true arc */}
+          <path
+            d={result.shuntArc.arcPath}
+            fill="none" stroke={COLORS.step2} strokeWidth="3" strokeLinecap="round"
+          />
+          {/* Series capacitor path */}
+          {result.seriesPath.length > 1 && (
+            <path
+              d={pointsToPath(result.seriesPath)}
+              fill="none" stroke={COLORS.step3} strokeWidth="3" strokeLinecap="round"
+            />
+          )}
+          {/* Arrows */}
+          {result.tapPath.length > 3 && (
+            <ArrowHead x={result.afterTapPt.x} y={result.afterTapPt.y}
+              angle={getArrowAngle(result.tapPath, result.afterTapPt)} color={COLORS.step1} />
+          )}
+          <ArrowHead x={result.afterShuntPt.x} y={result.afterShuntPt.y}
+            angle={result.shuntArc.arrowAngle} color={COLORS.step2} />
+          {result.seriesPath.length > 3 && (
+            <ArrowHead x={result.finalPt.x} y={result.finalPt.y}
+              angle={getArrowAngle(result.seriesPath, result.finalPt)} color={COLORS.step3} />
+          )}
+          {/* Points */}
+          <circle cx={result.origPt.x} cy={result.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
+          <text x={result.origPt.x - 14} y={result.origPt.y - 14}
+            fill={COLORS.orig} fontSize="11" fontWeight="600" textAnchor="end">
+            {'\u2460'} {Z(state.antR, state.antX).formatLabel()}
+          </text>
+          <circle cx={result.afterTapPt.x} cy={result.afterTapPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
+          <text x={result.afterTapPt.x + 12} y={result.afterTapPt.y - 8}
+            fill={COLORS.step1} fontSize="10" fontWeight="600">
+            {'\u2461'} {result.afterTap.formatLabel()}
+          </text>
+          <circle cx={result.afterShuntPt.x} cy={result.afterShuntPt.y} r="7" fill={COLORS.step2} stroke="#fff" strokeWidth="2" />
+          <text x={result.afterShuntPt.x + 12} y={result.afterShuntPt.y - 8}
+            fill={COLORS.step2} fontSize="10" fontWeight="600">
+            {'\u2462'} {result.afterShunt.formatLabel()}
+          </text>
+          <circle cx={result.finalPt.x} cy={result.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
+          <text x={result.finalPt.x + 14} y={result.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
+            {'\u2463'} {result.finalZ.formatLabel()}
+          </text>
+        </>
+      ),
+
+      Controls: ({ state, result, physical, setNum, freqMHz }) => (
+        <>
+          <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE'} tooltip="Starting impedance of the antenna feedpoint">
+            <label className="control-label">
+              <span className="control-text">Resistance: {state.antR}{'\u03A9'}</span>
+              <input type="range" min="10" max="150" value={state.antR}
+                onChange={setNum('antR')}
+                aria-label="Antenna resistance"
+                className="control-slider" style={{ accentColor: COLORS.orig }} />
+            </label>
+            <label className="control-label">
+              <span className="control-text">
+                Reactance: {state.antX >= 0 ? '+' : ''}j{state.antX}{'\u03A9'} {state.antX > 0 ? '(L)' : state.antX < 0 ? '(C)' : ''}
+              </span>
+              <input type="range" min="-100" max="100" value={state.antX}
+                onChange={setNum('antX')}
+                aria-label="Antenna reactance"
+                className="control-slider" style={{ accentColor: COLORS.orig }} />
+            </label>
+            <div className="impedance-display">
+              Z = {state.antR} {state.antX >= 0 ? '+' : '\u2212'} j{Math.abs(state.antX)} {'\u03A9'}
+            </div>
+          </ControlPanel>
+
+          <ControlPanel color={COLORS.step1} title={'\u2461 AUTOTRANSFORMER (TAP RATIO)'} tooltip="Impedance step-up via tap position on driven element">
+            <label className="control-label">
+              <span className="control-text">n = {state.tapRatio.toFixed(2)} (Z {'\u00D7'} {(state.tapRatio * state.tapRatio).toFixed(2)})</span>
+              <input type="range" min="1" max="2.5" step="0.01" value={state.tapRatio}
+                onChange={setNum('tapRatio')}
+                aria-label="Tap ratio"
+                className="control-slider" style={{ accentColor: COLORS.step1 }} />
+            </label>
+            <div className="control-result">{'\u2192'} {result.afterTap.format()} {'\u03A9'}</div>
+            {physical && (
+              <div className="physical-hint">{'\u2248'} {Math.round(physical.tapDistMm)} mm from center</div>
+            )}
+          </ControlPanel>
+
+          <ControlPanel color={COLORS.step2} title={'\u2462 GAMMA ROD (SHUNT +jX)'} tooltip="Parallel inductance from gamma rod coupling">
+            <label className="control-label">
+              <span className="control-text">Rod reactance: +j{state.gammaRodX}{'\u03A9'}</span>
+              <input type="range" min="20" max="400" value={state.gammaRodX}
+                onChange={setNum('gammaRodX')}
+                aria-label="Gamma rod reactance"
+                className="control-slider" style={{ accentColor: COLORS.step2 }} />
+            </label>
+            <div className="control-result">{'\u2192'} {result.afterShunt.format()} {'\u03A9'}</div>
+          </ControlPanel>
+
+          <ControlPanel color={COLORS.step3} title={'\u2463 SERIES CAPACITOR'} tooltip="Cancels inductive reactance to reach 50\u03A9">
+            <label className="control-label">
+              <span className="control-text">Cap reactance: {'\u2212'}j{state.seriesCapX}{'\u03A9'}</span>
+              <input type="range" min="0" max="100" value={state.seriesCapX}
+                onChange={setNum('seriesCapX')}
+                aria-label="Series capacitor reactance"
+                className="control-slider" style={{ accentColor: COLORS.step3 }} />
+            </label>
+            {physical && physical.capPf && (
+              <div className="physical-hint">{'\u2248'} {Math.round(physical.capPf)} pF at {freqMHz} MHz</div>
+            )}
+          </ControlPanel>
+
+          <div className={`result-panel ${result.swr < 1.5 ? 'good' : 'normal'}`}
+            style={{ borderColor: result.swr < 1.5 ? COLORS.hairpin : COLORS.final }}
+            aria-live="polite">
+            <div className="control-header" style={{ color: COLORS.final }}>MATCHED IMPEDANCE</div>
+            <div className="result-z">Z = {result.finalZ.format()} {'\u03A9'}</div>
+            <div className={`result-swr ${getSWRClass(result.swr)}`}>
+              SWR = {result.swr.toFixed(3)} : 1
+            </div>
+          </div>
+        </>
+      ),
+
+      Diagram: () => (
+        <svg viewBox="0 0 450 130" className="diagram-svg">
+          {/* Driven element */}
+          <line x1="50" y1="50" x2="400" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
+          <circle cx="225" cy="50" r="3" fill="#333" />
+          <text x="225" y="35" fill={COLORS.element} fontSize="10" textAnchor="middle">Driven Element ≈ λ/2</text>
+          {/* Gamma rod */}
+          <line x1="225" y1="65" x2="310" y2="65" stroke={COLORS.step2} strokeWidth="4" strokeLinecap="round" />
+          <text x="268" y="80" fill={COLORS.step2} fontSize="9" textAnchor="middle">Gamma Rod (+jX)</text>
+          {/* Tap point connection */}
+          <line x1="310" y1="50" x2="310" y2="65" stroke={COLORS.step1} strokeWidth="2" />
+          <circle cx="310" cy="50" r="4" fill={COLORS.step1} />
+          <text x="310" y="100" fill={COLORS.step1} fontSize="8" textAnchor="middle">tap point</text>
+          {/* Series capacitor */}
+          <line x1="225" y1="65" x2="183" y2="65" stroke={COLORS.wire} strokeWidth="2" />
+          <line x1="183" y1="59" x2="183" y2="71" stroke={COLORS.step3} strokeWidth="2" />
+          <line x1="177" y1="59" x2="177" y2="71" stroke={COLORS.step3} strokeWidth="2" />
+          <line x1="177" y1="65" x2="150" y2="65" stroke={COLORS.wire} strokeWidth="2" />
+          <text x="180" y="84" fill={COLORS.step3} fontSize="9" textAnchor="middle">C</text>
+          {/* Feed lines to coax */}
+          <line x1="225" y1="50" x2="225" y2="56" stroke={COLORS.wire} strokeWidth="2" />
+          <line x1="225" y1="56" x2="150" y2="56" stroke={COLORS.wire} strokeWidth="2" />
+          <line x1="150" y1="56" x2="150" y2="65" stroke={COLORS.coax} strokeWidth="3" />
+          <line x1="150" y1="60" x2="100" y2="60" stroke={COLORS.coax} strokeWidth="3" />
+          <text x="75" y="64" fill={COLORS.coax} fontSize="9" textAnchor="middle">50Ω</text>
+        </svg>
+      ),
+
+      Legend: () => (
+        <>
+          <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
+          <text x="26" y="4" fill={COLORS.step1} fontSize="9">{'\u2461'} Autotransformer</text>
+          <line x1="0" y1="16" x2="20" y2="16" stroke={COLORS.step2} strokeWidth="3" />
+          <text x="26" y="20" fill={COLORS.step2} fontSize="9">{'\u2462'} Shunt L</text>
+          <line x1="0" y1="32" x2="20" y2="32" stroke={COLORS.step3} strokeWidth="3" />
+          <text x="26" y="36" fill={COLORS.step3} fontSize="9">{'\u2463'} Series C</text>
+        </>
+      ),
+
+      Info: () => (
+        <div className="info">
+          <strong>Gamma Match:</strong> Uses tap ratio to scale Z, shunt inductor (gamma rod), and series capacitor.
+          Works for both high-Z and low-Z antennas by adjusting the tap position.
+        </div>
+      ),
+    };
+
+    /** Hairpin/beta match mode — all mode-specific behavior in one object */
+    const hairpinMode = {
+      key: 'hairpin',
+      title: 'Beta (Hairpin) Match',
+      buttonLabel: 'Beta (Hairpin) Match',
+      activeClass: 'active-hairpin',
+      diagramTitle: 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT',
+      hasAutoTune: true,
+      showElementDiam: true,
+      presets: HAIRPIN_PRESETS,
+      impedanceKeys: { r: 'antR', x: 'antX' },
+
+      serializeUrl(p) {
+        return {
+          [URL_KEYS.antR]: Math.round(p.antR),
+          [URL_KEYS.antX]: Math.round(p.antX),
+          [URL_KEYS.shortening]: Math.round(p.shortening),
+          [URL_KEYS.hairpinX]: Math.round(p.hairpinX),
+        };
+      },
+
+      tune(z) {
+        const bounds = {
+          shorten: { min: 0, max: 60 },
+          hp: { min: 15, max: 200 }
+        };
+        const { shorten: s, hp: h } = bounds;
+        const result = fmin.nelderMead(([shorten, hp]) => {
+          if (shorten < s.min || shorten > s.max || hp < h.min || hp > h.max) {
+            return SWR_MAX;
+          }
+          const z1 = Z(z.r, z.x - shorten);
+          const z2 = addShuntReactance(z1, hp);
+          return calcSWR(z2);
+        }, [(s.min + s.max) / 2, (h.min + h.max) / 2]);
+        return {
+          shortening: Math.round(result.x[0]),
+          hairpinX: Math.round(result.x[1])
+        };
+      },
+
+      calc(p, zToScreen) {
+        const antZ = Z(p.antR, p.antX);
+        // Shortening path
+        const shortenPath = [];
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const z = Z(p.antR, p.antX - p.shortening * (i / PATH_STEPS));
+          shortenPath.push(zToScreen(z));
+        }
+        const afterShorten = Z(p.antR, p.antX - p.shortening);
+        // Hairpin inductance arc along constant-G circle
+        const hpArc = calcShuntArc(afterShorten, p.hairpinX, zToScreen);
+        return {
+          origPt: zToScreen(antZ),
+          shortenedPt: zToScreen(afterShorten),
+          finalPt: hpArc.endPt,
+          afterShorten,
+          finalZ: hpArc.endZ,
+          shortenPath,
+          hpArc,
+          swr: calcSWR(hpArc.endZ)
+        };
+      },
+
+      physical(p, base) {
+        const diam = parseFloat(p.elementDiamMm);
+        let shortenMm = null;
+        let shortenPct = null;
+        if (diam && diam > 0) {
+          const z0Ant = 276 * Math.log10(base.lambdaMm / (2 * diam));
+          const deltaLOverLambda = p.shortening / (z0Ant * Math.PI);
+          shortenMm = deltaLOverLambda * base.lambdaMm / 2;
+          shortenPct = (deltaLOverLambda / 0.5) * 100;
+        }
+        return { shortenMm, shortenPct };
+      },
+
+      SmithOverlay: ({ result, state }) => (
+        <>
+          {/* Shortening path */}
+          {result.shortenPath.length > 1 && (
+            <path
+              d={pointsToPath(result.shortenPath)}
+              fill="none" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
+            />
+          )}
+          {/* Hairpin path - true arc */}
+          <path
+            d={result.hpArc.arcPath}
+            fill="none" stroke={COLORS.hairpin} strokeWidth="3" strokeLinecap="round"
+          />
+          {/* Arrows */}
+          {result.shortenPath.length > 3 && (
+            <ArrowHead x={result.shortenedPt.x} y={result.shortenedPt.y}
+              angle={getArrowAngle(result.shortenPath, result.shortenedPt)} color={COLORS.step1} />
+          )}
+          <ArrowHead x={result.finalPt.x} y={result.finalPt.y}
+            angle={result.hpArc.arrowAngle} color={COLORS.hairpin} />
+          {/* Points */}
+          <circle cx={result.origPt.x} cy={result.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
+          <text x={result.origPt.x + 14} y={result.origPt.y + 4}
+            fill={COLORS.orig} fontSize="11" fontWeight="600">
+            {'\u2460'} {Z(state.antR, state.antX).formatLabel()}
+          </text>
+          <circle cx={result.shortenedPt.x} cy={result.shortenedPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
+          <text x={result.shortenedPt.x + 12} y={result.shortenedPt.y - 8}
+            fill={COLORS.step1} fontSize="10" fontWeight="600">
+            {'\u2461'} {result.afterShorten.formatLabel()}
+          </text>
+          <circle cx={result.finalPt.x} cy={result.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
+          <text x={result.finalPt.x + 14} y={result.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
+            {'\u2462'} {result.finalZ.formatLabel()}
+          </text>
+        </>
+      ),
+
+      Controls: ({ state, result, physical, setNum }) => (
+        <>
+          <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE'} tooltip="Starting impedance of the antenna feedpoint">
+            <label className="control-label">
+              <span className="control-text">Resistance: {state.antR}{'\u03A9'}</span>
+              <input type="range" min="10" max="150" value={state.antR}
+                onChange={setNum('antR')}
+                aria-label="Antenna resistance"
+                className="control-slider" style={{ accentColor: COLORS.orig }} />
+            </label>
+            <label className="control-label">
+              <span className="control-text">
+                Reactance: {state.antX >= 0 ? '+' : ''}j{state.antX}{'\u03A9'} {state.antX > 0 ? '(L)' : state.antX < 0 ? '(C)' : ''}
+              </span>
+              <input type="range" min="-100" max="100" value={state.antX}
+                onChange={setNum('antX')}
+                aria-label="Antenna reactance"
+                className="control-slider" style={{ accentColor: COLORS.orig }} />
+            </label>
+            <div className="impedance-display">
+              Z = {state.antR} {state.antX >= 0 ? '+' : '\u2212'} j{Math.abs(state.antX)} {'\u03A9'}
+            </div>
+          </ControlPanel>
+
+          <ControlPanel color={COLORS.step1} title={'\u2461 SHORTEN ELEMENT'} tooltip="Capacitive reactance from shortened driven element">
+            <label className="control-label">
+              <span className="control-text">Capacitive reactance: {'\u2212'}j{state.shortening}{'\u03A9'}</span>
+              <input type="range" min="0" max="60" value={state.shortening}
+                onChange={setNum('shortening')}
+                aria-label="Element shortening reactance"
+                className="control-slider" style={{ accentColor: COLORS.step1 }} />
+            </label>
+            <div className="control-result">{'\u2192'} {result.afterShorten.format()} {'\u03A9'}</div>
+            {physical && physical.shortenMm !== null ? (
+              <div className="physical-hint">
+                {'\u2248'} {physical.shortenMm.toFixed(1)} mm per side ({physical.shortenPct.toFixed(1)}% of {'\u03BB'}/2)
+              </div>
+            ) : (
+              <div className="control-hint">Constant-R circle (series reactance)</div>
+            )}
+          </ControlPanel>
+
+          <ControlPanel color={COLORS.hairpin} title={'\u2462 HAIRPIN (PARALLEL +jX)'} tooltip="Shunt inductor transforms impedance up to 50\u03A9">
+            <label className="control-label">
+              <span className="control-text">Inductive reactance: +j{state.hairpinX}{'\u03A9'}</span>
+              <input type="range" min="15" max="200" value={state.hairpinX}
+                onChange={setNum('hairpinX')}
+                aria-label="Hairpin reactance"
+                className="control-slider" style={{ accentColor: COLORS.hairpin }} />
+            </label>
+            <div className="control-hint">Constant-G circle (shunt susceptance)</div>
+          </ControlPanel>
+
+          <div className={`result-panel ${result.swr < 1.5 ? 'good' : 'normal'}`}
+            style={{ borderColor: result.swr < 1.5 ? COLORS.hairpin : COLORS.final }}
+            aria-live="polite">
+            <div className="control-header" style={{ color: COLORS.final }}>MATCHED IMPEDANCE</div>
+            <div className="result-z">Z = {result.finalZ.format()} {'\u03A9'}</div>
+            <div className={`result-swr ${getSWRClass(result.swr)}`}>
+              SWR = {result.swr.toFixed(3)} : 1
+            </div>
+          </div>
+        </>
+      ),
+
+      Diagram: () => (
+        <svg viewBox="0 0 450 130" className="diagram-svg">
+          {/* Driven element - split with gap */}
+          <line x1="50" y1="50" x2="212" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
+          <line x1="238" y1="50" x2="400" y2="50" stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
+          <text x="131" y="35" fill={COLORS.element} fontSize="10" textAnchor="middle">&lt; λ/4</text>
+          <text x="319" y="35" fill={COLORS.element} fontSize="10" textAnchor="middle">&lt; λ/4</text>
+          <path d="M 215 56 L 215 90 Q 215 100 225 100 Q 235 100 235 90 L 235 56"
+            fill="none" stroke={COLORS.hairpin} strokeWidth="4" strokeLinecap="round" />
+          <text x="225" y="118" fill={COLORS.hairpin} fontSize="9" textAnchor="middle">Hairpin (+jX)</text>
+          <line x1="215" y1="56" x2="150" y2="56" stroke={COLORS.wire} strokeWidth="2" />
+          <line x1="235" y1="56" x2="235" y2="70" stroke={COLORS.wire} strokeWidth="2" />
+          <line x1="235" y1="70" x2="150" y2="70" stroke={COLORS.wire} strokeWidth="2" />
+          <line x1="150" y1="56" x2="150" y2="70" stroke={COLORS.coax} strokeWidth="3" />
+          <line x1="150" y1="63" x2="100" y2="63" stroke={COLORS.coax} strokeWidth="3" />
+          <text x="75" y="67" fill={COLORS.coax} fontSize="9" textAnchor="middle">50Ω</text>
+        </svg>
+      ),
+
+      Legend: () => (
+        <>
+          <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
+          <text x="26" y="4" fill={COLORS.step1} fontSize="9">{'\u2461'} Shorten</text>
+          <line x1="0" y1="16" x2="20" y2="16" stroke={COLORS.hairpin} strokeWidth="3" />
+          <text x="26" y="20" fill={COLORS.hairpin} fontSize="9">{'\u2462'} Hairpin</text>
+        </>
+      ),
+
+      Info: () => (
+        <div className="info">
+          <strong>Beta (Hairpin) Match:</strong> Shorten the driven element to add capacitive reactance,
+          then use a parallel inductor (hairpin) to transform up to 50{'\u03A9'}. Best for low-Z antennas like Yagis.
+        </div>
+      ),
+    };
+
+    /** OCFD mode — all mode-specific behavior in one object */
+    const ocfdMode = {
+      key: 'ocfd',
+      title: 'Off-Center Fed Doublet',
+      buttonLabel: 'OCFD',
+      activeClass: 'active-ocfd',
+      diagramTitle: 'OFF-CENTER FED DOUBLET',
+      hasAutoTune: false,
+      showElementDiam: false,
+      presets: OCFD_PRESETS,
+      impedanceKeys: { r: 'ocfdR', x: 'ocfdX' },
+
+      serializeUrl(p) {
+        return {
+          [URL_KEYS.ocfdR]: Math.round(p.ocfdR),
+          [URL_KEYS.ocfdX]: Math.round(p.ocfdX),
+          [URL_KEYS.feedOffset]: Math.round(p.feedOffset),
+          [URL_KEYS.feedlineZ0]: p.feedlineZ0,
+        };
+      },
+
+      tune: null,
+
+      calc(p, zToScreen) {
+        const centerZ = Z(p.ocfdR, p.ocfdX);
+        const z0 = p.feedlineZ0;
+        const alpha = p.feedOffset / 100;
+        const factor = 1 / Math.cos(Math.PI * alpha) ** 2;
+        const feedZ = Z(p.ocfdR * factor, p.ocfdX * factor);
+        const centerPt = zToScreen(centerZ);
+        const feedPt = zToScreen(feedZ);
+        // Trajectory path: impedance as offset sweeps from 0 to current value
+        const trajectoryPath = [];
+        for (let i = 0; i <= PATH_STEPS; i++) {
+          const a = alpha * (i / PATH_STEPS);
+          const f = 1 / Math.cos(Math.PI * a) ** 2;
+          const z = Z(p.ocfdR * f, p.ocfdX * f);
+          if (z.r > 0 && z.r < PATH_R_MAX) {
+            trajectoryPath.push(zToScreen(z));
+          }
+        }
+        const swrs = FEEDLINE_IMPEDANCES.map(fl => ({
+          z0: fl,
+          swr: calcSWRForZ0(feedZ, fl)
+        }));
+        const selectedSwr = calcSWRForZ0(feedZ, z0);
+        return { centerZ, feedZ, centerPt, feedPt, swrs, swr: selectedSwr, z0, trajectoryPath };
+      },
+
+      physical(p, base) {
+        const alpha = p.feedOffset / 100;
+        const halfDipole = base.lambdaMm / 2;
+        return {
+          ocfdL1Mm: halfDipole * (0.5 - alpha),
+          ocfdL2Mm: halfDipole * (0.5 + alpha),
+        };
+      },
+
+      SmithOverlay: ({ result }) => (
+        <>
+          {/* Trajectory path from center to feed point */}
+          {result.trajectoryPath.length > 1 && (
+            <path
+              d={pointsToPath(result.trajectoryPath)}
+              fill="none" stroke={COLORS.ocfd} strokeWidth="2" strokeDasharray="4,3" strokeLinecap="round" opacity="0.6"
+            />
+          )}
+          {/* Center impedance point */}
+          <circle cx={result.centerPt.x} cy={result.centerPt.y} r="8" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
+          <text x={result.centerPt.x - 14} y={result.centerPt.y - 12}
+            fill={COLORS.orig} fontSize="10" fontWeight="600" textAnchor="end">
+            {'\u2460'} {result.centerZ.formatLabel()}
+          </text>
+          {/* Feed impedance point */}
+          <circle cx={result.feedPt.x} cy={result.feedPt.y} r="10" fill={COLORS.ocfd} stroke="#fff" strokeWidth="2" />
+          <text x={result.feedPt.x + 14} y={result.feedPt.y + 4}
+            fill={COLORS.ocfd} fontSize="11" fontWeight="600">
+            {'\u2461'} {result.feedZ.formatLabel()}
+          </text>
+        </>
+      ),
+
+      Controls: ({ state, result, physical, setNum, set }) => {
+        return (
+          <>
+            <ControlPanel color={COLORS.orig} title={'\u2460 CENTER-FEED IMPEDANCE'} tooltip="Impedance at the center of the dipole">
+              <label className="control-label">
+                <span className="control-text">Resistance: {state.ocfdR}{'\u03A9'}</span>
+                <input type="range" min="10" max="150" value={state.ocfdR}
+                  onChange={setNum('ocfdR')}
+                  aria-label="OCFD center resistance"
+                  className="control-slider" style={{ accentColor: COLORS.orig }} />
+              </label>
+              <label className="control-label">
+                <span className="control-text">
+                  Reactance: {state.ocfdX >= 0 ? '+' : ''}j{state.ocfdX}{'\u03A9'} {state.ocfdX > 0 ? '(L)' : state.ocfdX < 0 ? '(C)' : ''}
+                </span>
+                <input type="range" min="-100" max="100" value={state.ocfdX}
+                  onChange={setNum('ocfdX')}
+                  aria-label="OCFD center reactance"
+                  className="control-slider" style={{ accentColor: COLORS.orig }} />
+              </label>
+              <div className="impedance-display">
+                Z{'\u2080'} = {state.ocfdR} {state.ocfdX >= 0 ? '+' : '\u2212'} j{Math.abs(state.ocfdX)} {'\u03A9'}
+              </div>
+            </ControlPanel>
+
+            <ControlPanel color={COLORS.ocfd} title={'\u2461 FEED OFFSET'} tooltip="Distance from center as % of half-length">
+              <label className="control-label">
+                <span className="control-text">Offset: {state.feedOffset}% from center</span>
+                <input type="range" min="0" max="48" step="1" value={state.feedOffset}
+                  onChange={setNum('feedOffset')}
+                  aria-label="Feed offset"
+                  className="control-slider" style={{ accentColor: COLORS.ocfd }} />
+              </label>
+              {physical && (
+                <div className="physical-hint">
+                  L{'\u2081'} = {physical.ocfdL1Mm >= 1000 ? (physical.ocfdL1Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL1Mm) + 'mm'}
+                  {' / '}
+                  L{'\u2082'} = {physical.ocfdL2Mm >= 1000 ? (physical.ocfdL2Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL2Mm) + 'mm'}
+                </div>
+              )}
+            </ControlPanel>
+
+            <ControlPanel color={COLORS.ocfd} title={'\u2462 FEEDLINE IMPEDANCE'} tooltip="Characteristic impedance of the feedline">
+              <div className="feedline-selector">
+                {FEEDLINE_IMPEDANCES.map(z0 => (
+                  <button
+                    key={z0}
+                    className={`btn preset-btn ${state.feedlineZ0 === z0 ? 'active' : ''}`}
+                    onClick={() => set({ feedlineZ0: z0 })}
+                    aria-label={`${z0} ohm feedline`}
+                  >
+                    {z0}{'\u03A9'}
+                  </button>
+                ))}
+              </div>
+            </ControlPanel>
+
+            <div className="result-panel normal" style={{ borderColor: COLORS.ocfd }} aria-live="polite">
+              <div className="control-header" style={{ color: COLORS.ocfd }}>FEED IMPEDANCE</div>
+              <div className="result-z">Z = {result.feedZ.format()} {'\u03A9'}</div>
+              <div className="result-swr" style={{ marginBottom: 6 }}>
+                <span className={getSWRClass(result.swr)}>
+                  SWR ({state.feedlineZ0}{'\u03A9'}) = {result.swr.toFixed(3)} : 1
+                </span>
+              </div>
+              <div className="swr-table">
+                {result.swrs.filter(s => s.z0 !== state.feedlineZ0).map(({ z0, swr }) => (
+                  <div key={z0} className="swr-row">
+                    <span className="swr-row-label">{z0}{'\u03A9'} line:</span>
+                    <span className={`swr-row-value ${getSWRClass(swr)}`}>
+                      SWR = {swr.toFixed(2)} : 1
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      },
+
+      Diagram: ({ state, physical }) => {
+        const alpha = state.feedOffset / 100;
+        const wireLeft = 50;
+        const wireRight = 400;
+        const wireLen = wireRight - wireLeft;
+        const wireCenter = (wireLeft + wireRight) / 2;
+        const wireY = 50;
+        const feedX = wireCenter + alpha * (wireLen / 2);
+        const feedXClamped = Math.min(feedX, wireRight - 10);
+        return (
+          <svg viewBox="0 0 450 130" className="diagram-svg">
+            {/* Full dipole wire */}
+            <line x1={wireLeft} y1={wireY} x2={wireRight} y2={wireY}
+              stroke={COLORS.element} strokeWidth="6" strokeLinecap="round" />
+            {/* Center marker */}
+            <circle cx={wireCenter} cy={wireY} r="3" fill="#333" />
+            <text x={wireCenter} y={wireY - 10} fill="#555" fontSize="9" textAnchor="middle">center</text>
+            {/* Feed point */}
+            <circle cx={feedXClamped} cy={wireY} r="5" fill={COLORS.ocfd} />
+            {/* Feedline dropping down */}
+            <line x1={feedXClamped} y1={wireY} x2={feedXClamped} y2={95}
+              stroke={COLORS.coax} strokeWidth="3" />
+            <text x={feedXClamped} y={110} fill={COLORS.coax} fontSize="9" textAnchor="middle">Feedline</text>
+            {/* L1 label (short side = left of feed) */}
+            <line x1={wireLeft} y1={wireY + 20} x2={feedXClamped} y2={wireY + 20}
+              stroke={COLORS.orig} strokeWidth="1" />
+            <line x1={wireLeft} y1={wireY + 16} x2={wireLeft} y2={wireY + 24}
+              stroke={COLORS.orig} strokeWidth="1" />
+            <line x1={feedXClamped} y1={wireY + 16} x2={feedXClamped} y2={wireY + 24}
+              stroke={COLORS.orig} strokeWidth="1" />
+            <text x={(wireLeft + feedXClamped) / 2} y={wireY + 34}
+              fill={COLORS.orig} fontSize="9" textAnchor="middle">
+              {physical ? `L₁ = ${physical.ocfdL1Mm >= 1000 ? (physical.ocfdL1Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL1Mm) + 'mm'}` : 'L₁ (short)'}
+            </text>
+            {/* L2 label (long side = right of feed) */}
+            <line x1={feedXClamped} y1={wireY + 20} x2={wireRight} y2={wireY + 20}
+              stroke={COLORS.ocfd} strokeWidth="1" />
+            <line x1={feedXClamped} y1={wireY + 16} x2={feedXClamped} y2={wireY + 24}
+              stroke={COLORS.ocfd} strokeWidth="1" />
+            <line x1={wireRight} y1={wireY + 16} x2={wireRight} y2={wireY + 24}
+              stroke={COLORS.ocfd} strokeWidth="1" />
+            <text x={(feedXClamped + wireRight) / 2} y={wireY + 34}
+              fill={COLORS.ocfd} fontSize="9" textAnchor="middle">
+              {physical ? `L₂ = ${physical.ocfdL2Mm >= 1000 ? (physical.ocfdL2Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL2Mm) + 'mm'}` : 'L₂ (long)'}
+            </text>
+            {/* Total length */}
+            <text x={wireCenter} y={wireY - 26} fill={COLORS.element} fontSize="10" textAnchor="middle">
+              {physical ? `Dipole ≈ ${(physical.lambdaMm / 2000).toFixed(2)}m (λ/2)` : 'Dipole ≈ λ/2'}
+            </text>
+            {/* Offset label */}
+            <text x={feedXClamped} y={wireY - 10} fill={COLORS.ocfd} fontSize="9" textAnchor="middle">
+              {state.feedOffset}% off-center
+            </text>
+          </svg>
+        );
+      },
+
+      Legend: () => (
+        <>
+          <circle cx="5" cy="0" r="5" fill={COLORS.orig} />
+          <text x="16" y="4" fill={COLORS.orig} fontSize="9">{'\u2460'} Center Z</text>
+          <line x1="0" y1="16" x2="10" y2="16" stroke={COLORS.ocfd} strokeWidth="2" strokeDasharray="4,3" />
+          <text x="16" y="20" fill={COLORS.ocfd} fontSize="9">Offset trajectory</text>
+          <circle cx="5" cy="32" r="5" fill={COLORS.ocfd} />
+          <text x="16" y="36" fill={COLORS.ocfd} fontSize="9">{'\u2461'} Feed Z</text>
+        </>
+      ),
+
+      Info: () => (
+        <div className="info">
+          <strong>Off-Center Fed Doublet:</strong> A half-wave dipole fed off-center presents higher impedance,
+          enabling use with 300{'\u03A9'} or 450{'\u03A9'} balanced feedline.
+          Z{'\u2090'}({'\u03B1'}) = Z{'\u2080'} / cos{'\u00B2'}({'\u03C0\u03B1'}) where {'\u03B1'} is the feed offset ratio.
+        </div>
+      ),
+    };
+
+    /** @type {Object} Per-mode object map */
+    const MODE_MAP = Object.freeze({
+      [MODES.GAMMA]: gammaMode,
+      [MODES.HAIRPIN]: hairpinMode,
+      [MODES.OCFD]: ocfdMode,
+    });
+
+    /**
+     * Calculate base physical parameters from frequency
+     * @param {string} freqMHz - Frequency in MHz
+     * @returns {Object|null} { lambda, lambdaMm } or null if no valid frequency
+     */
+    const calcBasePhysical = (freqMHz) => {
+      const freq = parseFloat(freqMHz);
+      if (!freq || freq <= 0) return null;
+      const lambda = C_SPEED / (freq * 1e6);
+      return { lambda, lambdaMm: lambda * 1000 };
+    };
 
     // ============================================================
     // URL Parameter Utilities
@@ -1091,7 +1701,11 @@
       shortening: 15,
       hairpinX: 50,
       freqMHz: '',
-      elementDiamMm: '2'
+      elementDiamMm: '2',
+      ocfdR: 73,
+      ocfdX: 43,
+      feedOffset: 33,
+      feedlineZ0: 50
     });
 
     /**
@@ -1119,7 +1733,11 @@
         shortening: parseParam(params.get(URL_KEYS.shortening), DEFAULTS.shortening),
         hairpinX: parseParam(params.get(URL_KEYS.hairpinX), DEFAULTS.hairpinX),
         freqMHz: params.get(URL_KEYS.freqMHz) || DEFAULTS.freqMHz,
-        elementDiamMm: params.get(URL_KEYS.elementDiamMm) || DEFAULTS.elementDiamMm
+        elementDiamMm: params.get(URL_KEYS.elementDiamMm) || DEFAULTS.elementDiamMm,
+        ocfdR: parseParam(params.get(URL_KEYS.ocfdR), DEFAULTS.ocfdR),
+        ocfdX: parseParam(params.get(URL_KEYS.ocfdX), DEFAULTS.ocfdX),
+        feedOffset: parseParam(params.get(URL_KEYS.feedOffset), DEFAULTS.feedOffset),
+        feedlineZ0: parseParam(params.get(URL_KEYS.feedlineZ0), DEFAULTS.feedlineZ0)
       };
     };
 
@@ -1151,9 +1769,8 @@
       /** Helper for string input onChange handlers */
       const setStr = (key) => (e) => set({ [key]: e.target.value });
 
-      // Destructure for convenience
-      const { mode, antR, antX, tapRatio, gammaRodX, seriesCapX, shortening, hairpinX, freqMHz, elementDiamMm } = p;
-      const isGamma = mode === MODES.GAMMA;
+      const { mode, freqMHz, elementDiamMm } = p;
+      const modeDef = MODE_MAP[mode];
 
       // Update URL when state changes
       useEffect(() => {
@@ -1164,16 +1781,8 @@
 
         const params = new URLSearchParams();
         params.set(URL_KEYS.mode, p.mode);
-        params.set(URL_KEYS.antR, Math.round(p.antR));
-        params.set(URL_KEYS.antX, Math.round(p.antX));
-        if (isGamma) {
-          params.set(URL_KEYS.tapRatio, p.tapRatio.toFixed(2));
-          params.set(URL_KEYS.gammaRodX, Math.round(p.gammaRodX));
-          params.set(URL_KEYS.seriesCapX, Math.round(p.seriesCapX));
-        } else {
-          params.set(URL_KEYS.shortening, Math.round(p.shortening));
-          params.set(URL_KEYS.hairpinX, Math.round(p.hairpinX));
-        }
+        const modeParams = modeDef.serializeUrl(p);
+        Object.entries(modeParams).forEach(([k, v]) => params.set(k, v));
         if (p.freqMHz) params.set(URL_KEYS.freqMHz, p.freqMHz);
         if (p.elementDiamMm && p.elementDiamMm !== DEFAULTS.elementDiamMm) params.set(URL_KEYS.elementDiamMm, p.elementDiamMm);
 
@@ -1182,89 +1791,69 @@
       }, [p]);
 
       // Hooks
-      const { rCircles, xArcs, createXArc } = useSmithChart();
-      const gammaPaths = useGammaMatch(antR, antX, tapRatio, gammaRodX, seriesCapX);
-      const hairpinPaths = useHairpinMatch(antR, antX, shortening, hairpinX);
-      const { autoTuneGamma, autoTuneHairpin } = useAutoTune(antR, antX);
+      const { zToScreen, rCircles, xArcs, createXArc } = useSmithChart();
+      const result = useMemo(() => modeDef.calc(p, zToScreen), [modeDef, p, zToScreen]);
       const didAutoTune = useRef(false);
 
-      // Physical calculations (when freq/diameter are provided)
+      // Physical calculations (shared base + mode-specific)
       const physical = useMemo(() => {
-        const freq = parseFloat(freqMHz);
-        const diam = parseFloat(elementDiamMm);
-        if (!freq || freq <= 0) return null;
+        const base = calcBasePhysical(freqMHz);
+        return base ? { ...base, ...modeDef.physical(p, base) } : null;
+      }, [modeDef, p, freqMHz]);
 
-        const lambda = C_SPEED / (freq * 1e6); // wavelength in meters
-        const lambdaMm = lambda * 1000;
-
-        // Capacitor value: C = 1/(2πfXc)
-        const capPf = seriesCapX > 0 ? 1e12 / (2 * Math.PI * freq * 1e6 * seriesCapX) : null;
-
-        // Tap point distance from center: d = (λ/2π) * arccos(1/n)
-        const tapDistMm = (lambdaMm / (2 * Math.PI)) * Math.acos(1 / tapRatio);
-
-        // Element shortening (requires diameter)
-        let shortenMm = null;
-        let shortenPct = null;
-        if (diam && diam > 0) {
-          // Characteristic impedance: Z0 ≈ 276 * log10(λ/(2*d))
-          const z0Ant = 276 * Math.log10(lambdaMm / (2 * diam));
-          // ΔX ≈ -Z0 * π * Δ(L/λ), so Δ(L/λ) ≈ -ΔX / (Z0 * π)
-          const deltaLOverLambda = shortening / (z0Ant * Math.PI);
-          shortenMm = deltaLOverLambda * lambdaMm / 2; // per side (quarter wave each side)
-          shortenPct = (deltaLOverLambda / 0.5) * 100; // as % of λ/2
+      const handleAutoTune = useCallback(() => {
+        if (modeDef.tune) {
+          const { r: rKey, x: xKey } = modeDef.impedanceKeys;
+          set(modeDef.tune(Z(p[rKey], p[xKey])));
         }
-
-        return { lambda, lambdaMm, capPf, tapDistMm, shortenMm, shortenPct };
-      }, [freqMHz, elementDiamMm, seriesCapX, shortening, tapRatio]);
-
-      const paths = isGamma ? gammaPaths : hairpinPaths;
-      const swr = paths.swr;
-
-      const handleAutoTune = () => set(isGamma ? autoTuneGamma() : autoTuneHairpin());
+      }, [modeDef, p]);
 
       // Auto-tune on initial load if no URL parameters provided
       useEffect(() => {
-        if (!didAutoTune.current && !window.location.search) {
+        if (!didAutoTune.current && !window.location.search && modeDef.hasAutoTune) {
           didAutoTune.current = true;
           handleAutoTune();
         }
-      }, [handleAutoTune]);
+      }, [handleAutoTune, modeDef]);
 
       const handlePreset = (preset) => {
-        const z = Z(preset.r, preset.x);
-        const tuned = isGamma ? tuneGamma(z) : tuneHairpin(z);
-        set({ antR: preset.r, antX: preset.x, ...tuned });
+        const { r, x, label, ...extra } = preset;
+        const { r: rKey, x: xKey } = modeDef.impedanceKeys;
+        const updates = { [rKey]: r, [xKey]: x, ...extra };
+        if (modeDef.tune) {
+          Object.assign(updates, modeDef.tune(Z(r, x)));
+        }
+        set(updates);
       };
 
-      const isPresetActive = (preset) => antR === preset.r && antX === preset.x;
+      const isPresetActive = (preset) => {
+        const { r: rKey, x: xKey } = modeDef.impedanceKeys;
+        if (p[rKey] !== preset.r || p[xKey] !== preset.x) return false;
+        if ('feedOffset' in preset) return p.feedOffset === preset.feedOffset;
+        return true;
+      };
 
       return (
         <div className="app">
           {/* Mode Toggle */}
           <div className="mode-toggle">
-            <button
-              className={`btn mode-btn ${isGamma ? 'active-gamma' : ''}`}
-              onClick={() => set({ mode: MODES.GAMMA })}
-            >
-              Gamma Match
-            </button>
-            <button
-              className={`btn mode-btn ${!isGamma ? 'active-hairpin' : ''}`}
-              onClick={() => set({ mode: MODES.HAIRPIN })}
-            >
-              Beta (Hairpin) Match
-            </button>
+            {Object.entries(MODE_MAP).map(([modeKey, def]) => (
+              <button
+                key={modeKey}
+                className={`btn mode-btn ${mode === modeKey ? def.activeClass : ''}`}
+                onClick={() => set({ mode: modeKey })}
+              >
+                {def.buttonLabel}
+              </button>
+            ))}
           </div>
 
-          <h1 className="title">
-            {isGamma ? 'Gamma Match' : 'Beta (Hairpin) Match'}
-          </h1>
+          <h1 className="title">{modeDef.title}</h1>
           <div className="footer" style={{ marginTop: '-12px' }}>By AI6KG &lt;<a href="mailto:ai6kg@arrl.net">ai6kg@arrl.net</a>&gt;</div>
 
           {/* Presets */}
           <div className="presets">
-            {PRESETS.map((preset) => (
+            {modeDef.presets.map((preset) => (
               <button
                 key={preset.label}
                 className={`btn preset-btn ${isPresetActive(preset) ? 'active' : ''}`}
@@ -1273,13 +1862,15 @@
                 {preset.label}
               </button>
             ))}
-            <button
-              className={`btn auto-tune-btn ${mode}`}
-              onClick={handleAutoTune}
-              data-tooltip="Find optimal match parameters"
-            >
-              Auto-Tune
-            </button>
+            {modeDef.hasAutoTune && (
+              <button
+                className={`btn auto-tune-btn ${mode}`}
+                onClick={handleAutoTune}
+                data-tooltip="Find optimal match parameters"
+              >
+                Auto-Tune
+              </button>
+            )}
           </div>
 
           {/* Physical Parameters (optional) */}
@@ -1295,9 +1886,9 @@
                 step="0.1"
               />
             </label>
-            {!isGamma && (
+            {modeDef.showElementDiam && (
               <label>
-                Element ⌀ (mm):
+                Element {'\u2300'} (mm):
                 <input
                   type="number"
                   value={elementDiamMm}
@@ -1309,7 +1900,7 @@
               </label>
             )}
             <span style={{ color: '#555', alignSelf: 'center', minWidth: '90px' }}>
-              {physical ? `λ = ${(physical.lambdaMm / 1000).toFixed(2)}m` : ''}
+              {physical ? `\u03BB = ${(physical.lambdaMm / 1000).toFixed(2)}m` : ''}
             </span>
             <button
               className="btn preset-btn"
@@ -1321,7 +1912,7 @@
             </button>
             <button
               className="btn preset-btn"
-              onClick={() => window.location.href = window.location.pathname}
+              onClick={() => set({ ...DEFAULTS, mode: p.mode })}
               style={{ alignSelf: 'center' }}
               data-tooltip="Reset all parameters to defaults"
             >
@@ -1352,271 +1943,57 @@
 
               {/* Labels */}
               <text x={CX - RADIUS - 8} y={CY + 4} fill={COLORS.label} fontSize="10" textAnchor="end">0</text>
-              <text x={CX + RADIUS + 8} y={CY + 4} fill={COLORS.label} fontSize="10" textAnchor="start">∞</text>
-              <text x={CX} y={CY - 8} fill={COLORS.label} fontSize="9" textAnchor="middle">50Ω</text>
+              <text x={CX + RADIUS + 8} y={CY + 4} fill={COLORS.label} fontSize="10" textAnchor="start">{'\u221E'}</text>
+              <text x={CX} y={CY - 8} fill={COLORS.label} fontSize="9" textAnchor="middle">50{'\u03A9'}</text>
               <text x={CX} y={CY - RADIUS - 8} fill={COLORS.label} fontSize="9" textAnchor="middle">+jX</text>
-              <text x={CX} y={CY + RADIUS + 16} fill={COLORS.label} fontSize="9" textAnchor="middle">−jX</text>
+              <text x={CX} y={CY + RADIUS + 16} fill={COLORS.label} fontSize="9" textAnchor="middle">{'\u2212'}jX</text>
 
-              {isGamma ? (
-                <>
-                  {/* Tap ratio path */}
-                  {gammaPaths.tapPath.length > 1 && (
-                    <path
-                      d={pointsToPath(gammaPaths.tapPath)}
-                      fill="none" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
-                    />
-                  )}
-                  {/* Shunt inductance path - true arc */}
-                  <path
-                    d={gammaPaths.shuntArc.arcPath}
-                    fill="none" stroke={COLORS.step2} strokeWidth="3" strokeLinecap="round"
-                  />
-                  {/* Series capacitor path */}
-                  {gammaPaths.seriesPath.length > 1 && (
-                    <path
-                      d={pointsToPath(gammaPaths.seriesPath)}
-                      fill="none" stroke={COLORS.step3} strokeWidth="3" strokeLinecap="round"
-                    />
-                  )}
-                  {/* Arrows */}
-                  {gammaPaths.tapPath.length > 3 && (
-                    <ArrowHead x={gammaPaths.afterTapPt.x} y={gammaPaths.afterTapPt.y}
-                      angle={getArrowAngle(gammaPaths.tapPath, gammaPaths.afterTapPt)} color={COLORS.step1} />
-                  )}
-                  <ArrowHead x={gammaPaths.afterShuntPt.x} y={gammaPaths.afterShuntPt.y}
-                    angle={gammaPaths.shuntArc.arrowAngle} color={COLORS.step2} />
-                  {gammaPaths.seriesPath.length > 3 && (
-                    <ArrowHead x={gammaPaths.finalPt.x} y={gammaPaths.finalPt.y}
-                      angle={getArrowAngle(gammaPaths.seriesPath, gammaPaths.finalPt)} color={COLORS.step3} />
-                  )}
-                  {/* Points */}
-                  <circle cx={gammaPaths.origPt.x} cy={gammaPaths.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
-                  <text x={gammaPaths.origPt.x - 14} y={gammaPaths.origPt.y - 14}
-                    fill={COLORS.orig} fontSize="11" fontWeight="600" textAnchor="end">
-                    ① {Z(antR, antX).formatLabel()}
-                  </text>
-                  <circle cx={gammaPaths.afterTapPt.x} cy={gammaPaths.afterTapPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
-                  <text x={gammaPaths.afterTapPt.x + 12} y={gammaPaths.afterTapPt.y - 8}
-                    fill={COLORS.step1} fontSize="10" fontWeight="600">
-                    ② {gammaPaths.afterTap.formatLabel()}
-                  </text>
-                  <circle cx={gammaPaths.afterShuntPt.x} cy={gammaPaths.afterShuntPt.y} r="7" fill={COLORS.step2} stroke="#fff" strokeWidth="2" />
-                  <text x={gammaPaths.afterShuntPt.x + 12} y={gammaPaths.afterShuntPt.y - 8}
-                    fill={COLORS.step2} fontSize="10" fontWeight="600">
-                    ③ {gammaPaths.afterShunt.formatLabel()}
-                  </text>
-                  <circle cx={gammaPaths.finalPt.x} cy={gammaPaths.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
-                  <text x={gammaPaths.finalPt.x + 14} y={gammaPaths.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
-                    ④ {gammaPaths.finalZ.formatLabel()}
-                  </text>
-                </>
-              ) : (
-                <>
-                  {/* Shortening path */}
-                  {hairpinPaths.shortenPath.length > 1 && (
-                    <path
-                      d={pointsToPath(hairpinPaths.shortenPath)}
-                      fill="none" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round"
-                    />
-                  )}
-                  {/* Hairpin path - true arc */}
-                  <path
-                    d={hairpinPaths.hpArc.arcPath}
-                    fill="none" stroke={COLORS.hairpin} strokeWidth="3" strokeLinecap="round"
-                  />
-                  {/* Arrows */}
-                  {hairpinPaths.shortenPath.length > 3 && (
-                    <ArrowHead x={hairpinPaths.shortenedPt.x} y={hairpinPaths.shortenedPt.y}
-                      angle={getArrowAngle(hairpinPaths.shortenPath, hairpinPaths.shortenedPt)} color={COLORS.step1} />
-                  )}
-                  <ArrowHead x={hairpinPaths.finalPt.x} y={hairpinPaths.finalPt.y}
-                    angle={hairpinPaths.hpArc.arrowAngle} color={COLORS.hairpin} />
-                  {/* Points */}
-                  <circle cx={hairpinPaths.origPt.x} cy={hairpinPaths.origPt.y} r="10" fill={COLORS.orig} stroke="#fff" strokeWidth="2" />
-                  <text x={hairpinPaths.origPt.x + 14} y={hairpinPaths.origPt.y + 4}
-                    fill={COLORS.orig} fontSize="11" fontWeight="600">
-                    ① {Z(antR, antX).formatLabel()}
-                  </text>
-                  <circle cx={hairpinPaths.shortenedPt.x} cy={hairpinPaths.shortenedPt.y} r="7" fill={COLORS.step1} stroke="#fff" strokeWidth="2" />
-                  <text x={hairpinPaths.shortenedPt.x + 12} y={hairpinPaths.shortenedPt.y - 8}
-                    fill={COLORS.step1} fontSize="10" fontWeight="600">
-                    ② {hairpinPaths.afterShorten.formatLabel()}
-                  </text>
-                  <circle cx={hairpinPaths.finalPt.x} cy={hairpinPaths.finalPt.y} r="10" fill={COLORS.final} stroke="#fff" strokeWidth="2" />
-                  <text x={hairpinPaths.finalPt.x + 14} y={hairpinPaths.finalPt.y + 4} fill={COLORS.final} fontSize="11" fontWeight="600">
-                    ③ {hairpinPaths.finalZ.formatLabel()}
-                  </text>
-                </>
-              )}
+              {/* Mode-specific overlay */}
+              <modeDef.SmithOverlay result={result} state={p} />
 
-              {/* 50Ω target */}
-              <circle cx={CX} cy={CY} r="6" fill="none" stroke={COLORS.hairpin} strokeWidth="2" strokeDasharray="3,3" />
+              {/* Target impedance */}
+              {(() => {
+                const targetZ0 = mode === MODES.OCFD ? p.feedlineZ0 : Z0;
+                const pt = zToScreen(Z(targetZ0, 0));
+                return (
+                  <>
+                    <circle cx={pt.x} cy={pt.y} r="6" fill="none" stroke={COLORS.hairpin} strokeWidth="2" strokeDasharray="3,3" />
+                    {targetZ0 !== Z0 && (
+                      <text x={pt.x} y={pt.y - 10} fill={COLORS.label} fontSize="9" textAnchor="middle">
+                        {targetZ0}{'\u03A9'}
+                      </text>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Legend */}
               <g transform={`translate(${CX - RADIUS + 10}, ${CY + RADIUS - 80})`}>
-                {isGamma ? (
-                  <>
-                    <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
-                    <text x="26" y="4" fill={COLORS.step1} fontSize="9">② Autotransformer</text>
-                    <line x1="0" y1="16" x2="20" y2="16" stroke={COLORS.step2} strokeWidth="3" />
-                    <text x="26" y="20" fill={COLORS.step2} fontSize="9">③ Shunt L</text>
-                    <line x1="0" y1="32" x2="20" y2="32" stroke={COLORS.step3} strokeWidth="3" />
-                    <text x="26" y="36" fill={COLORS.step3} fontSize="9">④ Series C</text>
-                  </>
-                ) : (
-                  <>
-                    <line x1="0" y1="0" x2="20" y2="0" stroke={COLORS.step1} strokeWidth="3" strokeDasharray="6,4" />
-                    <text x="26" y="4" fill={COLORS.step1} fontSize="9">② Shorten</text>
-                    <line x1="0" y1="16" x2="20" y2="16" stroke={COLORS.hairpin} strokeWidth="3" />
-                    <text x="26" y="20" fill={COLORS.hairpin} fontSize="9">③ Hairpin</text>
-                  </>
-                )}
+                <modeDef.Legend />
               </g>
             </svg>
 
             {/* Controls */}
             <div className="controls">
-              {/* Antenna Impedance */}
-              <ControlPanel color={COLORS.orig} title="① ANTENNA IMPEDANCE" tooltip="Starting impedance of the antenna feedpoint">
-                <label className="control-label">
-                  <span className="control-text">Resistance: {antR}Ω</span>
-                  <input type="range" min="10" max="150" value={antR}
-                    onChange={setNum('antR')}
-                    aria-label="Antenna resistance"
-                    className="control-slider" style={{ accentColor: COLORS.orig }} />
-                </label>
-                <label className="control-label">
-                  <span className="control-text">
-                    Reactance: {antX >= 0 ? '+' : ''}j{antX}Ω {antX > 0 ? '(L)' : antX < 0 ? '(C)' : ''}
-                  </span>
-                  <input type="range" min="-100" max="100" value={antX}
-                    onChange={setNum('antX')}
-                    aria-label="Antenna reactance"
-                    className="control-slider" style={{ accentColor: COLORS.orig }} />
-                </label>
-                <div className="impedance-display">
-                  Z = {antR} {antX >= 0 ? '+' : '−'} j{Math.abs(antX)} Ω
-                </div>
-              </ControlPanel>
-
-              {isGamma ? (
-                <>
-                  {/* Tap Ratio */}
-                  <ControlPanel color={COLORS.step1} title="② AUTOTRANSFORMER (TAP RATIO)" tooltip="Impedance step-up via tap position on driven element">
-                    <label className="control-label">
-                      <span className="control-text">n = {tapRatio.toFixed(2)} (Z × {(tapRatio * tapRatio).toFixed(2)})</span>
-                      <input type="range" min="1" max="2.5" step="0.01" value={tapRatio}
-                        onChange={setNum('tapRatio')}
-                        aria-label="Tap ratio"
-                        className="control-slider" style={{ accentColor: COLORS.step1 }} />
-                    </label>
-                    <div className="control-result">→ {gammaPaths.afterTap.format()} Ω</div>
-                    {physical && (
-                      <div className="physical-hint">≈ {Math.round(physical.tapDistMm)} mm from center</div>
-                    )}
-                  </ControlPanel>
-
-                  {/* Gamma Rod */}
-                  <ControlPanel color={COLORS.step2} title="③ GAMMA ROD (SHUNT +jX)" tooltip="Parallel inductance from gamma rod coupling">
-                    <label className="control-label">
-                      <span className="control-text">Rod reactance: +j{gammaRodX}Ω</span>
-                      <input type="range" min="20" max="400" value={gammaRodX}
-                        onChange={setNum('gammaRodX')}
-                        aria-label="Gamma rod reactance"
-                        className="control-slider" style={{ accentColor: COLORS.step2 }} />
-                    </label>
-                    <div className="control-result">→ {gammaPaths.afterShunt.format()} Ω</div>
-                  </ControlPanel>
-
-                  {/* Series Capacitor */}
-                  <ControlPanel color={COLORS.step3} title="④ SERIES CAPACITOR" tooltip="Cancels inductive reactance to reach 50Ω">
-                    <label className="control-label">
-                      <span className="control-text">Cap reactance: −j{seriesCapX}Ω</span>
-                      <input type="range" min="0" max="100" value={seriesCapX}
-                        onChange={setNum('seriesCapX')}
-                        aria-label="Series capacitor reactance"
-                        className="control-slider" style={{ accentColor: COLORS.step3 }} />
-                    </label>
-                    {physical && physical.capPf && (
-                      <div className="physical-hint">≈ {Math.round(physical.capPf)} pF at {freqMHz} MHz</div>
-                    )}
-                  </ControlPanel>
-                </>
-              ) : (
-                <>
-                  {/* Shortening */}
-                  <ControlPanel color={COLORS.step1} title="② SHORTEN ELEMENT" tooltip="Capacitive reactance from shortened driven element">
-                    <label className="control-label">
-                      <span className="control-text">Capacitive reactance: −j{shortening}Ω</span>
-                      <input type="range" min="0" max="60" value={shortening}
-                        onChange={setNum('shortening')}
-                        aria-label="Element shortening reactance"
-                        className="control-slider" style={{ accentColor: COLORS.step1 }} />
-                    </label>
-                    <div className="control-result">→ {hairpinPaths.afterShorten.format()} Ω</div>
-                    {physical && physical.shortenMm !== null ? (
-                      <div className="physical-hint">
-                        ≈ {physical.shortenMm.toFixed(1)} mm per side ({physical.shortenPct.toFixed(1)}% of λ/2)
-                      </div>
-                    ) : (
-                      <div className="control-hint">Constant-R circle (series reactance)</div>
-                    )}
-                  </ControlPanel>
-
-                  {/* Hairpin */}
-                  <ControlPanel color={COLORS.hairpin} title="③ HAIRPIN (PARALLEL +jX)" tooltip="Shunt inductor transforms impedance up to 50Ω">
-                    <label className="control-label">
-                      <span className="control-text">Inductive reactance: +j{hairpinX}Ω</span>
-                      <input type="range" min="15" max="200" value={hairpinX}
-                        onChange={setNum('hairpinX')}
-                        aria-label="Hairpin reactance"
-                        className="control-slider" style={{ accentColor: COLORS.hairpin }} />
-                    </label>
-                    <div className="control-hint">Constant-G circle (shunt susceptance)</div>
-                  </ControlPanel>
-                </>
-              )}
-
-              {/* Result */}
-              <div className={`result-panel ${swr < 1.5 ? 'good' : 'normal'}`}
-                style={{ borderColor: swr < 1.5 ? COLORS.hairpin : COLORS.final }}
-                aria-live="polite">
-                <div className="control-header" style={{ color: COLORS.final }}>MATCHED IMPEDANCE</div>
-                <div className="result-z">Z = {paths.finalZ.format()} Ω</div>
-                <div className={`result-swr ${getSWRClass(swr)}`}>
-                  SWR = {swr.toFixed(3)} : 1
-                </div>
-              </div>
+              <modeDef.Controls state={p} result={result} physical={physical}
+                setNum={setNum} set={set} freqMHz={freqMHz} />
             </div>
           </div>
 
           {/* Physical diagram */}
           <div className="diagram-container">
-            <div className="diagram-title">
-              {isGamma ? 'GAMMA MATCH PHYSICAL ARRANGEMENT' : 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT'}
-            </div>
-            {isGamma ? <GammaDiagram /> : <HairpinDiagram />}
+            <div className="diagram-title">{modeDef.diagramTitle}</div>
+            <modeDef.Diagram state={p} physical={physical} />
           </div>
 
           {/* Info */}
-          <div className="info">
-            {isGamma ? (
-              <>
-                <strong>Gamma Match:</strong> Uses tap ratio to scale Z, shunt inductor (gamma rod), and series capacitor.
-                Works for both high-Z and low-Z antennas by adjusting the tap position.
-              </>
-            ) : (
-              <>
-                <strong>Beta (Hairpin) Match:</strong> Shorten the driven element to add capacitive reactance,
-                then use a parallel inductor (hairpin) to transform up to 50Ω. Best for low-Z antennas like Yagis.
-              </>
-            )}
-          </div>
+          <modeDef.Info />
 
           {/* Footer */}
           <div className="footer">
-            © 2025 Christopher Hoover. <a href="https://github.com/charlieh0tel/ham_radio/blob/master/LICENSE">MIT License</a>.{' '}
-            <a href="https://github.com/charlieh0tel/ham_radio">GitHub</a>
+            {'\u00A9'} 2025-2026 Christopher Hoover. <a href="https://github.com/charlieh0tel/ham_radio/blob/master/LICENSE">MIT License</a>.{' '}
+            <a href="https://github.com/charlieh0tel/ham_radio">GitHub</a>.{' '}
+            <a href="https://github.com/charlieh0tel/ham_radio/issues">Bugs &amp; Feedback</a>
           </div>
         </div>
       );
