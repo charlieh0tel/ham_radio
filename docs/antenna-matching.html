@@ -594,9 +594,9 @@
 
     /** @type {Preset[]} OCFD center impedance presets (includes feedOffset) */
     const OCFD_PRESETS = Object.freeze([
-      { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, feedOffset: 33 },
-      { label: 'Resonant (67Ω)', r: 67, x: 0, feedOffset: 33 },
-      { label: 'Low Height Resonant (77+j17Ω)', r: 77, x: 17, feedOffset: 33 },
+      { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, feedOffset: 33, groundType: 'free' },
+      { label: 'Resonant, λ/2 AGL, Average Ground', r: 67, x: 0, feedOffset: 33, groundType: 'average' },
+      { label: 'Resonant, λ/4 AGL, Average Ground', r: 77, x: 17, feedOffset: 33, groundType: 'average' },
     ]);
 
     /** @type {number[]} Normalized resistance values for Smith chart circles */
