@@ -1716,7 +1716,11 @@
         let shortenMm = null;
         let shortenPct = null;
         if (diam && diam > 0) {
-          const z0Ant = 276 * Math.log10(base.lambdaMm / diam);
+          // Schelkunoff average characteristic impedance: Z₀ = 120·(ln(2h/a) − 1)
+          // where h = λ/4 (half-length), a = d/2 (wire radius)
+          const halfLen = base.lambdaMm / 4;
+          const wireRadius = diam / 2;
+          const z0Ant = 120 * (Math.log(2 * halfLen / wireRadius) - 1);
           const deltaLOverLambda = p.shortening / (z0Ant * Math.PI);
           shortenMm = deltaLOverLambda * base.lambdaMm / 2;
           shortenPct = (deltaLOverLambda / 0.5) * 100;
