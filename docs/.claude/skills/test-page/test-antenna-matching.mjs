@@ -803,19 +803,23 @@ async function run() {
       );
     });
 
-    await test('12.6 OCFD preset sets feedOffset', async () => {
+    await test('12.6 OCFD preset sets impedance and groundType', async () => {
       await page.goto(`${BASE}?mode=ocfd`, { waitUntil: 'networkidle0', timeout: 15000 });
       await wait(page, 500);
-      // Click first OCFD preset (Free-Space λ/2 with feedOffset:33)
-      await page.evaluate(() => {
-        const btn = [...document.querySelectorAll('.presets .preset-btn')]
-          .find(b => b.textContent.includes('Free-Space'));
+      // Click Free-Space preset — should set impedance to 73+j43 but not touch feedOffset
+      await page.$$eval('.presets .preset-btn', btns => {
+        const btn = btns.find(b => b.textContent.includes('Free-Space'));
         if (!btn) throw new Error('Free-Space preset not found');
         btn.click();
       });
       await wait(page, 200);
+      const ocfdR = await getSliderValue(page, 'OCFD center resistance');
+      assert(ocfdR === 73, `Expected ocfdR=73 from preset, got ${ocfdR}`);
+      const ocfdX = await getSliderValue(page, 'OCFD center reactance');
+      assert(ocfdX === 43, `Expected ocfdX=43 from preset, got ${ocfdX}`);
+      // Feed offset should remain at default (0), not be changed by preset
       const offset = await getSliderValue(page, 'Feed offset');
-      assert(offset === 33, `Expected feedOffset=33 from preset, got ${offset}`);
+      assert(offset === 0, `Expected feedOffset unchanged at 0, got ${offset}`);
     });
 
     await test('12.7 OCFD feed offset=50 does not crash (boundary)', async () => {
@@ -878,6 +882,45 @@ async function run() {
       await wait(page, 500);
       const swrRows = await page.$$eval('.swr-row', rows => rows.length);
       assert(swrRows >= 3, `Expected at least 3 SWR table rows, got ${swrRows}`);
+    });
+
+    await test('12.12 OCFD computed preset with freq sets impedance and opens calculator', async () => {
+      await page.goto(`${BASE}?mode=ocfd&freq=7.1`, { waitUntil: 'networkidle0', timeout: 15000 });
+      await wait(page, 500);
+      // Click "Resonant, λ/2 AGL, Average Ground" preset
+      await page.$$eval('.presets .preset-btn', btns => {
+        const btn = btns.find(b => b.textContent.includes('\u03bb/2 AGL'));
+        if (!btn) throw new Error('\u03bb/2 AGL preset not found');
+        btn.click();
+      });
+      await wait(page, 300);
+      // Impedance should be set to computed values (not the old hardcoded 67+j0)
+      const ocfdR = await getSliderValue(page, 'OCFD center resistance');
+      assert(ocfdR > 0, `Expected computed ocfdR > 0, got ${ocfdR}`);
+      // Calculator panel should be open
+      const calcOpen = await page.$$eval('.control-header', headers => {
+        const calcHeader = headers.find(h => h.textContent.includes('CALCULATOR'));
+        return calcHeader ? calcHeader.getAttribute('aria-expanded') === 'true' : false;
+      });
+      assert(calcOpen, 'Dipole calculator should be open after computed preset click');
+    });
+
+    await test('12.13 OCFD computed preset disabled without freq', async () => {
+      await page.goto(`${BASE}?mode=ocfd`, { waitUntil: 'networkidle0', timeout: 15000 });
+      await wait(page, 500);
+      const disabledState = await page.$$eval('.presets .preset-btn', btns => {
+        const halfWave = btns.find(b => b.textContent.includes('\u03bb/2 AGL'));
+        const quarterWave = btns.find(b => b.textContent.includes('\u03bb/4 AGL'));
+        const freeSpace = btns.find(b => b.textContent.includes('Free-Space'));
+        return {
+          halfWaveDisabled: halfWave ? halfWave.disabled : null,
+          quarterWaveDisabled: quarterWave ? quarterWave.disabled : null,
+          freeSpaceDisabled: freeSpace ? freeSpace.disabled : null,
+        };
+      });
+      assert(disabledState.halfWaveDisabled === true, '\u03bb/2 AGL preset should be disabled without freq');
+      assert(disabledState.quarterWaveDisabled === true, '\u03bb/4 AGL preset should be disabled without freq');
+      assert(disabledState.freeSpaceDisabled === false, 'Free-Space preset should not be disabled');
     });
 
     // ==========================================================

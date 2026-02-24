@@ -30,14 +30,16 @@
     .experimental-banner {
       position: fixed;
       top: 44px;
-      right: -40px;
+      right: -60px;
+      width: 260px;
       background: #e03131;
       color: #fff;
       font-size: 14px;
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
-      padding: 8px 80px;
+      padding: 8px 0;
+      text-align: center;
       transform: rotate(45deg);
       z-index: 100;
       pointer-events: none;
@@ -594,9 +596,11 @@
 
     /** @type {Preset[]} OCFD center impedance presets (includes feedOffset) */
     const OCFD_PRESETS = Object.freeze([
-      { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, feedOffset: 33, groundType: 'free' },
-      { label: 'Resonant, λ/2 AGL, Average Ground', r: 67, x: 0, feedOffset: 33, groundType: 'average' },
-      { label: 'Resonant, λ/4 AGL, Average Ground', r: 77, x: 17, feedOffset: 33, groundType: 'average' },
+      { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, groundType: 'free' },
+      { label: 'Resonant, λ/2 AGL, Average Ground', r: 67, x: 0, groundType: 'average',
+        heightFraction: 0.5 },
+      { label: 'Resonant, λ/4 AGL, Average Ground', r: 77, x: 17, groundType: 'average',
+        heightFraction: 0.25 },
     ]);
 
     /** @type {number[]} Normalized resistance values for Smith chart circles */
@@ -1256,8 +1260,16 @@
      * induced EMF method with image theory. Displays shortening factor
      * K and Ω'. Available in all modes (gamma, hairpin, OCFD).
      */
-    const DipoleCalculator = ({ state, set, setStr, onApplyZ }) => {
-      const [open, setOpen] = useState(false);
+    const DipoleCalculator = ({ state, set, setStr, onApplyZ, impedanceKeys }) => {
+      const [open, setOpen] = useState(state.calcOpen > 0);
+      const [infoOpen, setInfoOpen] = useState(false);
+      const prevCalcOpen = useRef(state.calcOpen);
+      useEffect(() => {
+        if (state.calcOpen !== prevCalcOpen.current) {
+          setOpen(state.calcOpen > 0);
+          prevCalcOpen.current = state.calcOpen;
+        }
+      }, [state.calcOpen]);
       const freq = parseFloat(state.freqMHz);
       const diam = parseFloat(state.elementDiamMm);
       const hasFreqDiam = freq > 0 && diam > 0;
@@ -1281,13 +1293,45 @@
       return (
         <div className="control-panel" style={{ borderColor: '#4ade80' }}
           data-tooltip="Compute center impedance from antenna geometry using the induced EMF method">
-          <div className="control-header" style={{ color: '#4ade80', cursor: 'pointer', userSelect: 'none' }}
-            onClick={() => setOpen(o => !o)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } }}
-            tabIndex={0}
-            role="button"
-            aria-expanded={open}>
-            {open ? '\u25BC' : '\u25B6'} DIPOLE CALCULATOR
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="control-header" style={{ color: '#4ade80', cursor: 'pointer', userSelect: 'none', flex: 1 }}
+              onClick={() => setOpen(o => !o)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } }}
+              tabIndex={0}
+              role="button"
+              aria-expanded={open}>
+              {open ? '\u25BC' : '\u25B6'} DIPOLE CALCULATOR
+            </div>
+            <span style={{ position: 'relative', flexShrink: 0 }}>
+              <span
+                onClick={(e) => { e.stopPropagation(); setInfoOpen(o => !o); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInfoOpen(o => !o); } }}
+                tabIndex={0}
+                role="button"
+                aria-label="References"
+                style={{ cursor: 'pointer', fontSize: 14, color: '#888', border: '1px solid #555',
+                  borderRadius: '50%', width: 20, height: 20, display: 'inline-flex',
+                  alignItems: 'center', justifyContent: 'center' }}>
+                {'\u2139'}
+              </span>
+              {infoOpen && (
+                <div style={{ position: 'absolute', top: 28, right: 0, background: '#2a2a2a',
+                  border: '1px solid #555', borderRadius: 6, padding: '10px 14px', width: 280,
+                  fontSize: 12, color: '#ccc', lineHeight: 1.5, zIndex: 200,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                  Free-space impedance via the induced EMF method
+                  (Stearns, K6OIK, {'\u201C'}Antenna Impedance Models,{'\u201D'} ARRL Pacificon 2004;
+                  {' '}{'\u201C'}Dipole Basics,{'\u201D'} 2019). Ground effects via image theory with
+                  Fresnel reflection (Balanis, <em>Antenna Theory</em>, 4e, Ch. 4 {'\u0026'} 8).
+                  <div style={{ textAlign: 'right', marginTop: 6 }}>
+                    <span onClick={() => setInfoOpen(false)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInfoOpen(false); } }}
+                      tabIndex={0} role="button" aria-label="Close references"
+                      style={{ cursor: 'pointer', color: '#888', fontSize: 11 }}>close</span>
+                  </div>
+                </div>
+              )}
+            </span>
           </div>
           {open && (
             <>
@@ -1338,24 +1382,35 @@
                   Enter height to compute impedance over ground
                 </div>
               )}
-              <button
-                className="btn auto-tune-btn ocfd"
-                style={{ marginTop: 4, width: '100%', opacity: groundZ ? 1 : 0.4 }}
-                disabled={!groundZ}
-                onClick={() => groundZ && onApplyZ(groundZ)}
-                data-tooltip={!groundZ
-                  ? (() => {
-                    const reasons = [
-                      !(freq > 0) && 'frequency',
-                      !(diam > 0) && 'wire diameter',
-                      hasFreqDiam && !isFreeSpace && !hasHeight && 'height (or select free space)',
-                    ].filter(Boolean);
-                    return reasons.length > 0 ? `Enter ${reasons.join(', ')}` : 'Unable to compute impedance';
-                  })()
-                  : 'Set antenna impedance from calculated dipole Z'}
-              >
-                Apply to Antenna Impedance
-              </button>
+              {(() => {
+                const alreadyApplied = groundZ && impedanceKeys
+                  && state[impedanceKeys.r] === Math.round(groundZ.r)
+                  && state[impedanceKeys.x] === Math.round(groundZ.x)
+                  && state._appliedCalcR === groundZ.r
+                  && state._appliedCalcX === groundZ.x;
+                return (
+                  <button
+                    className="btn auto-tune-btn ocfd"
+                    style={{ marginTop: 4, width: '100%', opacity: groundZ && !alreadyApplied ? 1 : 0.4 }}
+                    disabled={!groundZ || alreadyApplied}
+                    onClick={() => groundZ && onApplyZ(groundZ)}
+                    data-tooltip={alreadyApplied
+                      ? 'Already applied'
+                      : !groundZ
+                        ? (() => {
+                          const reasons = [
+                            !(freq > 0) && 'frequency',
+                            !(diam > 0) && 'wire diameter',
+                            hasFreqDiam && !isFreeSpace && !hasHeight && 'height (or select free space)',
+                          ].filter(Boolean);
+                          return reasons.length > 0 ? `Enter ${reasons.join(', ')}` : 'Unable to compute impedance';
+                        })()
+                        : 'Set antenna impedance from calculated dipole Z'}
+                  >
+                    {alreadyApplied ? '\u2713 Applied' : 'Apply to Antenna Impedance'}
+                  </button>
+                );
+              })()}
             </>
           )}
         </div>
@@ -1534,7 +1589,7 @@
             </div>
           </ControlPanel>
 
-          <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} />
+          <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} impedanceKeys={gammaMode.impedanceKeys} />
 
           <ControlPanel color={COLORS.step1} title={'\u2461 AUTOTRANSFORMER (TAP RATIO)'} tooltip="Impedance step-up via tap position on driven element">
             <label className="control-label">
@@ -1791,7 +1846,7 @@
             </div>
           </ControlPanel>
 
-          <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} />
+          <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} impedanceKeys={hairpinMode.impedanceKeys} />
 
           <ControlPanel color={COLORS.step1} title={'\u2461 SHORTEN ELEMENT'} tooltip="Capacitive reactance from shortened driven element">
             <label className="control-label">
@@ -1953,7 +2008,7 @@
 
       Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
           <>
-            <ControlPanel color={COLORS.orig} title="ANTENNA IMPEDANCE (CENTER FED)" tooltip="Impedance at the center of the dipole (source of truth for matching)">
+            <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE (CENTER FED)'} tooltip="Impedance at the center of the dipole (source of truth for matching)">
               <label className="control-label">
                 <span className="control-text">Resistance: {state.ocfdR}{'\u03A9'}</span>
                 <input type="range" min="10" max="150" value={state.ocfdR}
@@ -1975,9 +2030,9 @@
               </div>
             </ControlPanel>
 
-            <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} />
+            <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} impedanceKeys={ocfdMode.impedanceKeys} />
 
-            <ControlPanel color={COLORS.ocfd} title="FEED OFFSET" tooltip="Distance from center as % of half-length">
+            <ControlPanel color={COLORS.ocfd} title={'\u2461 FEED OFFSET'} tooltip="Distance from center as % of half-length">
               <label className="control-label">
                 <span className="control-text">Offset: {state.feedOffset}% from center</span>
                 <input type="range" min="0" max="50" step="1" value={state.feedOffset}
@@ -2105,10 +2160,6 @@
           <strong>Off-Center Fed Doublet:</strong> A half-wave dipole fed off-center presents higher impedance,
           enabling use with 300{'\u03A9'} or 450{'\u03A9'} balanced feedline.
           Z{'\u2090'}({'\u03B1'}) = Z{'\u2080'} / cos{'\u00B2'}({'\u03C0\u03B1'}) where {'\u03B1'} is the feed offset ratio.
-          Free-space impedance via the induced EMF method
-          (Stearns, K6OIK, {'\u201C'}Antenna Impedance Models,{'\u201D'} ARRL Pacificon 2004;
-          {'\u201C'}Dipole Basics,{'\u201D'} 2019). Ground effects via image theory with
-          Fresnel reflection (Balanis, <em>Antenna Theory</em>, 4e, Ch. 4 {'\u0026'} 8).
         </div>
       ),
     };
@@ -2165,7 +2216,8 @@
       feedOffset: 0,
       feedlineZ0: 50,
       heightM: '',
-      groundType: 'average'
+      groundType: 'average',
+      calcOpen: 0
     });
 
     /**
@@ -2200,7 +2252,8 @@
         feedlineZ0: parseParam(params.get(URL_KEYS.feedlineZ0), DEFAULTS.feedlineZ0),
         heightM: params.get(URL_KEYS.heightM) || DEFAULTS.heightM,
         groundType: (params.get(URL_KEYS.groundType) in GROUND_TYPES)
-          ? params.get(URL_KEYS.groundType) : DEFAULTS.groundType
+          ? params.get(URL_KEYS.groundType) : DEFAULTS.groundType,
+        calcOpen: 0
       };
     };
 
@@ -2285,18 +2338,44 @@
       }, [handleAutoTune, modeDef]);
 
       const handlePreset = (preset) => {
-        const { r, x, label, ...extra } = preset;
+        const { r, x, label, heightFraction, ...extra } = preset;
         const { r: rKey, x: xKey } = modeDef.impedanceKeys;
-        const updates = { [rKey]: r, [xKey]: x, ...extra };
-        if (modeDef.tune) {
-          Object.assign(updates, modeDef.tune(Z(r, x)));
+
+        if (heightFraction != null) {
+          // Computed preset — requires freq (button is disabled without it)
+          const freq = parseFloat(p.freqMHz);
+          if (!freq || freq <= 0) return;
+          const lambda = C_SPEED / (freq * 1e6);
+          const heightM = (heightFraction * lambda).toFixed(1);
+          const diam = parseFloat(p.elementDiamMm) > 0 ? p.elementDiamMm : '2';
+          const groundType = extra.groundType || 'average';
+          const computed = calcDipoleOverGround(freq, parseFloat(heightM), parseFloat(diam), groundType);
+          if (!computed) return;
+          const updates = {
+            [rKey]: Math.round(computed.r), [xKey]: Math.round(computed.x),
+            _appliedCalcR: computed.r, _appliedCalcX: computed.x,
+            heightM, elementDiamMm: diam, calcOpen: Math.abs(p.calcOpen || 0) + 1, ...extra,
+          };
+          if (modeDef.tune) Object.assign(updates, modeDef.tune(Z(computed.r, computed.x)));
+          set(updates);
+        } else {
+          const updates = { [rKey]: r, [xKey]: x, calcOpen: -Math.abs(p.calcOpen || 0) - 1, ...extra };
+          if (modeDef.tune) Object.assign(updates, modeDef.tune(Z(r, x)));
+          set(updates);
         }
-        set(updates);
       };
 
       const isPresetActive = (preset) => {
         const { r: rKey, x: xKey } = modeDef.impedanceKeys;
+        if ('heightFraction' in preset) {
+          if (p.groundType !== preset.groundType) return false;
+          const freq = parseFloat(p.freqMHz);
+          if (!freq || freq <= 0) return false;
+          const expectedHeight = (preset.heightFraction * C_SPEED / (freq * 1e6)).toFixed(1);
+          return parseFloat(p.heightM).toFixed(1) === expectedHeight;
+        }
         if (p[rKey] !== preset.r || p[xKey] !== preset.x) return false;
+        if ('groundType' in preset && p.groundType !== preset.groundType) return false;
         if ('feedOffset' in preset) return p.feedOffset === preset.feedOffset;
         return true;
       };
@@ -2304,7 +2383,10 @@
       /** Apply computed dipole impedance to the mode's R/X sliders + auto-tune */
       const handleApplyCalculatedZ = (computedZ) => {
         const { r: rKey, x: xKey } = modeDef.impedanceKeys;
-        const updates = { [rKey]: Math.round(computedZ.r), [xKey]: Math.round(computedZ.x) };
+        const updates = {
+          [rKey]: Math.round(computedZ.r), [xKey]: Math.round(computedZ.x),
+          _appliedCalcR: computedZ.r, _appliedCalcX: computedZ.x,
+        };
         if (modeDef.tune) Object.assign(updates, modeDef.tune(computedZ));
         set(updates);
       };
@@ -2318,7 +2400,7 @@
               <button
                 key={modeKey}
                 className={`btn mode-btn ${mode === modeKey ? def.activeClass : ''}`}
-                onClick={() => set({ mode: modeKey })}
+                onClick={() => set({ mode: modeKey, calcOpen: 0, _appliedCalcR: undefined, _appliedCalcX: undefined })}
               >
                 {def.buttonLabel}
               </button>
@@ -2330,15 +2412,22 @@
 
           {/* Presets */}
           <div className="presets">
-            {modeDef.presets.map((preset) => (
-              <button
-                key={preset.label}
-                className={`btn preset-btn ${isPresetActive(preset) ? 'active' : ''}`}
-                onClick={() => handlePreset(preset)}
-              >
-                {preset.label}
-              </button>
-            ))}
+            {modeDef.presets.map((preset) => {
+              const needsFreq = preset.heightFraction != null;
+              const freqOk = parseFloat(p.freqMHz) > 0;
+              return (
+                <button
+                  key={preset.label}
+                  className={`btn preset-btn ${isPresetActive(preset) ? 'active' : ''}`}
+                  onClick={() => handlePreset(preset)}
+                  disabled={needsFreq && !freqOk}
+                  style={needsFreq && !freqOk ? { opacity: 0.4 } : undefined}
+                  data-tooltip={needsFreq && !freqOk ? 'Enter frequency first' : undefined}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Physical Parameters */}
