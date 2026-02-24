@@ -101,7 +101,12 @@ async function getSliderValue(page, ariaLabel) {
 
 /** Click auto-tune and wait for update */
 async function autoTune(page) {
-  await page.click('.auto-tune-btn');
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('.auto-tune-btn')]
+      .find(b => b.textContent.trim() === 'Auto-Tune');
+    if (!btn) throw new Error('Auto-Tune button not found');
+    btn.click();
+  });
   await wait(page, 300);
 }
 
@@ -284,21 +289,29 @@ async function run() {
 
     await switchMode(page, 'gamma'); // back to Gamma
 
-    const presetLabels = await page.$$eval('.preset-btn', btns =>
-      btns.map(b => b.textContent)
+    // Get antenna preset labels from the top-level .presets section
+    const presetLabels = await page.$$eval('.presets .preset-btn', btns =>
+      btns.map(b => b.textContent.trim())
     );
+
+    /** Click a preset button by its label text */
+    async function clickPreset(pg, label) {
+      await pg.$$eval('.presets .preset-btn', (btns, lbl) => {
+        const btn = btns.find(b => b.textContent.trim() === lbl);
+        if (!btn) throw new Error(`Preset button "${lbl}" not found`);
+        btn.click();
+      }, label);
+      await wait(pg, 300);
+    }
 
     for (let i = 0; i < presetLabels.length; i++) {
       const label = presetLabels[i];
-      // Skip non-antenna-preset buttons (Auto-Tune, Copy URL, Reset)
-      if (!label.includes('Ω')) continue;
 
       await test(`5.1.${i + 1} Preset "${label}" loads correct impedance`, async () => {
-        await page.click(`.preset-btn:nth-child(${i + 1})`);
-        await wait(page, 300);
+        await clickPreset(page, label);
         const display = await getImpedanceDisplay(page);
-        // Extract R from the preset label, e.g. "(73+j43Ω)" or "(25Ω)"
-        const match = label.match(/(\d+)[+−\-]/);
+        // Extract R from the preset label, e.g. "(73+j43Ω)" or "(67Ω)"
+        const match = label.match(/\((\d+)(?:[+−\-]|Ω)/);
         if (match) {
           const expectedR = match[1];
           assert(display.includes(expectedR), `Impedance "${display}" doesn't contain R=${expectedR}`);
@@ -312,16 +325,17 @@ async function run() {
     }
 
     await test('5.3 Active state on preset button', async () => {
-      await page.click('.preset-btn:nth-child(1)');
-      await wait(page, 300);
-      const hasActive = await page.$eval('.preset-btn:nth-child(1)', el =>
-        el.classList.contains('active')
-      );
-      assert(hasActive, 'First preset button does not have .active class');
-      const secondActive = await page.$eval('.preset-btn:nth-child(2)', el =>
-        el.classList.contains('active')
-      );
-      assert(!secondActive, 'Second preset button incorrectly has .active class');
+      await clickPreset(page, presetLabels[0]);
+      const activeState = await page.$$eval('.presets .preset-btn', (btns, firstLbl, secondLbl) => {
+        const first = btns.find(b => b.textContent.trim() === firstLbl);
+        const second = btns.find(b => b.textContent.trim() === secondLbl);
+        return {
+          firstActive: first ? first.classList.contains('active') : false,
+          secondActive: second ? second.classList.contains('active') : false,
+        };
+      }, presetLabels[0], presetLabels[1]);
+      assert(activeState.firstActive, 'First preset button does not have .active class');
+      assert(!activeState.secondActive, 'Second preset button incorrectly has .active class');
     });
 
     // ----------------------------------------------------------
@@ -497,8 +511,9 @@ async function run() {
     await test('8.1 Wavelength displayed with frequency', async () => {
       await page.goto(BASE, { waitUntil: 'networkidle0', timeout: 15000 });
       await wait(page, 500);
-      // Type frequency into the freq input
-      const freqInput = await page.$('input[type=number][min="1"]');
+      // Type frequency into the freq input (in physical-params bar)
+      const freqInput = await page.$('.physical-params input[type=number]');
+      assert(freqInput, 'Frequency input not found');
       await freqInput.click({ clickCount: 3 });
       await freqInput.type('145');
       await wait(page, 300);
@@ -588,6 +603,137 @@ async function run() {
       await wait(page, 200);
       const display = await getImpedanceDisplay(page);
       assert(display.includes('50'), `Display "${display}" doesn't show X=50`);
+    });
+
+    // ----------------------------------------------------------
+    // 11. Shared Dipole Calculator
+    // ----------------------------------------------------------
+    console.log('\n11. Shared Dipole Calculator');
+
+    await test('11.1 Calculator present in Gamma mode', async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle0', timeout: 15000 });
+      await wait(page, 500);
+      const headers = await page.$$eval('.control-header', els =>
+        els.map(e => e.textContent)
+      );
+      assert(headers.some(h => h.includes('DIPOLE CALCULATOR')),
+        'DIPOLE CALCULATOR not found in Gamma mode');
+    });
+
+    await test('11.2 Calculator present in Hairpin mode', async () => {
+      await switchMode(page, 'hairpin');
+      const headers = await page.$$eval('.control-header', els =>
+        els.map(e => e.textContent)
+      );
+      assert(headers.some(h => h.includes('DIPOLE CALCULATOR')),
+        'DIPOLE CALCULATOR not found in Hairpin mode');
+    });
+
+    await test('11.3 Calculator present in OCFD mode', async () => {
+      await switchMode(page, 'ocfd');
+      const headers = await page.$$eval('.control-header', els =>
+        els.map(e => e.textContent)
+      );
+      assert(headers.some(h => h.includes('DIPOLE CALCULATOR')),
+        'DIPOLE CALCULATOR not found in OCFD mode');
+    });
+
+    await test('11.4 Freq in params bar, diam/height in calculator', async () => {
+      await switchMode(page, 'gamma');
+      const freqInput = await page.$('.physical-params input[type=number]');
+      assert(freqInput, 'Frequency input not found in physical-params bar');
+      // Expand the calculator to check diam/height
+      await page.$$eval('.control-header', headers => {
+        const calc = headers.find(h => h.textContent.includes('CALCULATOR'));
+        if (calc && calc.textContent.includes('\u25B6')) calc.click();
+      });
+      await wait(page, 200);
+      const diamInput = await page.$('.controls input[min="0.1"][max="100"]');
+      assert(diamInput, 'Wire diameter input not found in controls');
+      const heightInput = await page.$('.controls input[min="0.1"][max="100"][step="0.1"]');
+      assert(heightInput, 'Height input not found in controls');
+    });
+
+    await test('11.5 Ground type buttons present', async () => {
+      const groundBtns = await page.$$eval('.controls .preset-btn', btns =>
+        btns.map(b => b.textContent.trim())
+          .filter(t => ['Free space', 'Perfect', 'Sea water', 'Wet', 'Average', 'Dry', 'City'].includes(t))
+      );
+      assert(groundBtns.length >= 4, `Only ${groundBtns.length} ground type buttons found`);
+    });
+
+    await test('11.6 Free-space impedance shown when freq entered', async () => {
+      // Load with freq/diam/gnd=free via URL params
+      await page.goto(`${BASE}?mode=gamma&r=73&x=43&freq=146&diam=2&gnd=free`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      // Expand the calculator only if collapsed
+      await page.$$eval('.control-header', headers => {
+        const h = headers.find(h => h.textContent.includes('CALCULATOR'));
+        if (h && h.textContent.includes('\u25B6')) h.click();
+      });
+      await wait(page, 300);
+      const bodyText = await page.$eval('body', b => b.innerText);
+      assert(bodyText.includes('Free-space'), `Free-space impedance not found in body text`);
+    });
+
+    await test('11.6b Resonant length and K displayed', async () => {
+      // After 11.6, calculator is expanded with computed Z for 146 MHz, 2mm wire
+      const bodyText = await page.$eval('body', b => b.innerText);
+      assert(bodyText.includes('Resonant length'), `Resonant length not displayed`);
+      assert(bodyText.includes('K ='), `K factor not displayed`);
+      // K should be ~0.96 for 2mm wire at 146 MHz
+      const kMatch = bodyText.match(/K\s*=\s*([\d.]+)/);
+      assert(kMatch, 'Could not parse K value');
+      const k = parseFloat(kMatch[1]);
+      assert(k > 0.92 && k < 0.99, `K = ${k} outside expected range 0.92-0.99`);
+    });
+
+    await test('11.7 Apply to Antenna Impedance updates antenna impedance', async () => {
+      // After 11.6, calculator is expanded with computed Z. Click Apply
+      await page.$$eval('.auto-tune-btn', btns => {
+        const btn = btns.find(b => b.textContent.trim() === 'Apply to Antenna Impedance');
+        if (!btn) throw new Error('Apply to Antenna Impedance button not found');
+        btn.click();
+      });
+      await wait(page, 300);
+      // Antenna R should be ~73 (free-space resonant dipole)
+      const r = await getSliderValue(page, 'Antenna resistance');
+      assert(r >= 60 && r <= 90, `Expected R near 73 for free-space dipole, got ${r}`);
+    });
+
+    await test('11.8 Presets section separate from calculator', async () => {
+      await switchMode(page, 'gamma');
+      const topPresets = await page.$('.presets');
+      assert(topPresets, 'Top-level .presets section should exist');
+      // Verify calculator does NOT contain preset buttons with Ω
+      const calcPresets = await page.$$eval('.control-panel', panels => {
+        const calc = panels.find(p => p.querySelector('.control-header')?.textContent.includes('CALCULATOR'));
+        if (!calc) return 0;
+        return [...calc.querySelectorAll('.preset-btn')]
+          .filter(b => b.textContent.includes('Ω') && !b.textContent.includes('line')).length;
+      });
+      assert(calcPresets === 0, `Calculator should not contain antenna presets, found ${calcPresets}`);
+    });
+
+    await test('11.9 Presets shown for each mode', async () => {
+      for (const modeName of ['gamma', 'hairpin', 'ocfd']) {
+        await switchMode(page, modeName);
+        const presets = await page.$$eval('.presets .preset-btn', btns => btns.length);
+        assert(presets >= 2, `${modeName} mode has only ${presets} preset buttons`);
+      }
+    });
+
+    await test('11.10 URL includes height/ground for all modes', async () => {
+      // Load with height and ground type via URL params
+      await page.goto(`${BASE}?mode=gamma&r=73&x=43&freq=146&diam=2&ht=10&gnd=wet`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      const url = await page.url();
+      assert(url.includes('ht='), `URL missing height param: ${url}`);
+      assert(url.includes('gnd='), `URL missing ground param: ${url}`);
     });
 
     await page.close();

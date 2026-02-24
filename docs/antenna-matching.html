@@ -23,6 +23,25 @@
       flex-direction: column;
       align-items: center;
       gap: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .experimental-banner {
+      position: fixed;
+      top: 44px;
+      right: -40px;
+      background: #e03131;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 80px;
+      transform: rotate(45deg);
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
 
     .main-content {
@@ -547,11 +566,11 @@
     });
 
     /** @type {number[]} Feedline impedances for OCFD SWR calculations */
-    const FEEDLINE_IMPEDANCES = Object.freeze([50, 300, 450]);
+    const FEEDLINE_IMPEDANCES = Object.freeze([50, 75, 100, 150, 300, 450]);
 
     /** @type {Preset[]} Gamma match antenna presets */
     const GAMMA_PRESETS = Object.freeze([
-      { label: 'Dipole (73+j43Ω)', r: 73, x: 43 },
+      { label: 'Resonant Dipole (67Ω)', r: 67, x: 0 },
       { label: 'Yagi (25Ω)', r: 25, x: 0 },
       { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 },
     ]);
@@ -560,13 +579,14 @@
     const HAIRPIN_PRESETS = Object.freeze([
       { label: 'Yagi (25Ω)', r: 25, x: 0 },
       { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 },
-      { label: 'Dipole (73Ω)', r: 73, x: 0 },
+      { label: 'Resonant Dipole (67Ω)', r: 67, x: 0 },
     ]);
 
     /** @type {Preset[]} OCFD center impedance presets (includes feedOffset) */
     const OCFD_PRESETS = Object.freeze([
       { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, feedOffset: 33 },
-      { label: 'Low Height (~λ/4 AGL)', r: 55, x: 0, feedOffset: 33 },
+      { label: 'Resonant (67Ω)', r: 67, x: 0, feedOffset: 33 },
+      { label: 'Low Height Resonant (77+j17Ω)', r: 77, x: 17, feedOffset: 33 },
     ]);
 
     /** @type {number[]} Normalized resistance values for Smith chart circles */
@@ -858,17 +878,40 @@
     };
 
     /**
-     * Half-wave dipole feedpoint impedance via IEMF.
-     * Convenience wrapper: sets l = λ/2 for the given frequency.
+     * Find the resonant dipole length (where X_in = 0) via bisection.
+     * The resonant length is slightly shorter than λ/2 due to finite
+     * wire diameter. The shortening factor K = L_resonant / (λ/2)
+     * depends on Ω' = 2·ln(2L/a), the antenna thickness parameter.
+     *
+     * Stearns, K6OIK, "Dipole Basics," Pacificon 2019, slides 43-47.
      *
      * @param {number} freqMHz - Frequency in MHz
      * @param {number} wireDiamMm - Wire diameter in mm
-     * @returns {Impedance} Feedpoint impedance
+     * @returns {{ z: Impedance, lengthM: number, K: number }}
      */
-    const calcDipoleHalfWave = (freqMHz, wireDiamMm) => {
+    const calcDipoleResonant = (freqMHz, wireDiamMm) => {
       const lambda = C_SPEED / (freqMHz * 1e6);
       const wireRadiusM = (wireDiamMm / 1000) / 2;
-      return calcDipoleIEMF(freqMHz, lambda / 2, wireRadiusM);
+
+      // Bisection: X_in > 0 at λ/2, decreases as dipole shortens
+      let lo = 0.42 * lambda;
+      let hi = 0.50 * lambda;
+      const xLo = calcDipoleIEMF(freqMHz, lo, wireRadiusM).x;
+      const xHi = calcDipoleIEMF(freqMHz, hi, wireRadiusM).x;
+      if (xLo * xHi > 0 || !isFinite(xLo) || !isFinite(xHi)) {
+        // No sign change or degenerate input — fall back to λ/2
+        const lengthM = lambda / 2;
+        return { z: calcDipoleIEMF(freqMHz, lengthM, wireRadiusM), lengthM, K: 1 };
+      }
+      for (let i = 0; i < 60; i++) {
+        const mid = (lo + hi) / 2;
+        if (calcDipoleIEMF(freqMHz, mid, wireRadiusM).x > 0) hi = mid;
+        else lo = mid;
+      }
+      const lengthM = (lo + hi) / 2;
+      const z = calcDipoleIEMF(freqMHz, lengthM, wireRadiusM);
+      const K = lengthM / (lambda / 2);
+      return { z, lengthM, K };
     };
 
     // ============================================================
@@ -918,7 +961,10 @@
     // ============================================================
 
     /**
-     * Horizontal half-wave dipole impedance over ground.
+     * Resonant dipole impedance over ground.
+     * Uses the free-space resonant length (X_in = 0) rather than λ/2
+     * when wire diameter is provided; otherwise falls back to the
+     * standard half-wave approximation (73.1 + j42.5 Ω).
      *
      * Z_input = Z_self + Γ_ground · Z_mutual(2h)
      *
@@ -929,31 +975,40 @@
      *
      * @param {number} freqMHz - Frequency in MHz
      * @param {number} heightM - Height above ground in meters
-     * @param {number} [wireDiamMm] - Wire diameter in mm (uses IEMF if provided)
+     * @param {number} [wireDiamMm] - Wire diameter in mm (computes resonant
+     *   length via IEMF if provided; otherwise uses half-wave approximation)
      * @param {string} [groundType='perfect'] - Key into GROUND_TYPES
-     * @returns {Impedance|null} Input impedance, or null if inputs invalid
+     * @returns {(Impedance & { lengthM: number, K: number })|null}
      */
     const calcDipoleOverGround = (freqMHz, heightM, wireDiamMm, groundType) => {
       const freq = parseFloat(freqMHz);
       if (!freq || freq <= 0) return null;
 
-      // Z_self: use IEMF when wire diameter is available, else fixed values
+      const lambda = C_SPEED / (freq * 1e6);
       const diam = parseFloat(wireDiamMm);
-      const zSelf = (diam > 0)
-        ? calcDipoleHalfWave(freq, diam)
-        : Z(73.1, 42.5);
+      let zSelf, lengthM, K;
+      if (diam > 0) {
+        const res = calcDipoleResonant(freq, diam);
+        zSelf = res.z;
+        lengthM = res.lengthM;
+        K = res.K;
+      } else {
+        // No wire diameter — use standard half-wave values (not resonant)
+        zSelf = Z(73.1, 42.5);
+        lengthM = lambda / 2;
+        K = 1;
+      }
 
       // Free space: no ground image, just Z_self
       const gnd = GROUND_TYPES[groundType];
-      if (gnd && gnd.er === null) return zSelf;
+      if (gnd && gnd.er === null) return { ...zSelf, lengthM, K };
 
       const h = parseFloat(heightM);
       if (!h || h <= 0) return null;
 
-      const lambda = C_SPEED / (freq * 1e6);
       const beta = 2 * Math.PI / lambda;
       const d = 2 * h;
-      const L = lambda / 2;
+      const L = lengthM;
       const dL = Math.sqrt(d * d + L * L);
 
       const u0 = beta * d;
@@ -973,7 +1028,7 @@
       const rMut = gammaG.re * R12 - gammaG.im * X12;
       const xMut = gammaG.re * X12 + gammaG.im * R12;
 
-      return Z(zSelf.r + rMut, zSelf.x + xMut);
+      return { ...Z(zSelf.r + rMut, zSelf.x + xMut), lengthM, K };
     };
 
     // ============================================================
@@ -1177,6 +1232,114 @@
       </div>
     );
 
+    /**
+     * Shared dipole calculator — computes resonant dipole impedance
+     * (center feed) from wire geometry and ground conditions using the
+     * induced EMF method with image theory. Displays shortening factor
+     * K and Ω'. Available in all modes (gamma, hairpin, OCFD).
+     */
+    const DipoleCalculator = ({ state, set, setStr, onApplyZ }) => {
+      const [open, setOpen] = useState(false);
+      const freq = parseFloat(state.freqMHz);
+      const diam = parseFloat(state.elementDiamMm);
+      const hasFreqDiam = freq > 0 && diam > 0;
+      const isFreeSpace = state.groundType === 'free';
+      const h = parseFloat(state.heightM);
+      const hasHeight = h > 0;
+      const groundZ = hasFreqDiam && (isFreeSpace || hasHeight)
+        ? calcDipoleOverGround(freq, h, diam, state.groundType)
+        : null;
+      const gndLabel = GROUND_TYPES[state.groundType]?.label || state.groundType;
+      // Ω' = 2·ln(2L/a) where L = half-length, a = wire radius
+      // Stearns, K6OIK, "Dipole Basics," Pacificon 2019, slide 18
+      const omegaPrime = hasFreqDiam
+        ? (() => {
+            const a = (diam / 1000) / 2;
+            const halfLen = groundZ ? groundZ.lengthM / 2 : (C_SPEED / (freq * 1e6)) / 4;
+            return 2 * Math.log(2 * halfLen / a);
+          })()
+        : null;
+
+      return (
+        <div className="control-panel" style={{ borderColor: '#4ade80' }}
+          data-tooltip="Compute center impedance from antenna geometry using the induced EMF method">
+          <div className="control-header" style={{ color: '#4ade80', cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => setOpen(o => !o)}>
+            {open ? '\u25BC' : '\u25B6'} DIPOLE CALCULATOR
+          </div>
+          {open && (
+            <>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
+                  Wire {'\u2300'} (mm):
+                  <input type="number" value={state.elementDiamMm}
+                    onChange={setStr('elementDiamMm')}
+                    min="0.1" max="100" step="0.1"
+                    style={{ width: 60, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
+                  Height (m):
+                  <input type="number" value={state.heightM}
+                    onChange={setStr('heightM')}
+                    min="0.1" max="100" step="0.1"
+                    style={{ width: 60, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                {Object.entries(GROUND_TYPES).map(([key, { label }]) => (
+                  <button key={key}
+                    className={`btn preset-btn ${state.groundType === key ? 'active' : ''}`}
+                    style={{ padding: '4px 8px', fontSize: 12 }}
+                    onClick={() => set({ groundType: key })}
+                    aria-label={`${label} ground`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {groundZ && (
+                <div style={{ fontSize: 13, color: '#4ade80', marginBottom: 4 }}>
+                  <div>
+                    {isFreeSpace
+                      ? `Free-space resonant dipole: Z = ${groundZ.format()} \u03A9`
+                      : `Over ${gndLabel.toLowerCase()} ground (h=${state.heightM}m): Z = ${groundZ.format()} \u03A9`}
+                  </div>
+                  <div style={{ color: '#888', fontSize: 12, marginTop: 6 }}>
+                    Resonant length (K6OIK): {groundZ.lengthM.toFixed(3)} m
+                    {' ('}K = {groundZ.K.toFixed(4)}
+                    {omegaPrime != null && <>, {'\u03A9\u2032'} = {omegaPrime.toFixed(1)}</>}
+                    {')'}
+                  </div>
+                </div>
+              )}
+              {hasFreqDiam && !groundZ && !isFreeSpace && (
+                <div style={{ fontSize: 13, color: '#666', fontStyle: 'italic', marginBottom: 4 }}>
+                  Enter height to compute impedance over ground
+                </div>
+              )}
+              <button
+                className="btn auto-tune-btn ocfd"
+                style={{ marginTop: 4, width: '100%', opacity: groundZ ? 1 : 0.4 }}
+                disabled={!groundZ}
+                onClick={() => groundZ && onApplyZ(groundZ)}
+                data-tooltip={!groundZ
+                  ? (() => {
+                    const reasons = [
+                      !(freq > 0) && 'frequency',
+                      !(diam > 0) && 'wire diameter',
+                      hasFreqDiam && !isFreeSpace && !hasHeight && 'height (or select free space)',
+                    ].filter(Boolean);
+                    return reasons.length > 0 ? `Enter ${reasons.join(', ')}` : 'Unable to compute impedance';
+                  })()
+                  : 'Set antenna impedance from calculated dipole Z'}
+              >
+                Apply to Antenna Impedance
+              </button>
+            </>
+          )}
+        </div>
+      );
+    };
+
     // ============================================================
     // Per-Mode Definitions
     // ============================================================
@@ -1189,8 +1352,6 @@
       activeClass: 'active-gamma',
       diagramTitle: 'GAMMA MATCH PHYSICAL ARRANGEMENT',
       hasAutoTune: true,
-      showFreq: true,
-      showElementDiam: false,
       presets: GAMMA_PRESETS,
       impedanceKeys: { r: 'antR', x: 'antX' },
 
@@ -1327,7 +1488,7 @@
         </>
       ),
 
-      Controls: ({ state, result, physical, setNum, freqMHz }) => (
+      Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
         <>
           <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE'} tooltip="Starting impedance of the antenna feedpoint">
             <label className="control-label">
@@ -1350,6 +1511,8 @@
               Z = {state.antR} {state.antX >= 0 ? '+' : '\u2212'} j{Math.abs(state.antX)} {'\u03A9'}
             </div>
           </ControlPanel>
+
+          <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} />
 
           <ControlPanel color={COLORS.step1} title={'\u2461 AUTOTRANSFORMER (TAP RATIO)'} tooltip="Impedance step-up via tap position on driven element">
             <label className="control-label">
@@ -1385,7 +1548,7 @@
                 className="control-slider" style={{ accentColor: COLORS.step3 }} />
             </label>
             {physical && physical.capPf && (
-              <div className="physical-hint">{'\u2248'} {Math.round(physical.capPf)} pF at {freqMHz} MHz</div>
+              <div className="physical-hint">{'\u2248'} {Math.round(physical.capPf)} pF at {state.freqMHz} MHz</div>
             )}
           </ControlPanel>
 
@@ -1471,8 +1634,6 @@
       activeClass: 'active-hairpin',
       diagramTitle: 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT',
       hasAutoTune: true,
-      showFreq: true,
-      showElementDiam: true,
       presets: HAIRPIN_PRESETS,
       impedanceKeys: { r: 'antR', x: 'antX' },
 
@@ -1580,7 +1741,7 @@
         </>
       ),
 
-      Controls: ({ state, result, physical, setNum }) => (
+      Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
         <>
           <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE'} tooltip="Starting impedance of the antenna feedpoint">
             <label className="control-label">
@@ -1603,6 +1764,8 @@
               Z = {state.antR} {state.antX >= 0 ? '+' : '\u2212'} j{Math.abs(state.antX)} {'\u03A9'}
             </div>
           </ControlPanel>
+
+          <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} />
 
           <ControlPanel color={COLORS.step1} title={'\u2461 SHORTEN ELEMENT'} tooltip="Capacitive reactance from shortened driven element">
             <label className="control-label">
@@ -1689,8 +1852,6 @@
       activeClass: 'active-ocfd',
       diagramTitle: 'OFF-CENTER FED DOUBLET',
       hasAutoTune: false,
-      showFreq: false,
-      showElementDiam: false,
       presets: OCFD_PRESETS,
       impedanceKeys: { r: 'ocfdR', x: 'ocfdX' },
 
@@ -1700,8 +1861,6 @@
           [URL_KEYS.ocfdX]: Math.round(p.ocfdX),
           [URL_KEYS.feedOffset]: Math.round(p.feedOffset),
           [URL_KEYS.feedlineZ0]: p.feedlineZ0,
-          ...(p.heightM ? { [URL_KEYS.heightM]: p.heightM } : {}),
-          ...(p.groundType !== DEFAULTS.groundType ? { [URL_KEYS.groundType]: p.groundType } : {}),
         };
       },
 
@@ -1766,24 +1925,9 @@
         </>
       ),
 
-      Controls: ({ state, result, physical, setNum, set, setStr }) => {
-        const freq = parseFloat(state.freqMHz);
-        const diam = parseFloat(state.elementDiamMm);
-        const hasFreqDiam = freq > 0 && diam > 0;
-        const isFreeSpace = state.groundType === 'free';
-        const h = parseFloat(state.heightM);
-        const hasHeight = h > 0;
-        const groundZ = hasFreqDiam && (isFreeSpace || hasHeight)
-          ? calcDipoleOverGround(freq, h, diam, state.groundType)
-          : null;
-        const gndLabel = GROUND_TYPES[state.groundType]?.label || state.groundType;
-        // Omega prime: ratio of half-length to wire radius (Stearns notation)
-        const omegaPrime = hasFreqDiam
-          ? (C_SPEED / (freq * 1e6)) / (2 * (diam / 1000))
-          : null;
-        return (
+      Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
           <>
-            <ControlPanel color={COLORS.orig} title={'\u2460 CENTER-FEED IMPEDANCE'} tooltip="Impedance at the center of the dipole (source of truth for matching)">
+            <ControlPanel color={COLORS.orig} title="ANTENNA IMPEDANCE (CENTER FED)" tooltip="Impedance at the center of the dipole (source of truth for matching)">
               <label className="control-label">
                 <span className="control-text">Resistance: {state.ocfdR}{'\u03A9'}</span>
                 <input type="range" min="10" max="150" value={state.ocfdR}
@@ -1805,66 +1949,9 @@
               </div>
             </ControlPanel>
 
-            <ControlPanel color="#4ade80" title="DIPOLE CALCULATOR" tooltip="Compute center impedance from antenna geometry using the induced EMF method">
-              <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
-                  Freq (MHz):
-                  <input type="number" value={state.freqMHz}
-                    onChange={setStr('freqMHz')}
-                    min="1" max="3000" step="0.1"
-                    style={{ width: 70, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
-                  Wire {'\u2300'} (mm):
-                  <input type="number" value={state.elementDiamMm}
-                    onChange={setStr('elementDiamMm')}
-                    min="0.1" max="100" step="0.1"
-                    style={{ width: 60, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
-                  Height (m):
-                  <input type="number" value={state.heightM}
-                    onChange={setStr('heightM')}
-                    min="0.1" max="100" step="0.1"
-                    style={{ width: 60, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
-                </label>
-              </div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-                {Object.entries(GROUND_TYPES).map(([key, { label }]) => (
-                  <button key={key}
-                    className={`btn preset-btn ${state.groundType === key ? 'active' : ''}`}
-                    style={{ padding: '4px 8px', fontSize: 12 }}
-                    onClick={() => set({ groundType: key })}
-                    aria-label={`${label} ground`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-              {groundZ && (
-                <div style={{ padding: 8, background: '#0a1a0a', borderRadius: 6, border: '1px solid #2a5a2a' }}>
-                  <div style={{ fontSize: 13, color: '#4ade80', marginBottom: 4 }}>
-                    {isFreeSpace
-                      ? `Free-space \u03BB/2: Z = ${groundZ.format()} \u03A9`
-                      : `Over ${gndLabel.toLowerCase()} ground (h=${state.heightM}m): Z = ${groundZ.format()} \u03A9`}
-                    {omegaPrime && <span style={{ color: '#888' }}> ({'\u03A9\u2032'} = {omegaPrime.toFixed(1)})</span>}
-                  </div>
-                  <button
-                    className="btn auto-tune-btn ocfd"
-                    style={{ marginTop: 4, width: '100%' }}
-                    onClick={() => set({ ocfdR: Math.round(groundZ.r), ocfdX: Math.round(groundZ.x) })}
-                  >
-                    Apply to Sliders
-                  </button>
-                </div>
-              )}
-              {hasFreqDiam && !groundZ && !isFreeSpace && (
-                <div style={{ fontSize: 13, color: '#666', fontStyle: 'italic' }}>
-                  Enter height to compute impedance over ground
-                </div>
-              )}
-            </ControlPanel>
+            <DipoleCalculator state={state} set={set} setStr={setStr} onApplyZ={onApplyZ} />
 
-            <ControlPanel color={COLORS.ocfd} title={'\u2461 FEED OFFSET'} tooltip="Distance from center as % of half-length">
+            <ControlPanel color={COLORS.ocfd} title="FEED OFFSET" tooltip="Distance from center as % of half-length">
               <label className="control-label">
                 <span className="control-text">Offset: {state.feedOffset}% from center</span>
                 <input type="range" min="0" max="50" step="1" value={state.feedOffset}
@@ -1881,7 +1968,7 @@
               )}
             </ControlPanel>
 
-            <ControlPanel color={COLORS.ocfd} title={'\u2462 FEEDLINE IMPEDANCE'} tooltip="Characteristic impedance of the feedline">
+            <ControlPanel color={COLORS.ocfd} title="FEEDLINE IMPEDANCE" tooltip="Characteristic impedance of the feedline">
               <div className="feedline-selector">
                 {FEEDLINE_IMPEDANCES.map(z0 => (
                   <button
@@ -1916,8 +2003,7 @@
               </div>
             </div>
           </>
-        );
-      },
+      ),
 
       Diagram: ({ state, physical }) => {
         const alpha = state.feedOffset / 100;
@@ -2120,7 +2206,7 @@
       /** Helper for string input onChange handlers */
       const setStr = (key) => (e) => set({ [key]: e.target.value });
 
-      const { mode, freqMHz, elementDiamMm, heightM } = p;
+      const { mode, freqMHz } = p;
       const modeDef = MODE_MAP[mode];
 
       // Update URL when state changes
@@ -2136,6 +2222,8 @@
         Object.entries(modeParams).forEach(([k, v]) => params.set(k, v));
         if (p.freqMHz) params.set(URL_KEYS.freqMHz, p.freqMHz);
         if (p.elementDiamMm && p.elementDiamMm !== DEFAULTS.elementDiamMm) params.set(URL_KEYS.elementDiamMm, p.elementDiamMm);
+        if (p.heightM) params.set(URL_KEYS.heightM, p.heightM);
+        if (p.groundType !== DEFAULTS.groundType) params.set(URL_KEYS.groundType, p.groundType);
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
         window.history.replaceState(null, '', newUrl);
@@ -2184,8 +2272,17 @@
         return true;
       };
 
+      /** Apply computed dipole impedance to the mode's R/X sliders + auto-tune */
+      const handleApplyCalculatedZ = (computedZ) => {
+        const { r: rKey, x: xKey } = modeDef.impedanceKeys;
+        const updates = { [rKey]: Math.round(computedZ.r), [xKey]: Math.round(computedZ.x) };
+        if (modeDef.tune) Object.assign(updates, modeDef.tune(computedZ));
+        set(updates);
+      };
+
       return (
         <div className="app">
+          {mode === 'ocfd' && <div className="experimental-banner">Experimental</div>}
           {/* Mode Toggle */}
           <div className="mode-toggle">
             {Object.entries(MODE_MAP).map(([modeKey, def]) => (
@@ -2213,48 +2310,34 @@
                 {preset.label}
               </button>
             ))}
+          </div>
+
+          {/* Physical Parameters */}
+          <div className="physical-params">
+            <label>
+              Freq (MHz):
+              <input
+                type="number"
+                value={freqMHz}
+                onChange={setStr('freqMHz')}
+                min="1"
+                max="3000"
+                step="0.1"
+              />
+            </label>
+            <span style={{ color: '#555', alignSelf: 'center', minWidth: '90px' }}>
+              {physical ? `\u03BB = ${(physical.lambdaMm / 1000).toFixed(2)}m` : ''}
+            </span>
             {modeDef.hasAutoTune && (
               <button
                 className={`btn auto-tune-btn ${mode}`}
                 onClick={handleAutoTune}
+                style={{ alignSelf: 'center' }}
                 data-tooltip="Find optimal match parameters"
               >
                 Auto-Tune
               </button>
             )}
-          </div>
-
-          {/* Physical Parameters (optional) */}
-          <div className="physical-params">
-            {modeDef.showFreq !== false && (
-              <label>
-                Freq (MHz):
-                <input
-                  type="number"
-                  value={freqMHz}
-                  onChange={setStr('freqMHz')}
-                  min="1"
-                  max="3000"
-                  step="0.1"
-                />
-              </label>
-            )}
-            {modeDef.showElementDiam && (
-              <label>
-                Element {'\u2300'} (mm):
-                <input
-                  type="number"
-                  value={elementDiamMm}
-                  onChange={setStr('elementDiamMm')}
-                  min="0.1"
-                  max="100"
-                  step="0.1"
-                />
-              </label>
-            )}
-            <span style={{ color: '#555', alignSelf: 'center', minWidth: '90px' }}>
-              {physical ? `\u03BB = ${(physical.lambdaMm / 1000).toFixed(2)}m` : ''}
-            </span>
             <button
               className="btn preset-btn"
               onClick={() => navigator.clipboard.writeText(window.location.href)}
@@ -2329,7 +2412,8 @@
             {/* Controls */}
             <div className="controls">
               <modeDef.Controls state={p} result={result} physical={physical}
-                setNum={setNum} set={set} setStr={setStr} freqMHz={freqMHz} />
+                setNum={setNum} set={set} setStr={setStr}
+                onApplyZ={handleApplyCalculatedZ} />
             </div>
           </div>
 
