@@ -619,7 +619,9 @@
       ocfdR: 'ocr',
       ocfdX: 'ocx',
       feedOffset: 'off',
-      feedlineZ0: 'z0'
+      feedlineZ0: 'z0',
+      heightM: 'ht',
+      groundType: 'gnd'
     });
 
     // ============================================================
@@ -644,8 +646,14 @@
      */
     const Z = (r, x) => ({
       r, x,
-      format() { return `${this.r.toFixed(1)} ${this.x >= 0 ? '+' : '−'} j${Math.abs(this.x).toFixed(1)}`; },
-      formatLabel() { return `${Math.round(this.r)}${this.x >= 0 ? '+' : ''}j${Math.round(this.x)}Ω`; }
+      format() {
+        const fmtNum = (v) => !isFinite(v) || Math.abs(v) >= 1e9 ? '∞' : v.toFixed(1);
+        return `${fmtNum(this.r)} ${this.x >= 0 ? '+' : '−'} j${fmtNum(Math.abs(this.x))}`;
+      },
+      formatLabel() {
+        const fmtNum = (v) => !isFinite(v) || Math.abs(v) >= 1e9 ? '∞' : Math.round(v);
+        return `${fmtNum(this.r)}${this.x >= 0 ? '+' : ''}j${fmtNum(this.x)}Ω`;
+      }
     });
 
     /**
@@ -726,6 +734,246 @@
       const gammaMag = Math.sqrt(gamma.re ** 2 + gamma.im ** 2);
       if (gammaMag >= 1) return SWR_MAX;
       return (1 + gammaMag) / (1 - gammaMag);
+    };
+
+    // ============================================================
+    // Special Functions (Sine/Cosine Integrals)
+    // ============================================================
+
+    /** Euler-Mascheroni constant */
+    const EULER_GAMMA = 0.5772156649015329;
+
+    /**
+     * Auxiliary functions f(x), g(x) for asymptotic expansion of Si/Ci.
+     * Si(x) = π/2 - f(x)cos(x) - g(x)sin(x)
+     * Ci(x) = f(x)sin(x) - g(x)cos(x)
+     * @param {number} x - Must be > 0
+     * @returns {{f: number, g: number}}
+     */
+    const siCiAsymptotic = (x) => {
+      // f(x) ~ (1/x) Σ (-1)^n (2n)! / x^(2n)
+      // g(x) ~ (1/x²) Σ (-1)^n (2n+1)! / x^(2n)
+      // Truncate at smallest term (asymptotic series diverge)
+      let fSum = 0, fTerm = 1;
+      let gSum = 0, gTerm = 1;
+      const x2 = x * x;
+      for (let n = 0; n < 20; n++) {
+        fSum += fTerm;
+        gSum += gTerm * (2 * n + 1);
+        const nextF = -fTerm * (2 * n + 1) * (2 * n + 2) / x2;
+        if (Math.abs(nextF) > Math.abs(fTerm)) break;
+        fTerm = nextF;
+        gTerm = -gTerm * (2 * n + 2) * (2 * n + 3) / x2;
+      }
+      return { f: fSum / x, g: gSum / x2 };
+    };
+
+    /**
+     * Sine integral: Si(x) = ∫₀ˣ sin(t)/t dt
+     * Abramowitz & Stegun, Eq. 5.2.1.
+     * Uses power series for |x| < 20, asymptotic expansion for |x| >= 20.
+     * @param {number} x
+     * @returns {number}
+     */
+    const Si = (x) => {
+      const sign = x < 0 ? -1 : 1;
+      const ax = Math.abs(x);
+      if (ax < 20) {
+        let sum = 0, term = ax;
+        for (let n = 0; n < 40; n++) {
+          if (n > 0) term *= -ax * ax / (2 * n * (2 * n + 1));
+          sum += term / (2 * n + 1);
+        }
+        return sign * sum;
+      }
+      const { f, g } = siCiAsymptotic(ax);
+      return sign * (Math.PI / 2 - f * Math.cos(ax) - g * Math.sin(ax));
+    };
+
+    /**
+     * Cosine integral: Ci(x) = γ + ln(x) + ∫₀ˣ (cos(t)-1)/t dt
+     * Abramowitz & Stegun, Eq. 5.2.2.
+     * Uses power series for x < 20, asymptotic expansion for x >= 20.
+     * @param {number} x - Must be > 0
+     * @returns {number}
+     */
+    const Ci = (x) => {
+      if (x < 20) {
+        let sum = EULER_GAMMA + Math.log(x), term = 1;
+        for (let n = 1; n <= 40; n++) {
+          term *= -x * x / ((2 * n - 1) * (2 * n));
+          sum += term / (2 * n);
+        }
+        return sum;
+      }
+      const { f, g } = siCiAsymptotic(x);
+      return f * Math.sin(x) - g * Math.cos(x);
+    };
+
+    // ============================================================
+    // Dipole Impedance (Induced EMF Method)
+    // ============================================================
+
+    /**
+     * Dipole feedpoint impedance via the Induced EMF method.
+     *
+     * R_in: Balanis, "Antenna Theory" 4e, Eq. (8-60a)
+     * X_in: Balanis, Eq. (8-60b); wire radius enters via Ci(2ka²/l) term
+     *
+     * See also: Stearns, K6OIK, "Antenna Impedance Models,"
+     * ARRL Pacificon 2004, slide 15; "Dipole Basics," Pacificon 2019,
+     * slides 18, 43-47 (shortening factor K).
+     *
+     * @param {number} freqMHz - Frequency in MHz
+     * @param {number} lengthM - Total dipole length in meters
+     * @param {number} wireRadiusM - Wire radius in meters
+     * @returns {Impedance} Feedpoint impedance
+     */
+    const calcDipoleIEMF = (freqMHz, lengthM, wireRadiusM) => {
+      const eta = 120 * Math.PI;
+      const lambda = C_SPEED / (freqMHz * 1e6);
+      const k = 2 * Math.PI / lambda;
+      const l = lengthM;
+      const a = wireRadiusM;
+      const kl = k * l;
+      const sinHalf = Math.sin(kl / 2);
+      const denom = 2 * Math.PI * sinHalf * sinHalf;
+
+      const sinKl = Math.sin(kl);
+      const cosKl = Math.cos(kl);
+
+      const Rin = (eta / denom) * (
+        EULER_GAMMA + Math.log(kl) - Ci(kl)
+        + 0.5 * sinKl * (Si(2 * kl) - 2 * Si(kl))
+        + 0.5 * cosKl * (EULER_GAMMA + Math.log(kl / 2) + Ci(2 * kl) - 2 * Ci(kl))
+      );
+
+      const Xin = (eta / denom) * (
+        Si(kl)
+        + 0.5 * cosKl * (2 * Si(kl) - Si(2 * kl))
+        - 0.5 * sinKl * (2 * Ci(kl) - Ci(2 * kl) - Ci(2 * k * a * a / l))
+      );
+
+      return Z(Rin, Xin);
+    };
+
+    /**
+     * Half-wave dipole feedpoint impedance via IEMF.
+     * Convenience wrapper: sets l = λ/2 for the given frequency.
+     *
+     * @param {number} freqMHz - Frequency in MHz
+     * @param {number} wireDiamMm - Wire diameter in mm
+     * @returns {Impedance} Feedpoint impedance
+     */
+    const calcDipoleHalfWave = (freqMHz, wireDiamMm) => {
+      const lambda = C_SPEED / (freqMHz * 1e6);
+      const wireRadiusM = (wireDiamMm / 1000) / 2;
+      return calcDipoleIEMF(freqMHz, lambda / 2, wireRadiusM);
+    };
+
+    // ============================================================
+    // Ground Reflection
+    // ============================================================
+
+    /** @type {Object} Ground type parameters (ε_r, σ in S/m) */
+    const GROUND_TYPES = Object.freeze({
+      free:    { label: 'Free space', er: null, sigma: null },
+      perfect: { label: 'Perfect', er: Infinity, sigma: Infinity },
+      sea:     { label: 'Sea water', er: 80, sigma: 5.0 },
+      wet:     { label: 'Wet', er: 30, sigma: 0.01 },
+      average: { label: 'Average', er: 13, sigma: 0.005 },
+      dry:     { label: 'Dry', er: 5, sigma: 0.001 },
+      city:    { label: 'City', er: 3, sigma: 0.001 },
+    });
+
+    /**
+     * Fresnel reflection coefficient for horizontal polarization at broadside (ψ=π/2).
+     * Γ_h = (1 - √ε_c) / (1 + √ε_c) where ε_c = ε_r - jσ/(ωε₀)
+     *
+     * Balanis, "Antenna Theory" 4e, Eq. (4-128) for horizontal polarization.
+     * Ground parameters from ITU-R P.527-6, Table 1.
+     * See also: Stearns, K6OIK, "Dipole Basics," Pacificon 2019, slide 80.
+     *
+     * @param {number} freqMHz - Frequency in MHz
+     * @param {number} er - Relative permittivity
+     * @param {number} sigma - Conductivity in S/m
+     * @returns {{re: number, im: number}} Complex reflection coefficient
+     */
+    const calcGroundReflection = (freqMHz, er, sigma) => {
+      if (!isFinite(er)) return { re: -1, im: 0 };
+      const eps0 = 8.854187817e-12;
+      const omega = 2 * Math.PI * freqMHz * 1e6;
+      // ε_c = ε_r - jσ/(ωε₀) as a complex number
+      const epsC = complex(er, -sigma / (omega * eps0));
+      const sqrtEps = math.sqrt(epsC);
+      // Γ_h = (1 - √ε_c) / (1 + √ε_c)
+      const num = math.subtract(1, sqrtEps);
+      const den = math.add(1, sqrtEps);
+      const gamma = math.divide(num, den);
+      return { re: gamma.re, im: gamma.im };
+    };
+
+    // ============================================================
+    // Dipole Over Ground
+    // ============================================================
+
+    /**
+     * Horizontal half-wave dipole impedance over ground.
+     *
+     * Z_input = Z_self + Γ_ground · Z_mutual(2h)
+     *
+     * Mutual impedance: Balanis, "Antenna Theory" 4e, Eqs. (8-68a), (8-68b).
+     * Image theory: Balanis, Section 4.7.2.
+     * See also: Stearns, K6OIK, "Dipole Basics," Pacificon 2019, slide 80
+     * (impedance vs height for various ground conductivities).
+     *
+     * @param {number} freqMHz - Frequency in MHz
+     * @param {number} heightM - Height above ground in meters
+     * @param {number} [wireDiamMm] - Wire diameter in mm (uses IEMF if provided)
+     * @param {string} [groundType='perfect'] - Key into GROUND_TYPES
+     * @returns {Impedance|null} Input impedance, or null if inputs invalid
+     */
+    const calcDipoleOverGround = (freqMHz, heightM, wireDiamMm, groundType) => {
+      const freq = parseFloat(freqMHz);
+      if (!freq || freq <= 0) return null;
+
+      // Z_self: use IEMF when wire diameter is available, else fixed values
+      const diam = parseFloat(wireDiamMm);
+      const zSelf = (diam > 0)
+        ? calcDipoleHalfWave(freq, diam)
+        : Z(73.1, 42.5);
+
+      // Free space: no ground image, just Z_self
+      const gnd = GROUND_TYPES[groundType];
+      if (gnd && gnd.er === null) return zSelf;
+
+      const h = parseFloat(heightM);
+      if (!h || h <= 0) return null;
+
+      const lambda = C_SPEED / (freq * 1e6);
+      const beta = 2 * Math.PI / lambda;
+      const d = 2 * h;
+      const L = lambda / 2;
+      const dL = Math.sqrt(d * d + L * L);
+
+      const u0 = beta * d;
+      const u1 = beta * (dL + L);
+      const u2 = beta * (dL - L);
+
+      const R12 = 30 * (2 * Ci(u0) - Ci(u1) - Ci(u2));
+      const X12 = -30 * (2 * Si(u0) - Si(u1) - Si(u2));
+
+      // Ground reflection: Fresnel for lossy ground, PEC (Γ = -1) by default
+      const gammaG = gnd
+        ? calcGroundReflection(freq, gnd.er, gnd.sigma)
+        : { re: -1, im: 0 };
+
+      // Z_input = Z_self + Γ · Z_mutual
+      // For PEC (Γ = -1): Z_self - Z_mutual (matches original behavior)
+      const rMut = gammaG.re * R12 - gammaG.im * X12;
+      const xMut = gammaG.re * X12 + gammaG.im * R12;
+
+      return Z(zSelf.r + rMut, zSelf.x + xMut);
     };
 
     // ============================================================
@@ -941,6 +1189,7 @@
       activeClass: 'active-gamma',
       diagramTitle: 'GAMMA MATCH PHYSICAL ARRANGEMENT',
       hasAutoTune: true,
+      showFreq: true,
       showElementDiam: false,
       presets: GAMMA_PRESETS,
       impedanceKeys: { r: 'antR', x: 'antX' },
@@ -1207,6 +1456,7 @@
       activeClass: 'active-hairpin',
       diagramTitle: 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT',
       hasAutoTune: true,
+      showFreq: true,
       showElementDiam: true,
       presets: HAIRPIN_PRESETS,
       impedanceKeys: { r: 'antR', x: 'antX' },
@@ -1424,6 +1674,7 @@
       activeClass: 'active-ocfd',
       diagramTitle: 'OFF-CENTER FED DOUBLET',
       hasAutoTune: false,
+      showFreq: false,
       showElementDiam: false,
       presets: OCFD_PRESETS,
       impedanceKeys: { r: 'ocfdR', x: 'ocfdX' },
@@ -1434,6 +1685,8 @@
           [URL_KEYS.ocfdX]: Math.round(p.ocfdX),
           [URL_KEYS.feedOffset]: Math.round(p.feedOffset),
           [URL_KEYS.feedlineZ0]: p.feedlineZ0,
+          ...(p.heightM ? { [URL_KEYS.heightM]: p.heightM } : {}),
+          ...(p.groundType !== DEFAULTS.groundType ? { [URL_KEYS.groundType]: p.groundType } : {}),
         };
       },
 
@@ -1498,10 +1751,24 @@
         </>
       ),
 
-      Controls: ({ state, result, physical, setNum, set }) => {
+      Controls: ({ state, result, physical, setNum, set, setStr }) => {
+        const freq = parseFloat(state.freqMHz);
+        const diam = parseFloat(state.elementDiamMm);
+        const hasFreqDiam = freq > 0 && diam > 0;
+        const isFreeSpace = state.groundType === 'free';
+        const h = parseFloat(state.heightM);
+        const hasHeight = h > 0;
+        const groundZ = hasFreqDiam && (isFreeSpace || hasHeight)
+          ? calcDipoleOverGround(freq, h, diam, state.groundType)
+          : null;
+        const gndLabel = GROUND_TYPES[state.groundType]?.label || state.groundType;
+        // Omega prime: ratio of half-length to wire radius (Stearns notation)
+        const omegaPrime = hasFreqDiam
+          ? (C_SPEED / (freq * 1e6)) / (2 * (diam / 1000))
+          : null;
         return (
           <>
-            <ControlPanel color={COLORS.orig} title={'\u2460 CENTER-FEED IMPEDANCE'} tooltip="Impedance at the center of the dipole">
+            <ControlPanel color={COLORS.orig} title={'\u2460 CENTER-FEED IMPEDANCE'} tooltip="Impedance at the center of the dipole (source of truth for matching)">
               <label className="control-label">
                 <span className="control-text">Resistance: {state.ocfdR}{'\u03A9'}</span>
                 <input type="range" min="10" max="150" value={state.ocfdR}
@@ -1523,10 +1790,69 @@
               </div>
             </ControlPanel>
 
+            <ControlPanel color="#4ade80" title="DIPOLE CALCULATOR" tooltip="Compute center impedance from antenna geometry using the induced EMF method">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
+                  Freq (MHz):
+                  <input type="number" value={state.freqMHz}
+                    onChange={setStr('freqMHz')}
+                    min="1" max="3000" step="0.1"
+                    style={{ width: 70, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
+                  Wire {'\u2300'} (mm):
+                  <input type="number" value={state.elementDiamMm}
+                    onChange={setStr('elementDiamMm')}
+                    min="0.1" max="100" step="0.1"
+                    style={{ width: 60, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#888' }}>
+                  Height (m):
+                  <input type="number" value={state.heightM}
+                    onChange={setStr('heightM')}
+                    min="0.1" max="100" step="0.1"
+                    style={{ width: 60, padding: '4px 6px', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#aaa', fontFamily: 'inherit', fontSize: 13 }} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                {Object.entries(GROUND_TYPES).map(([key, { label }]) => (
+                  <button key={key}
+                    className={`btn preset-btn ${state.groundType === key ? 'active' : ''}`}
+                    style={{ padding: '4px 8px', fontSize: 12 }}
+                    onClick={() => set({ groundType: key })}
+                    aria-label={`${label} ground`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {groundZ && (
+                <div style={{ padding: 8, background: '#0a1a0a', borderRadius: 6, border: '1px solid #2a5a2a' }}>
+                  <div style={{ fontSize: 13, color: '#4ade80', marginBottom: 4 }}>
+                    {isFreeSpace
+                      ? `Free-space \u03BB/2: Z = ${groundZ.format()} \u03A9`
+                      : `Over ${gndLabel.toLowerCase()} ground (h=${state.heightM}m): Z = ${groundZ.format()} \u03A9`}
+                    {omegaPrime && <span style={{ color: '#888' }}> ({'\u03A9\u2032'} = {omegaPrime.toFixed(1)})</span>}
+                  </div>
+                  <button
+                    className="btn auto-tune-btn ocfd"
+                    style={{ marginTop: 4, width: '100%' }}
+                    onClick={() => set({ ocfdR: Math.round(groundZ.r), ocfdX: Math.round(groundZ.x) })}
+                  >
+                    Apply to Sliders
+                  </button>
+                </div>
+              )}
+              {hasFreqDiam && !groundZ && !isFreeSpace && (
+                <div style={{ fontSize: 13, color: '#666', fontStyle: 'italic' }}>
+                  Enter height to compute impedance over ground
+                </div>
+              )}
+            </ControlPanel>
+
             <ControlPanel color={COLORS.ocfd} title={'\u2461 FEED OFFSET'} tooltip="Distance from center as % of half-length">
               <label className="control-label">
                 <span className="control-text">Offset: {state.feedOffset}% from center</span>
-                <input type="range" min="0" max="48" step="1" value={state.feedOffset}
+                <input type="range" min="0" max="50" step="1" value={state.feedOffset}
                   onChange={setNum('feedOffset')}
                   aria-label="Feed offset"
                   className="control-slider" style={{ accentColor: COLORS.ocfd }} />
@@ -1585,8 +1911,9 @@
         const wireLen = wireRight - wireLeft;
         const wireCenter = (wireLeft + wireRight) / 2;
         const wireY = 50;
-        const feedX = wireCenter + alpha * (wireLen / 2);
-        const feedXClamped = Math.min(feedX, wireRight - 10);
+        // Feed moves right; L1 (left of feed) is long, L2 (right) is short
+        const feedX = wireCenter + alpha * wireLen;
+        const feedXClamped = Math.min(feedX, wireRight);
         return (
           <svg viewBox="0 0 450 130" className="diagram-svg">
             {/* Full dipole wire */}
@@ -1601,27 +1928,27 @@
             <line x1={feedXClamped} y1={wireY} x2={feedXClamped} y2={95}
               stroke={COLORS.coax} strokeWidth="3" />
             <text x={feedXClamped} y={110} fill={COLORS.coax} fontSize="9" textAnchor="middle">Feedline</text>
-            {/* L1 label (short side = left of feed) */}
+            {/* L2 label (long side = left of feed) */}
             <line x1={wireLeft} y1={wireY + 20} x2={feedXClamped} y2={wireY + 20}
-              stroke={COLORS.orig} strokeWidth="1" />
+              stroke={COLORS.ocfd} strokeWidth="1" />
             <line x1={wireLeft} y1={wireY + 16} x2={wireLeft} y2={wireY + 24}
-              stroke={COLORS.orig} strokeWidth="1" />
+              stroke={COLORS.ocfd} strokeWidth="1" />
             <line x1={feedXClamped} y1={wireY + 16} x2={feedXClamped} y2={wireY + 24}
-              stroke={COLORS.orig} strokeWidth="1" />
+              stroke={COLORS.ocfd} strokeWidth="1" />
             <text x={(wireLeft + feedXClamped) / 2} y={wireY + 34}
-              fill={COLORS.orig} fontSize="9" textAnchor="middle">
-              {physical ? `L₁ = ${physical.ocfdL1Mm >= 1000 ? (physical.ocfdL1Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL1Mm) + 'mm'}` : 'L₁ (short)'}
-            </text>
-            {/* L2 label (long side = right of feed) */}
-            <line x1={feedXClamped} y1={wireY + 20} x2={wireRight} y2={wireY + 20}
-              stroke={COLORS.ocfd} strokeWidth="1" />
-            <line x1={feedXClamped} y1={wireY + 16} x2={feedXClamped} y2={wireY + 24}
-              stroke={COLORS.ocfd} strokeWidth="1" />
-            <line x1={wireRight} y1={wireY + 16} x2={wireRight} y2={wireY + 24}
-              stroke={COLORS.ocfd} strokeWidth="1" />
-            <text x={(feedXClamped + wireRight) / 2} y={wireY + 34}
               fill={COLORS.ocfd} fontSize="9" textAnchor="middle">
               {physical ? `L₂ = ${physical.ocfdL2Mm >= 1000 ? (physical.ocfdL2Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL2Mm) + 'mm'}` : 'L₂ (long)'}
+            </text>
+            {/* L1 label (short side = right of feed) */}
+            <line x1={feedXClamped} y1={wireY + 20} x2={wireRight} y2={wireY + 20}
+              stroke={COLORS.orig} strokeWidth="1" />
+            <line x1={feedXClamped} y1={wireY + 16} x2={feedXClamped} y2={wireY + 24}
+              stroke={COLORS.orig} strokeWidth="1" />
+            <line x1={wireRight} y1={wireY + 16} x2={wireRight} y2={wireY + 24}
+              stroke={COLORS.orig} strokeWidth="1" />
+            <text x={(feedXClamped + wireRight) / 2} y={wireY + 34}
+              fill={COLORS.orig} fontSize="9" textAnchor="middle">
+              {physical ? `L₁ = ${physical.ocfdL1Mm >= 1000 ? (physical.ocfdL1Mm / 1000).toFixed(2) + 'm' : Math.round(physical.ocfdL1Mm) + 'mm'}` : 'L₁ (short)'}
             </text>
             {/* Total length */}
             <text x={wireCenter} y={wireY - 26} fill={COLORS.element} fontSize="10" textAnchor="middle">
@@ -1651,6 +1978,10 @@
           <strong>Off-Center Fed Doublet:</strong> A half-wave dipole fed off-center presents higher impedance,
           enabling use with 300{'\u03A9'} or 450{'\u03A9'} balanced feedline.
           Z{'\u2090'}({'\u03B1'}) = Z{'\u2080'} / cos{'\u00B2'}({'\u03C0\u03B1'}) where {'\u03B1'} is the feed offset ratio.
+          Free-space impedance via the induced EMF method
+          (Stearns, K6OIK, {'\u201C'}Antenna Impedance Models,{'\u201D'} ARRL Pacificon 2004;
+          {'\u201C'}Dipole Basics,{'\u201D'} 2019). Ground effects via image theory with
+          Fresnel reflection (Balanis, <em>Antenna Theory</em>, 4e, Ch. 4 {'\u0026'} 8).
         </div>
       ),
     };
@@ -1704,8 +2035,10 @@
       elementDiamMm: '2',
       ocfdR: 73,
       ocfdX: 43,
-      feedOffset: 33,
-      feedlineZ0: 50
+      feedOffset: 0,
+      feedlineZ0: 50,
+      heightM: '',
+      groundType: 'average'
     });
 
     /**
@@ -1737,7 +2070,10 @@
         ocfdR: parseParam(params.get(URL_KEYS.ocfdR), DEFAULTS.ocfdR),
         ocfdX: parseParam(params.get(URL_KEYS.ocfdX), DEFAULTS.ocfdX),
         feedOffset: parseParam(params.get(URL_KEYS.feedOffset), DEFAULTS.feedOffset),
-        feedlineZ0: parseParam(params.get(URL_KEYS.feedlineZ0), DEFAULTS.feedlineZ0)
+        feedlineZ0: parseParam(params.get(URL_KEYS.feedlineZ0), DEFAULTS.feedlineZ0),
+        heightM: params.get(URL_KEYS.heightM) || DEFAULTS.heightM,
+        groundType: (params.get(URL_KEYS.groundType) in GROUND_TYPES)
+          ? params.get(URL_KEYS.groundType) : DEFAULTS.groundType
       };
     };
 
@@ -1769,7 +2105,7 @@
       /** Helper for string input onChange handlers */
       const setStr = (key) => (e) => set({ [key]: e.target.value });
 
-      const { mode, freqMHz, elementDiamMm } = p;
+      const { mode, freqMHz, elementDiamMm, heightM } = p;
       const modeDef = MODE_MAP[mode];
 
       // Update URL when state changes
@@ -1875,17 +2211,19 @@
 
           {/* Physical Parameters (optional) */}
           <div className="physical-params">
-            <label>
-              Freq (MHz):
-              <input
-                type="number"
-                value={freqMHz}
-                onChange={setStr('freqMHz')}
-                min="1"
-                max="3000"
-                step="0.1"
-              />
-            </label>
+            {modeDef.showFreq !== false && (
+              <label>
+                Freq (MHz):
+                <input
+                  type="number"
+                  value={freqMHz}
+                  onChange={setStr('freqMHz')}
+                  min="1"
+                  max="3000"
+                  step="0.1"
+                />
+              </label>
+            )}
             {modeDef.showElementDiam && (
               <label>
                 Element {'\u2300'} (mm):
@@ -1976,7 +2314,7 @@
             {/* Controls */}
             <div className="controls">
               <modeDef.Controls state={p} result={result} physical={physical}
-                setNum={setNum} set={set} freqMHz={freqMHz} />
+                setNum={setNum} set={set} setStr={setStr} freqMHz={freqMHz} />
             </div>
           </div>
 
