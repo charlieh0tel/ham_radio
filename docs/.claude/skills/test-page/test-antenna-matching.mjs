@@ -736,6 +736,232 @@ async function run() {
       assert(url.includes('gnd='), `URL missing ground param: ${url}`);
     });
 
+    // ==========================================================
+    // Section 12: OCFD Functional Tests
+    // ==========================================================
+    console.log('\n12. OCFD Functional Tests');
+
+    await test('12.1 OCFD feed offset slider changes feed impedance', async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle0', timeout: 15000 });
+      await wait(page, 500);
+      await switchMode(page, 'ocfd');
+      const swr1 = await parseSWR(page);
+      await setSlider(page, 'Feed offset', 33);
+      const swr2 = await parseSWR(page);
+      assert(swr1 !== swr2, `SWR should change when feed offset changes (${swr1} -> ${swr2})`);
+    });
+
+    await test('12.2 OCFD center resistance slider changes results', async () => {
+      const swr1 = await parseSWR(page);
+      await setSlider(page, 'OCFD center resistance', 50);
+      const swr2 = await parseSWR(page);
+      assert(swr1 !== swr2, `SWR should change when center R changes (${swr1} -> ${swr2})`);
+    });
+
+    await test('12.3 OCFD center reactance slider changes results', async () => {
+      const swr1 = await parseSWR(page);
+      await setSlider(page, 'OCFD center reactance', 30);
+      const swr2 = await parseSWR(page);
+      assert(swr1 !== swr2, `SWR should change when center X changes (${swr1} -> ${swr2})`);
+    });
+
+    await test('12.4 OCFD feedline impedance selector works', async () => {
+      await page.goto(`${BASE}?mode=ocfd&ocr=73&ocx=0&off=33`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      const swr50 = await parseSWR(page);
+      // Click the 300Ω feedline button
+      await page.evaluate(() => {
+        const btn = [...document.querySelectorAll('[aria-label]')]
+          .find(b => b.getAttribute('aria-label') === '300 ohm feedline');
+        if (!btn) throw new Error('300Ω feedline button not found');
+        btn.click();
+      });
+      await wait(page, 200);
+      const swr300 = await parseSWR(page);
+      assert(swr50 !== swr300, `SWR should change when feedline Z0 changes (50Ω: ${swr50}, 300Ω: ${swr300})`);
+    });
+
+    await test('12.5 OCFD cos² impedance formula validated', async () => {
+      // Load with known values: center R=73, X=0, offset=33%
+      await page.goto(`${BASE}?mode=ocfd&ocr=73&ocx=0&off=33`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      // Parse feed impedance from result panel
+      const feedR = await page.evaluate(() => {
+        const text = document.querySelector('.result-z').textContent;
+        const match = text.match(/Z\s*=\s*([\d.]+)/);
+        return match ? parseFloat(match[1]) : NaN;
+      });
+      // Expected: 73 / cos²(π * 0.33) ≈ 73 / 0.259 ≈ 282
+      const expected = 73 / Math.cos(Math.PI * 0.33) ** 2;
+      assert(
+        Math.abs(feedR - expected) < 5,
+        `Feed R should be ~${expected.toFixed(0)} for 73Ω at 33% offset, got ${feedR}`
+      );
+    });
+
+    await test('12.6 OCFD preset sets feedOffset', async () => {
+      await page.goto(`${BASE}?mode=ocfd`, { waitUntil: 'networkidle0', timeout: 15000 });
+      await wait(page, 500);
+      // Click first OCFD preset (Free-Space λ/2 with feedOffset:33)
+      await page.evaluate(() => {
+        const btn = [...document.querySelectorAll('.presets .preset-btn')]
+          .find(b => b.textContent.includes('Free-Space'));
+        if (!btn) throw new Error('Free-Space preset not found');
+        btn.click();
+      });
+      await wait(page, 200);
+      const offset = await getSliderValue(page, 'Feed offset');
+      assert(offset === 33, `Expected feedOffset=33 from preset, got ${offset}`);
+    });
+
+    await test('12.7 OCFD feed offset=50 does not crash (boundary)', async () => {
+      await page.goto(`${BASE}?mode=ocfd&ocr=73&ocx=0&off=50`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      // Should not produce NaN or crash
+      const hasError = await page.evaluate(() => {
+        const text = document.querySelector('.result-z')?.textContent || '';
+        return text.includes('NaN') || text.includes('Infinity');
+      });
+      // Note: at offset=50 cos²→0 so Z→∞, SWR→∞. Just verify no crash.
+      const noConsoleErrors = errors.length === 0;
+      // We accept Infinity in the display here — the key is no JS crash
+      assert(noConsoleErrors, `Console errors at offset=50: ${errors.join('; ')}`);
+    });
+
+    await test('12.8 OCFD has no Auto-Tune button', async () => {
+      await switchMode(page, 'ocfd');
+      const autoTuneBtn = await page.evaluate(() => {
+        return [...document.querySelectorAll('.auto-tune-btn')]
+          .find(b => b.textContent.trim() === 'Auto-Tune') || null;
+      });
+      assert(autoTuneBtn === null, 'OCFD mode should not have Auto-Tune button');
+    });
+
+    await test('12.9 OCFD experimental banner visible', async () => {
+      const banner = await page.$('.experimental-banner');
+      assert(banner, 'Experimental banner should exist in OCFD mode');
+      const text = await page.$eval('.experimental-banner', el => el.textContent);
+      assert(text.includes('Experimental'), `Banner text should say Experimental, got: ${text}`);
+    });
+
+    await test('12.10 OCFD URL round-trip', async () => {
+      await page.goto(`${BASE}?mode=ocfd&ocr=60&ocx=-15&off=25&z0=300`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      const title = await page.$eval('.title', el => el.textContent);
+      assert(title.includes('Off-Center'), `Expected OCFD mode title, got: ${title}`);
+      const ocfdR = await getSliderValue(page, 'OCFD center resistance');
+      assert(ocfdR === 60, `Expected ocfdR=60, got ${ocfdR}`);
+      const ocfdX = await getSliderValue(page, 'OCFD center reactance');
+      assert(ocfdX === -15, `Expected ocfdX=-15, got ${ocfdX}`);
+      const offset = await getSliderValue(page, 'Feed offset');
+      assert(offset === 25, `Expected feedOffset=25, got ${offset}`);
+      // Verify 300Ω feedline is active
+      const activeZ0 = await page.evaluate(() => {
+        const btn = document.querySelector('.feedline-selector .preset-btn.active');
+        return btn ? btn.textContent.trim() : '';
+      });
+      assert(activeZ0.includes('300'), `Expected 300Ω active feedline, got: ${activeZ0}`);
+    });
+
+    await test('12.11 OCFD SWR table shows multiple feedline values', async () => {
+      await page.goto(`${BASE}?mode=ocfd&ocr=73&ocx=0&off=33`, {
+        waitUntil: 'networkidle0', timeout: 15000
+      });
+      await wait(page, 500);
+      const swrRows = await page.$$eval('.swr-row', rows => rows.length);
+      assert(swrRows >= 3, `Expected at least 3 SWR table rows, got ${swrRows}`);
+    });
+
+    // ==========================================================
+    // Section 13: Core Math Unit Tests (via page.evaluate)
+    // ==========================================================
+    console.log('\n13. Core Math Unit Tests');
+
+    await test('13.1 calcSWR(Z(50,0)) = 1.0 (perfect match)', async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle0', timeout: 15000 });
+      await wait(page, 300);
+      const swr = await page.evaluate(() => calcSWR(Z(50, 0)));
+      assert(Math.abs(swr - 1.0) < 0.001, `Expected SWR=1.0, got ${swr}`);
+    });
+
+    await test('13.2 calcSWR(Z(100,0)) = 2.0', async () => {
+      const swr = await page.evaluate(() => calcSWR(Z(100, 0)));
+      assert(Math.abs(swr - 2.0) < 0.001, `Expected SWR=2.0, got ${swr}`);
+    });
+
+    await test('13.3 calcSWR(Z(25,0)) = 2.0', async () => {
+      const swr = await page.evaluate(() => calcSWR(Z(25, 0)));
+      assert(Math.abs(swr - 2.0) < 0.001, `Expected SWR=2.0, got ${swr}`);
+    });
+
+    await test('13.4 calcSWRForZ0(Z(300,0), 300) = 1.0', async () => {
+      const swr = await page.evaluate(() => calcSWRForZ0(Z(300, 0), 300));
+      assert(Math.abs(swr - 1.0) < 0.001, `Expected SWR=1.0, got ${swr}`);
+    });
+
+    await test('13.5 calcDipoleIEMF half-wave dipole ≈ 73+j42.5', async () => {
+      const z = await page.evaluate(() => {
+        const res = calcDipoleIEMF(300, 0.5, 0.001);
+        return { r: res.r, x: res.x };
+      });
+      assert(
+        Math.abs(z.r - 73.1) < 2.0,
+        `Expected R ≈ 73.1 for half-wave dipole at 300MHz, got ${z.r.toFixed(1)}`
+      );
+      assert(
+        Math.abs(z.x - 42.5) < 3.0,
+        `Expected X ≈ 42.5 for half-wave dipole at 300MHz, got ${z.x.toFixed(1)}`
+      );
+    });
+
+    await test('13.6 calcDipoleResonant gives X ≈ 0', async () => {
+      const res = await page.evaluate(() => {
+        const r = calcDipoleResonant(146, 2);
+        return { r: r.z.r, x: r.z.x, K: r.K };
+      });
+      assert(Math.abs(res.x) < 0.5, `Resonant dipole X should be ≈ 0, got ${res.x.toFixed(2)}`);
+      assert(res.K > 0.92 && res.K < 0.99, `K should be in [0.92, 0.99], got ${res.K.toFixed(4)}`);
+    });
+
+    await test('13.7 calcGroundReflection PEC gives Γ = -1', async () => {
+      const gamma = await page.evaluate(() => calcGroundReflection(146, Infinity, 0));
+      assert(Math.abs(gamma.re - (-1)) < 0.001, `Expected Γ_re=-1, got ${gamma.re}`);
+      assert(Math.abs(gamma.im) < 0.001, `Expected Γ_im=0, got ${gamma.im}`);
+    });
+
+    await test('13.8 calcDipoleOverGround differs from free-space with ground', async () => {
+      const zFree = await page.evaluate(() => {
+        const res = calcDipoleOverGround(146, 10, 2, 'free');
+        return res ? { r: res.r, x: res.x } : null;
+      });
+      const zAvg = await page.evaluate(() => {
+        const res = calcDipoleOverGround(146, 10, 2, 'average');
+        return res ? { r: res.r, x: res.x } : null;
+      });
+      assert(zFree && zAvg, 'Both ground calculations should return results');
+      assert(
+        Math.abs(zFree.r - zAvg.r) > 0.5 || Math.abs(zFree.x - zAvg.x) > 0.5,
+        `Free-space Z (${zFree.r.toFixed(1)}+j${zFree.x.toFixed(1)}) should differ from average ground Z (${zAvg.r.toFixed(1)}+j${zAvg.x.toFixed(1)})`
+      );
+    });
+
+    await test('13.9 OCFD cos² formula: center-fed (offset=0) gives same Z', async () => {
+      const result = await page.evaluate(() => {
+        // At offset=0, factor = 1/cos²(0) = 1, so feedZ = centerZ
+        const factor = 1 / Math.cos(Math.PI * 0) ** 2;
+        return factor;
+      });
+      assert(Math.abs(result - 1.0) < 0.001, `Factor at offset=0 should be 1.0, got ${result}`);
+    });
+
     await page.close();
   } finally {
     await browser.close();

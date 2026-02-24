@@ -340,6 +340,16 @@
       border-color: #555;
     }
 
+    .btn:focus-visible {
+      outline: 2px solid #4dabf7;
+      outline-offset: 2px;
+    }
+
+    input:focus-visible {
+      outline: 2px solid #4dabf7;
+      outline-offset: 1px;
+    }
+
     .physical-hint {
       font-size: 10px;
       color: #888;
@@ -779,7 +789,7 @@
       const x2 = x * x;
       for (let n = 0; n < 20; n++) {
         fSum += fTerm;
-        gSum += gTerm * (2 * n + 1);
+        gSum += gTerm;
         const nextF = -fTerm * (2 * n + 1) * (2 * n + 2) / x2;
         if (Math.abs(nextF) > Math.abs(fTerm)) break;
         fTerm = nextF;
@@ -857,6 +867,7 @@
       const a = wireRadiusM;
       const kl = k * l;
       const sinHalf = Math.sin(kl / 2);
+      if (Math.abs(sinHalf) < 1e-12) return Z(Infinity, 0);
       const denom = 2 * Math.PI * sinHalf * sinHalf;
 
       const sinKl = Math.sin(kl);
@@ -1071,8 +1082,15 @@
       const cross = v1x * v2y - v1y * v2x;
       const sweepFlag = cross > 0 ? 1 : 0;
 
-      // SVG arc path (large-arc-flag = 0 for minor arc)
-      const arcPath = `M ${startPt.x} ${startPt.y} A ${circleRadius} ${circleRadius} 0 0 ${sweepFlag} ${endPt.x} ${endPt.y}`;
+      // Determine large-arc-flag from angular span
+      const ang1 = Math.atan2(v1y, v1x);
+      const ang2 = Math.atan2(v2y, v2x);
+      let angSpan = ang2 - ang1;
+      if (sweepFlag) { if (angSpan < 0) angSpan += 2 * Math.PI; }
+      else { if (angSpan > 0) angSpan -= 2 * Math.PI; }
+      const largeArcFlag = Math.abs(angSpan) > Math.PI ? 1 : 0;
+
+      const arcPath = `M ${startPt.x} ${startPt.y} A ${circleRadius} ${circleRadius} 0 ${largeArcFlag} ${sweepFlag} ${endPt.x} ${endPt.y}`;
 
       // Arrow angle: tangent to circle at endpoint
       // Tangent is perpendicular to radius; direction depends on sweep
@@ -1264,7 +1282,11 @@
         <div className="control-panel" style={{ borderColor: '#4ade80' }}
           data-tooltip="Compute center impedance from antenna geometry using the induced EMF method">
           <div className="control-header" style={{ color: '#4ade80', cursor: 'pointer', userSelect: 'none' }}
-            onClick={() => setOpen(o => !o)}>
+            onClick={() => setOpen(o => !o)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } }}
+            tabIndex={0}
+            role="button"
+            aria-expanded={open}>
             {open ? '\u25BC' : '\u25B6'} DIPOLE CALCULATOR
           </div>
           {open && (
@@ -1694,7 +1716,7 @@
         let shortenMm = null;
         let shortenPct = null;
         if (diam && diam > 0) {
-          const z0Ant = 276 * Math.log10(base.lambdaMm / (2 * diam));
+          const z0Ant = 276 * Math.log10(base.lambdaMm / diam);
           const deltaLOverLambda = p.shortening / (z0Ant * Math.PI);
           shortenMm = deltaLOverLambda * base.lambdaMm / 2;
           shortenPct = (deltaLOverLambda / 0.5) * 100;
@@ -2243,9 +2265,12 @@
       const handleAutoTune = useCallback(() => {
         if (modeDef.tune) {
           const { r: rKey, x: xKey } = modeDef.impedanceKeys;
-          set(modeDef.tune(Z(p[rKey], p[xKey])));
+          setP(prev => {
+            const tuned = modeDef.tune(Z(prev[rKey], prev[xKey]));
+            return { ...prev, ...tuned };
+          });
         }
-      }, [modeDef, p]);
+      }, [modeDef]);
 
       // Auto-tune on initial load if no URL parameters provided
       useEffect(() => {
@@ -2340,7 +2365,7 @@
             )}
             <button
               className="btn preset-btn"
-              onClick={() => navigator.clipboard.writeText(window.location.href)}
+              onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(window.location.href); }}
               style={{ alignSelf: 'center' }}
               data-tooltip="Copy shareable link to clipboard"
             >
