@@ -66,8 +66,9 @@ header a:hover { text-decoration:underline; }
 .stat-label { font-size:12px; color:var(--text2); margin-bottom:3px; }
 .stat-val { font-size:22px; font-weight:500; }
 
-.chart-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:1.25rem; }
-.chart-box { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:14px; }
+.chart-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:1.25rem; align-items:stretch; }
+.chart-box { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:14px; display:flex; flex-direction:column; }
+.chart-canvas-wrap { position:relative; flex:1; min-height:210px; }
 .chart-title { font-size:13px; font-weight:500; color:var(--text2); margin-bottom:6px; }
 .chart-note { font-size:11px; color:var(--text3); margin-top:6px; }
 .legend-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; font-size:11px; color:var(--text2); }
@@ -211,42 +212,31 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
       <!-- Scatter: wide vs narrow DR -->
       <div class="chart-box">
         <div class="chart-title">Wide DR vs narrow DR</div>
-        <div class="legend-row">
-          <span><span class="leg-dot" style="background:#1D9E75"></span>A — tracking presel.</span>
-          <span><span class="leg-dot" style="background:#378ADD"></span>B — band pass</span>
-          <span><span class="leg-dot" style="background:#EF9F27"></span>C — octave</span>
-          <span><span class="leg-dot" style="background:#D85A30"></span>D — hi/lo pass</span>
-          <span><span class="leg-dot" style="background:#888780"></span>unknown</span>
-        </div>
-        <div style="position:relative;height:240px"><canvas id="scatter"></canvas></div>
+        <div class="chart-canvas-wrap"><canvas id="scatter"></canvas></div>
         <p class="chart-note">Dashed line = wide DR equals narrow DR. Dots below the line are phase-noise limited — the further below, the worse the LO.</p>
       </div>
 
       <!-- Bar: top 15 narrow DR -->
       <div class="chart-box">
         <div class="chart-title">Top 15 by narrow dynamic range</div>
-        <div class="legend-row">
-          <span><span class="leg-dot" style="background:#1D9E75;border-radius:2px;width:10px;height:10px"></span>A</span>
-          <span><span class="leg-dot" style="background:#378ADD;border-radius:2px;width:10px;height:10px"></span>B</span>
-          <span><span class="leg-dot" style="background:#EF9F27;border-radius:2px;width:10px;height:10px"></span>C</span>
-          <span><span class="leg-dot" style="background:#D85A30;border-radius:2px;width:10px;height:10px"></span>D</span>
-        </div>
-        <div style="position:relative;height:240px"><canvas id="bar"></canvas></div>
+        <div class="chart-canvas-wrap"><canvas id="bar"></canvas></div>
       </div>
 
       <!-- Scatter: LO noise vs narrow DR -->
       <div class="chart-box">
         <div class="chart-title">LO noise vs narrow DR</div>
-        <div class="legend-row">
-          <span><span class="leg-dot" style="background:#1D9E75"></span>A</span>
-          <span><span class="leg-dot" style="background:#378ADD"></span>B</span>
-          <span><span class="leg-dot" style="background:#EF9F27"></span>C</span>
-          <span><span class="leg-dot" style="background:#D85A30"></span>D</span>
-          <span><span class="leg-dot" style="background:#888780"></span>?</span>
-        </div>
-        <div style="position:relative;height:240px"><canvas id="lo-scatter"></canvas></div>
+        <div class="chart-canvas-wrap"><canvas id="lo-scatter"></canvas></div>
         <p class="chart-note">Better LO noise (higher dBc/Hz) generally predicts better narrow DR. Outliers reveal other limiting factors.</p>
       </div>
+    </div>
+
+    <!-- Shared legend -->
+    <div class="legend-row" style="margin-bottom:1.25rem">
+      <span><span class="leg-dot" style="background:#1D9E75"></span>A — tracking preselector</span>
+      <span><span class="leg-dot" style="background:#378ADD"></span>B — band pass</span>
+      <span><span class="leg-dot" style="background:#EF9F27"></span>C — octave / preselector</span>
+      <span><span class="leg-dot" style="background:#D85A30"></span>D — hi/lo pass</span>
+      <span><span class="leg-dot" style="background:#888780"></span>unknown</span>
     </div>
 
     <div class="row-count" id="row-count"></div>
