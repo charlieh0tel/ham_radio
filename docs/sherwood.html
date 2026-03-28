@@ -81,6 +81,7 @@ table { width:100%; border-collapse:collapse; font-size:14px; }
 thead th { background:var(--bg2); padding:9px 12px; text-align:left; font-weight:500; font-size:13px; color:var(--text2); white-space:nowrap; border-bottom:0.5px solid var(--border); cursor:pointer; user-select:none; }
 thead th:hover { color:var(--text); }
 thead th.sorted { color:var(--text); }
+.sort-arrow { display:inline-block; width:1em; text-align:center; }
 tbody tr { border-bottom:0.5px solid var(--border); cursor:pointer; }
 tbody tr:nth-child(even) { background:var(--bg2); }
 tbody tr:last-child { border-bottom:none; }
@@ -259,13 +260,13 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th scope="col" data-col="model"     onclick="setSort('model')">Model</th>
-          <th scope="col" data-col="dateAdded" onclick="setSort('dateAdded')">Added</th>
-          <th scope="col" data-col="drNarrow"  onclick="setSort('drNarrow')" class="sorted">Narrow DR (dB) ↓</th>
-          <th scope="col" data-col="drWide"    onclick="setSort('drWide')">Wide DR (dB)</th>
-          <th scope="col" data-col="blocking"  onclick="setSort('blocking')">Blocking (dB)</th>
-          <th scope="col" data-col="loNoise"   onclick="setSort('loNoise')">LO noise (dBc/Hz)</th>
-          <th scope="col" data-col="filterUlt" onclick="setSort('filterUlt')">Filter ult. (dB)</th>
+          <th scope="col" data-col="model"     onclick="setSort('model')">Model<span class="sort-arrow"></span></th>
+          <th scope="col" data-col="dateAdded" onclick="setSort('dateAdded')">Added<span class="sort-arrow"></span></th>
+          <th scope="col" data-col="drNarrow"  onclick="setSort('drNarrow')" class="sorted">Narrow DR (dB)<span class="sort-arrow">↓</span></th>
+          <th scope="col" data-col="drWide"    onclick="setSort('drWide')">Wide DR (dB)<span class="sort-arrow"></span></th>
+          <th scope="col" data-col="blocking"  onclick="setSort('blocking')">Blocking (dB)<span class="sort-arrow"></span></th>
+          <th scope="col" data-col="loNoise"   onclick="setSort('loNoise')">LO noise (dBc/Hz)<span class="sort-arrow"></span></th>
+          <th scope="col" data-col="filterUlt" onclick="setSort('filterUlt')">Filter ult. (dB)<span class="sort-arrow"></span></th>
           <th scope="col">Front end</th>
           <th scope="col">Notes</th>
         </tr></thead>
@@ -412,7 +413,7 @@ function parseSherwoodHTML(html) {
     const dateMatch = raw.match(/(?:Added|Updated|Corrected|Edited)\s+([\d]{1,2}\/[\d]{1,2}\/[\d]{2,4})/i);
     const dateAdded = dateMatch ? parseDateStr(dateMatch[1]) : null;
 
-    const modelRaw = raw.replace(/^(Added|Updated|Corrected|Edited)\s+[\d\/]+\s*/i, '').trim();
+    const modelRaw = cleanModelName(raw.replace(/^(Added|Updated|Corrected|Edited)\s+[\d\/]+\s*/i, '').trim());
     if (!modelRaw) continue;
 
     function firstInt(cell) { const m = cell.textContent.trim().match(/-?\d+/); return m ? parseInt(m[0],10) : null; }
@@ -477,11 +478,27 @@ function parseDateStr(s) {
   return date;
 }
 
+const KNOWN_BRANDS = ['Yaesu','Icom','Kenwood','Elecraft','FlexRadio','Apache','Ten-Tec','Drake',
+  'Collins','JRC','Hilberling','Atlas','Microtelecom','AOR','Heath','Watkins-Johnson',
+  'Signal/One','Racal','Lowe','Palstar','Grundig','Lab599','Aerial-51','Expert',
+  'Xiegu','Elad','CommRadio','KWZ','Perseus'];
+
+function cleanModelName(name) {
+  // If name starts with a known brand, nothing to move
+  const lower = name.toLowerCase();
+  for (const b of KNOWN_BRANDS) {
+    const idx = lower.indexOf(b.toLowerCase());
+    if (idx > 0) {
+      const prefix = name.slice(0, idx).trim();
+      const rest = name.slice(idx).trim();
+      return prefix ? rest + ' ' + prefix : rest;
+    }
+  }
+  return name;
+}
+
 function extractBrand(model) {
-  const known = ['Yaesu','Icom','Kenwood','Elecraft','FlexRadio','Apache','Ten-Tec','Drake',
-    'Collins','JRC','Hilberling','Atlas','Microtelecom','AOR','Heath','Watkins-Johnson',
-    'Signal/One','Racal','Lowe','Palstar','Grundig','Lab599','Aerial-51','Expert',
-    'Xiegu','Elad','CommRadio','KWZ','Perseus'];
+  const known = KNOWN_BRANDS;
   for (const b of known) if (model.toLowerCase().includes(b.toLowerCase())) return b;
   return model.split(/\s+/)[0];
 }
@@ -532,11 +549,16 @@ function setSort(col) {
   sortCol = col;
   document.querySelectorAll('thead th').forEach(th => {
     th.classList.remove('sorted');
-    th.textContent = th.textContent.replace(/ [↑↓]$/, '');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = '';
   });
   const th = document.querySelector('thead th[data-col="' + col + '"]');
-  if (th) { th.classList.add('sorted'); th.textContent += sortAsc ? ' ↑' : ' ↓'; }
-  update();
+  if (th) {
+    th.classList.add('sorted');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = sortAsc ? '↑' : '↓';
+  }
+  buildTable(getFiltered());
 }
 
 function getSorted(rows) {
