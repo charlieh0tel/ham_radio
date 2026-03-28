@@ -558,14 +558,13 @@ function rebuildChartHighlight() {
 
 function updateScatterHighlight(chart) {
   if (!chart) return;
-  // Skip dataset 0 if it's the diagonal line (_diag)
   chart.data.datasets.forEach(ds => {
     if (ds.label === '_diag') return;
     const fe = ds.label === '?' ? null : ds.label;
     const base = ptColor(fe);
-    ds.backgroundColor  = ds.data.map(p => p.label === highlightedModel ? '#ffffff' : base);
+    ds.backgroundColor  = ds.data.map(p => p.label === highlightedModel ? base : base);
     ds.pointRadius       = ds.data.map(p => p.label === highlightedModel ? 9 : 5);
-    ds.pointBorderColor  = ds.data.map(p => p.label === highlightedModel ? base : 'transparent');
+    ds.pointBorderColor  = ds.data.map(p => p.label === highlightedModel ? '#ffffff' : 'transparent');
     ds.pointBorderWidth  = ds.data.map(p => p.label === highlightedModel ? 2 : 0);
   });
   chart.update('none');
@@ -574,20 +573,12 @@ function updateScatterHighlight(chart) {
 function updateBarHighlight() {
   if (!BC) return;
   const ds = BC.data.datasets[0];
-  const labels = BC.data.labels;
-  // Match by truncated label since bar uses truncated model names
-  ds.backgroundColor = labels.map((lbl, i) => {
-    const full = BC.data.datasets[0]._fullLabels ? BC.data.datasets[0]._fullLabels[i] : lbl;
-    return full === highlightedModel ? '#ffffff' : ds._baseColors[i];
-  });
-  ds.borderColor = labels.map((lbl, i) => {
-    const full = BC.data.datasets[0]._fullLabels ? BC.data.datasets[0]._fullLabels[i] : lbl;
-    return full === highlightedModel ? ds._baseColors[i] : 'transparent';
-  });
-  ds.borderWidth = labels.map((lbl, i) => {
-    const full = BC.data.datasets[0]._fullLabels ? BC.data.datasets[0]._fullLabels[i] : lbl;
-    return full === highlightedModel ? 2 : 0;
-  });
+  ds.backgroundColor = ds._fullLabels.map((full, i) =>
+    full === highlightedModel ? ds._baseColors[i] : ds._baseColors[i]);
+  ds.borderColor = ds._fullLabels.map((full, i) =>
+    full === highlightedModel ? '#ffffff' : 'transparent');
+  ds.borderWidth = ds._fullLabels.map(full =>
+    full === highlightedModel ? 3 : 0);
   BC.update('none');
 }
 
