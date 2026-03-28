@@ -189,7 +189,7 @@
           <span><span class="leg-dot" style="background:#888780"></span>unknown</span>
         </div>
         <div style="position:relative;height:260px"><canvas id="scatter"></canvas></div>
-        <p class="chart-note">Dots above the diagonal = wide DR much better than narrow DR (phase-noise limited)</p>
+        <p class="chart-note">Dashed line = perfect radio (wide DR equals narrow DR). Dots above the line are phase-noise limited — the further above, the worse the LO.</p>
       </div>
       <div class="chart-box">
         <div class="chart-title">Top 15 by narrow dynamic range</div>
@@ -388,19 +388,55 @@ function buildScatter(rows) {
   if (SC) { SC.destroy(); SC = null; }
   const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
   const tc = isDark() ? '#9c9a92' : '#73726c';
+  const lc = isDark() ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.20)';
+
+  // Diagonal reference line: y = x (narrow DR = wide DR)
+  const diagDataset = {
+    label: '_diag',
+    data: [{x:40,y:40},{x:120,y:120}],
+    type: 'line',
+    borderColor: lc,
+    borderWidth: 1,
+    borderDash: [4, 4],
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    fill: false,
+    tension: 0,
+    tooltip: { enabled: false }
+  };
+
+  const pointDatasets = ['A','B','C','D',null].map(g => ({
+    label: g || '?',
+    data: rows.filter(r => r.fe === g && r.drNarrow != null && r.drWide != null)
+              .map(r => ({ x: r.drWide, y: r.drNarrow, label: r.model })),
+    backgroundColor: ptColor(g), pointRadius: 5, pointHoverRadius: 7
+  })).filter(d => d.data.length);
+
   SC = new Chart(document.getElementById('scatter'), {
     type: 'scatter',
-    data: {
-      datasets: ['A','B','C','D',null].map(g => ({
-        label: g || '?',
-        data: rows.filter(r => r.fe === g && r.drNarrow != null && r.drWide != null)
-                  .map(r => ({ x: r.drWide, y: r.drNarrow, label: r.model })),
-        backgroundColor: ptColor(g), pointRadius: 5, pointHoverRadius: 7
-      })).filter(d => d.data.length)
-    },
+    data: { datasets: [diagDataset, ...pointDatasets] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend:{display:false}, tooltip:{callbacks:{label:d=>`${d.raw.label}: wide ${d.raw.x} / narrow ${d.raw.y} dB`}} },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          filter: item => item.dataset.label !== '_diag',
+          callbacks: { label: d => `${d.raw.label}: wide ${d.raw.x} / narrow ${d.raw.y} dB` }
+        },
+        // Annotate the diagonal line
+        annotation: {
+          annotations: {
+            diagLabel: {
+              type: 'label',
+              xValue: 115, yValue: 118,
+              content: 'wide = narrow',
+              font: { size: 10 },
+              color: tc,
+              rotation: 0
+            }
+          }
+        }
+      },
       scales: {
         x: { title:{display:true,text:'Wide DR (dB)',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:10}}, grid:{color:gc}, min:40, max:120 },
         y: { title:{display:true,text:'Narrow DR (dB)',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:10}}, grid:{color:gc}, min:40, max:120 }
