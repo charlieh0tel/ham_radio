@@ -549,15 +549,22 @@ function clearSelection() {
   document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('highlighted'));
   document.getElementById('clear-btn').style.display = 'none';
   rebuildChartHighlight();
-  // Rebuild bar to restore top-15 mode
-  buildBar(getFiltered());
 }
 
 function rebuildChartHighlight() {
   updateScatterHighlight(SC);
   updateScatterHighlight(LOC);
-  // Bar: swap between top-15 and selected-only
-  buildBar(getFiltered());
+  updateBarHighlight();
+}
+
+function updateBarHighlight() {
+  if (!BC) return;
+  const ds = BC.data.datasets[0];
+  const hasSel = selectedModels.size > 0;
+  ds.backgroundColor = ds._fullLabels.map((full, i) =>
+    (!hasSel || selectedModels.has(full)) ? ds._baseColors[i] : ds._baseColors[i] + '33'
+  );
+  BC.update('none');
 }
 
 function updateScatterHighlight(chart) {
@@ -640,34 +647,22 @@ function buildScatter(rows) {
   });
 }
 
-// ── Chart: top 15 bar (or selected-only) ─────────────────────────────────
+// ── Chart: top 15 bar ────────────────────────────────────────────────────
 function buildBar(rows) {
   if (BC) { BC.destroy(); BC = null; }
   const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
   const tc = isDark() ? '#9c9a92' : '#73726c';
-
-  // If anything is selected, show only those radios sorted by narrow DR
-  // Otherwise show top 15
-  let barRows;
-  const title = document.querySelector('#bar').closest('.chart-box').querySelector('.chart-title');
-  if (selectedModels.size > 0) {
-    barRows = rows.filter(r => selectedModels.has(r.model) && r.drNarrow != null)
-                  .sort((a,b) => b.drNarrow - a.drNarrow);
-    if (title) title.textContent = 'Selected radios — narrow DR';
-  } else {
-    barRows = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
-    if (title) title.textContent = 'Top 15 by narrow dynamic range';
-  }
-
-  const baseColors = barRows.map(r => ptColor(r.fe));
-  const fullLabels = barRows.map(r => r.model);
+  const top = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
+  const baseColors = top.map(r => ptColor(r.fe));
+  const fullLabels = top.map(r => r.model);
+  const hasSel = selectedModels.size > 0;
   BC = new Chart(document.getElementById('bar'), {
     type:'bar',
     data:{
-      labels: barRows.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
+      labels: top.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
       datasets:[{
-        data: barRows.map(r => r.drNarrow),
-        backgroundColor: baseColors,
+        data: top.map(r => r.drNarrow),
+        backgroundColor: top.map((r,i) => (!hasSel || selectedModels.has(r.model)) ? baseColors[i] : baseColors[i]+'33'),
         borderWidth: 0,
         borderRadius:3, borderSkipped:false,
         _baseColors: baseColors,
