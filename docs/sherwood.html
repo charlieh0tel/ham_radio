@@ -240,7 +240,10 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
     </div>
 
     <div class="row-count" id="row-count"></div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Click a row to highlight it in the charts.</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <p style="font-size:12px;color:var(--text3)">Click rows to compare in the charts.</p>
+      <button id="clear-btn" onclick="clearSelection()" style="display:none;height:24px;padding:0 10px;font-size:11px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer">× clear selection</button>
+    </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
@@ -329,7 +332,7 @@ const FN_DEFS = {
 
 let ALL_DATA = [], FOOTNOTES_SEEN = new Set();
 let sortCol = 'drNarrow', sortAsc = false;
-let highlightedModel = null;
+let selectedModels = new Set();
 let SC = null, BC = null, LOC = null;
 
 // ── Screens ─────────────────────────────────────────────────────────────
@@ -530,48 +533,48 @@ function drColor(v) {
 }
 function isDark() { return matchMedia('(prefers-color-scheme:dark)').matches; }
 
-// ── Highlight ─────────────────────────────────────────────────────────────
+// ── Selection ─────────────────────────────────────────────────────────────
 function setHighlight(model) {
-  highlightedModel = highlightedModel === model ? null : model;
+  if (selectedModels.has(model)) selectedModels.delete(model);
+  else selectedModels.add(model);
   document.querySelectorAll('tbody tr').forEach(tr => {
-    tr.classList.toggle('highlighted', tr.dataset.model === highlightedModel);
+    tr.classList.toggle('highlighted', selectedModels.has(tr.dataset.model));
   });
+  document.getElementById('clear-btn').style.display = selectedModels.size ? 'inline-block' : 'none';
   rebuildChartHighlight();
 }
 
+function clearSelection() {
+  selectedModels.clear();
+  document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('highlighted'));
+  document.getElementById('clear-btn').style.display = 'none';
+  rebuildChartHighlight();
+  // Rebuild bar to restore top-15 mode
+  buildBar(getFiltered());
+}
+
 function rebuildChartHighlight() {
-  // Mutate point styles in-place — no destroy/recreate, no flicker
   updateScatterHighlight(SC);
   updateScatterHighlight(LOC);
-  updateBarHighlight();
+  // Bar: swap between top-15 and selected-only
+  buildBar(getFiltered());
 }
 
 function updateScatterHighlight(chart) {
   if (!chart) return;
-  const hasHL = highlightedModel !== null;
+  const hasSel = selectedModels.size > 0;
   chart.data.datasets.forEach(ds => {
     if (ds.label === '_diag') return;
     const fe = ds.label === '?' ? null : ds.label;
     const base = ptColor(fe);
-    ds.pointRadius      = ds.data.map(p => (!hasHL || p.label === highlightedModel) ? 5 : 4);
+    ds.pointRadius      = ds.data.map(p => (!hasSel || selectedModels.has(p.label)) ? 5 : 4);
     ds.pointHoverRadius = 7;
     ds.backgroundColor  = ds.data.map(p =>
-      (!hasHL || p.label === highlightedModel) ? base : base + '33'
+      (!hasSel || selectedModels.has(p.label)) ? base : base + '33'
     );
     ds.pointBorderWidth = 0;
   });
   chart.update('none');
-}
-
-function updateBarHighlight() {
-  if (!BC) return;
-  const ds = BC.data.datasets[0];
-  const hasHL = highlightedModel !== null;
-  ds.backgroundColor = ds._fullLabels.map((full, i) =>
-    (!hasHL || full === highlightedModel) ? ds._baseColors[i] : ds._baseColors[i] + '33'
-  );
-  ds.borderWidth = 0;
-  BC.update('none');
 }
 
 // ── Chart helpers ─────────────────────────────────────────────────────────
@@ -579,18 +582,18 @@ function pointDatasets(rows, xKey, yKey) {
   return ['A','B','C','D',null].map(g => {
     const pts = rows
       .filter(r => r.fe === g && r[xKey] != null && r[yKey] != null)
-      .map(r => ({
-        x: r[xKey], y: r[yKey], label: r.model,
-        _hl: r.model === highlightedModel
-      }));
+      .map(r => ({ x: r[xKey], y: r[yKey], label: r.model }));
     return {
       label: g || '?',
       data: pts,
-      backgroundColor: pts.map(p => p._hl ? '#ffffff' : ptColor(g)),
-      pointRadius: pts.map(p => p._hl ? 8 : 5),
+      backgroundColor: pts.map(p =>
+        (selectedModels.size === 0 || selectedModels.has(p.label)) ? ptColor(g) : ptColor(g) + '33'
+      ),
+      pointRadius: pts.map(p =>
+        (selectedModels.size === 0 || selectedModels.has(p.label)) ? 5 : 4
+      ),
       pointHoverRadius: 7,
-      pointBorderColor: pts.map(p => p._hl ? ptColor(g) : 'transparent'),
-      pointBorderWidth: pts.map(p => p._hl ? 2 : 0)
+      pointBorderWidth: 0
     };
   }).filter(d => d.data.length);
 }
@@ -637,23 +640,35 @@ function buildScatter(rows) {
   });
 }
 
-// ── Chart: top 15 bar ─────────────────────────────────────────────────────
+// ── Chart: top 15 bar (or selected-only) ─────────────────────────────────
 function buildBar(rows) {
   if (BC) { BC.destroy(); BC = null; }
   const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
   const tc = isDark() ? '#9c9a92' : '#73726c';
-  const top = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
-  const baseColors = top.map(r => ptColor(r.fe));
-  const fullLabels = top.map(r => r.model);
+
+  // If anything is selected, show only those radios sorted by narrow DR
+  // Otherwise show top 15
+  let barRows;
+  const title = document.querySelector('#bar').closest('.chart-box').querySelector('.chart-title');
+  if (selectedModels.size > 0) {
+    barRows = rows.filter(r => selectedModels.has(r.model) && r.drNarrow != null)
+                  .sort((a,b) => b.drNarrow - a.drNarrow);
+    if (title) title.textContent = 'Selected radios — narrow DR';
+  } else {
+    barRows = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
+    if (title) title.textContent = 'Top 15 by narrow dynamic range';
+  }
+
+  const baseColors = barRows.map(r => ptColor(r.fe));
+  const fullLabels = barRows.map(r => r.model);
   BC = new Chart(document.getElementById('bar'), {
     type:'bar',
     data:{
-      labels: top.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
+      labels: barRows.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
       datasets:[{
-        data: top.map(r => r.drNarrow),
-        backgroundColor: top.map((r,i) => r.model === highlightedModel ? '#ffffff' : baseColors[i]),
-        borderColor: top.map((r,i) => r.model === highlightedModel ? baseColors[i] : 'transparent'),
-        borderWidth: top.map(r => r.model === highlightedModel ? 2 : 0),
+        data: barRows.map(r => r.drNarrow),
+        backgroundColor: baseColors,
+        borderWidth: 0,
         borderRadius:3, borderSkipped:false,
         _baseColors: baseColors,
         _fullLabels: fullLabels
@@ -699,7 +714,7 @@ function buildTable(rows) {
     const dateStr = r.dateAdded
       ? r.dateAdded.toLocaleDateString('en-US',{year:'numeric',month:'short'})
       : '—';
-    const isHl = r.model === highlightedModel;
+    const isHl = selectedModels.has(r.model);
     return '<tr data-model="' + escHtml(r.model) + '" onclick="setHighlight(this.dataset.model)" class="' + (isHl?'highlighted':'') + '">' +
       '<td class="model-cell">' + escHtml(r.model) + '</td>' +
       '<td style="color:var(--text3);font-size:12px">' + dateStr + '</td>' +
