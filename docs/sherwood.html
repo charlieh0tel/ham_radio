@@ -218,8 +218,8 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 
       <!-- Bar: top 15 narrow DR -->
       <div class="chart-box">
-        <div class="chart-title">Top 15 by narrow dynamic range</div>
-        <div class="chart-canvas-wrap"><canvas id="bar"></canvas></div>
+        <div class="chart-title">Top 15 by narrow dynamic range (dB)</div>
+        <div class="chart-canvas-wrap" style="min-height:340px"><canvas id="bar"></canvas></div>
       </div>
 
       <!-- Scatter: LO noise vs narrow DR -->
@@ -674,7 +674,7 @@ function buildBar(rows) {
       plugins:{ legend:{display:false}, tooltip:{callbacks:{label:d=>'Narrow DR: '+d.raw+' dB'}} },
       scales:{
         x:{ ticks:{color:tc,font:{size:10}}, grid:{color:gc}, min:80 },
-        y:{ ticks:{color:tc,font:{size:10},maxRotation:0}, grid:{display:false} }
+        y:{ ticks:{color:tc,font:{size:10},maxRotation:0,autoSkip:false}, grid:{display:false} }
       }
     }
   });
