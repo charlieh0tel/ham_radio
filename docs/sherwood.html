@@ -189,7 +189,7 @@
           <span><span class="leg-dot" style="background:#888780"></span>unknown</span>
         </div>
         <div style="position:relative;height:260px"><canvas id="scatter"></canvas></div>
-        <p class="chart-note">Dashed line = perfect radio (wide DR equals narrow DR). Dots above the line are phase-noise limited — the further above, the worse the LO.</p>
+        <p class="chart-note">Dashed line = perfect radio (wide DR = narrow DR). Dots below the line are phase-noise limited — the further below, the worse the LO.</p>
       </div>
       <div class="chart-box">
         <div class="chart-title">Top 15 by narrow dynamic range</div>
@@ -428,7 +428,7 @@ function buildScatter(rows) {
           annotations: {
             diagLabel: {
               type: 'label',
-              xValue: 115, yValue: 118,
+              xValue: 55, yValue: 48,
               content: 'wide = narrow',
               font: { size: 10 },
               color: tc,
