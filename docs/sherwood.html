@@ -16,13 +16,13 @@
   --text:#1a1a18; --text2:#6b6a64; --text3:#9c9a92;
   --border:rgba(0,0,0,0.1); --border2:rgba(0,0,0,0.18);
   --radius:8px; --radius-lg:12px;
-  --col-A:#1D9E75; --col-B:#378ADD; --col-C:#EF9F27; --col-D:#D85A30;
-  --highlight:#378ADD;
+  --col-A:#1D9E75; --col-B:#378ADD; --col-C:#EF9F27; --col-D:#D85A30; --col-unknown:#888780;
+  --highlight:rgba(55,138,221,0.10);
 }
 @media (prefers-color-scheme:dark) {
   :root { --bg:#1c1c1a; --bg2:#252523; --bg3:#2e2e2b; --text:#e8e6de; --text2:#9c9a92; --text3:#6b6a64; --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.18); }
 }
-body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); font-size:15px; line-height:1.5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); font-size:16px; line-height:1.5; }
 
 /* ── Screens ── */
 .screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
@@ -63,28 +63,29 @@ header a:hover { text-decoration:underline; }
 
 .stat-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:1.25rem; }
 .stat { background:var(--bg2); border-radius:var(--radius); padding:10px 14px; }
-.stat-label { font-size:12px; color:var(--text2); margin-bottom:3px; }
-.stat-val { font-size:22px; font-weight:500; }
+.stat-label { font-size:13px; color:var(--text2); margin-bottom:3px; }
+.stat-val { font-size:26px; font-weight:500; }
 
 .chart-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:1.25rem; align-items:stretch; }
 .chart-box { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:14px; display:flex; flex-direction:column; }
-.chart-canvas-wrap { position:relative; flex:1; min-height:210px; }
-.chart-title { font-size:13px; font-weight:500; color:var(--text2); margin-bottom:6px; }
-.chart-note { font-size:11px; color:var(--text3); margin-top:6px; }
-.legend-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; font-size:11px; color:var(--text2); }
+.chart-canvas-wrap { position:relative; flex:1; min-height:300px; }
+.chart-title { font-size:16px; font-weight:600; color:var(--text2); margin-bottom:6px; }
+.chart-note { font-size:12px; color:var(--text3); margin-top:6px; }
+.legend-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; font-size:13px; color:var(--text2); }
 .legend-row span { display:flex; align-items:center; gap:4px; }
 .leg-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
 
 /* ── Table ── */
 .table-wrap { overflow-x:auto; border:0.5px solid var(--border); border-radius:var(--radius-lg); margin-bottom:1.5rem; }
-table { width:100%; border-collapse:collapse; font-size:13px; }
-thead th { background:var(--bg2); padding:9px 12px; text-align:left; font-weight:500; font-size:11px; color:var(--text2); white-space:nowrap; border-bottom:0.5px solid var(--border); cursor:pointer; user-select:none; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+thead th { background:var(--bg2); padding:9px 12px; text-align:left; font-weight:500; font-size:13px; color:var(--text2); white-space:nowrap; border-bottom:0.5px solid var(--border); cursor:pointer; user-select:none; }
 thead th:hover { color:var(--text); }
 thead th.sorted { color:var(--text); }
 tbody tr { border-bottom:0.5px solid var(--border); cursor:pointer; }
+tbody tr:nth-child(even) { background:var(--bg2); }
 tbody tr:last-child { border-bottom:none; }
-tbody tr:hover { background:var(--bg2); }
-tbody tr.highlighted { background:rgba(55,138,221,0.10) !important; }
+tbody tr:hover { background:var(--bg3); }
+tbody tr.highlighted { background:var(--highlight) !important; }
 td { padding:8px 12px; white-space:nowrap; }
 td.model-cell { white-space:normal; font-weight:500; max-width:200px; }
 .dr-bar { display:flex; align-items:center; gap:8px; }
@@ -103,6 +104,11 @@ td.model-cell { white-space:normal; font-weight:500; max-width:200px; }
 }
 .row-count { font-size:12px; color:var(--text3); margin-bottom:8px; }
 
+/* ── Focus / accessibility ── */
+:focus-visible { outline:2px solid var(--col-B); outline-offset:2px; }
+thead th:focus-visible { outline-offset:-2px; }
+tbody tr:focus-visible { outline-offset:-2px; }
+
 /* ── Footnotes ── */
 sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; line-height:0; }
 .fn-key { background:var(--bg2); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:1rem 1.5rem; margin-bottom:1.5rem; }
@@ -112,8 +118,13 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 .fn-grid dd { display:inline; margin:0; }
 .fn-grid dd::after { content:''; display:block; }
 
-@media (max-width:900px) {
+@media (max-width:1100px) {
+  .chart-row { grid-template-columns:1fr 1fr; }
+  .chart-box:last-child { grid-column:span 2; }
+}
+@media (max-width:768px) {
   .chart-row { grid-template-columns:1fr; }
+  .chart-box:last-child { grid-column:span 1; }
 }
 @media (max-width:700px) {
   header,.main { padding:1rem; }
@@ -182,7 +193,7 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 
   <div class="main">
     <div class="controls">
-      <input type="text" id="search" placeholder="Search model or brand…" oninput="update()">
+      <input type="text" id="search" placeholder="Search model or brand…" oninput="debouncedUpdate()" aria-label="Search radios by model or brand">
       <select id="brand-filter" onchange="update()"><option value="">All brands</option></select>
       <select id="fe-filter" onchange="update()">
         <option value="">All front ends</option>
@@ -212,31 +223,32 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
       <!-- Scatter: wide vs narrow DR -->
       <div class="chart-box">
         <div class="chart-title">Wide DR vs narrow DR</div>
-        <div class="chart-canvas-wrap"><canvas id="scatter"></canvas></div>
+        <div class="chart-canvas-wrap"><canvas id="scatter" role="img" aria-label="Scatter plot of wide dynamic range vs narrow dynamic range"></canvas></div>
         <p class="chart-note">Dashed line = wide DR equals narrow DR. Dots below the line are phase-noise limited — the further below, the worse the LO.</p>
       </div>
 
       <!-- Bar: top 15 narrow DR -->
       <div class="chart-box">
         <div class="chart-title">Top 15 by narrow dynamic range (dB)</div>
-        <div class="chart-canvas-wrap" style="min-height:340px"><canvas id="bar"></canvas></div>
+        <div class="chart-canvas-wrap" style="min-height:420px"><canvas id="bar" role="img" aria-label="Bar chart of top 15 radios by narrow dynamic range"></canvas></div>
       </div>
 
       <!-- Scatter: LO noise vs narrow DR -->
       <div class="chart-box">
         <div class="chart-title">LO noise vs narrow DR</div>
-        <div class="chart-canvas-wrap"><canvas id="lo-scatter"></canvas></div>
+        <div class="chart-canvas-wrap"><canvas id="lo-scatter" role="img" aria-label="Scatter plot of LO noise vs narrow dynamic range"></canvas></div>
         <p class="chart-note">Better LO noise (higher dBc/Hz) generally predicts better narrow DR. Outliers reveal other limiting factors.</p>
       </div>
     </div>
 
     <!-- Shared legend -->
     <div class="legend-row" style="margin-bottom:1.25rem">
-      <span><span class="leg-dot" style="background:#1D9E75"></span>A — tracking preselector</span>
-      <span><span class="leg-dot" style="background:#378ADD"></span>B — band pass</span>
-      <span><span class="leg-dot" style="background:#EF9F27"></span>C — octave / preselector</span>
-      <span><span class="leg-dot" style="background:#D85A30"></span>D — hi/lo pass</span>
-      <span><span class="leg-dot" style="background:#888780"></span>unknown</span>
+      <span id="sel-badge" style="display:none;background:var(--col-B);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px"></span>
+      <span><span class="leg-dot" style="background:var(--col-A)"></span>A — tracking preselector</span>
+      <span><span class="leg-dot" style="background:var(--col-B)"></span>B — band pass</span>
+      <span><span class="leg-dot" style="background:var(--col-C)"></span>C — octave / preselector</span>
+      <span><span class="leg-dot" style="background:var(--col-D)"></span>D — hi/lo pass</span>
+      <span><span class="leg-dot" style="background:var(--col-unknown)"></span>unknown</span>
     </div>
 
     <div class="row-count" id="row-count"></div>
@@ -247,15 +259,15 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th data-col="model"     onclick="setSort('model')">Model</th>
-          <th data-col="dateAdded" onclick="setSort('dateAdded')">Added</th>
-          <th data-col="drNarrow"  onclick="setSort('drNarrow')" class="sorted">Narrow DR ↓</th>
-          <th data-col="drWide"    onclick="setSort('drWide')">Wide DR</th>
-          <th data-col="blocking"  onclick="setSort('blocking')">Blocking (dB)</th>
-          <th data-col="loNoise"   onclick="setSort('loNoise')">LO noise (dBc/Hz)</th>
-          <th data-col="filterUlt" onclick="setSort('filterUlt')">Filter ult. (dB)</th>
-          <th>Front end</th>
-          <th>Notes</th>
+          <th scope="col" data-col="model"     onclick="setSort('model')">Model</th>
+          <th scope="col" data-col="dateAdded" onclick="setSort('dateAdded')">Added</th>
+          <th scope="col" data-col="drNarrow"  onclick="setSort('drNarrow')" class="sorted">Narrow DR (dB) ↓</th>
+          <th scope="col" data-col="drWide"    onclick="setSort('drWide')">Wide DR (dB)</th>
+          <th scope="col" data-col="blocking"  onclick="setSort('blocking')">Blocking (dB)</th>
+          <th scope="col" data-col="loNoise"   onclick="setSort('loNoise')">LO noise (dBc/Hz)</th>
+          <th scope="col" data-col="filterUlt" onclick="setSort('filterUlt')">Filter ult. (dB)</th>
+          <th scope="col">Front end</th>
+          <th scope="col">Notes</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -335,6 +347,12 @@ let sortCol = 'drNarrow', sortAsc = false;
 let selectedModels = new Set();
 let SC = null, BC = null, LOC = null;
 
+let _debounceTimer = null;
+function debouncedUpdate() {
+  clearTimeout(_debounceTimer);
+  _debounceTimer = setTimeout(update, 150);
+}
+
 // ── Screens ─────────────────────────────────────────────────────────────
 function show(id) {
   ['permission-screen','loading-screen','error-screen','dashboard'].forEach(s => {
@@ -359,7 +377,9 @@ async function startFetch() {
       const html = await proxy.fetch(TARGET);
       document.getElementById('loading-msg').textContent = 'Parsing table…';
       const { data, footnotes } = parseSherwoodHTML(html);
-      if (!data.length) throw new Error('Parsed 0 rows — page structure may have changed');
+      if (!data.length) {
+        console.warn('Parsed 0 rows — page structure may have changed');
+      }
       ALL_DATA = data;
       FOOTNOTES_SEEN = footnotes;
       buildBrandFilter();
@@ -446,8 +466,15 @@ function parseDateStr(s) {
   const parts = s.split('/');
   if (parts.length !== 3) return null;
   let [m, d, y] = parts.map(Number);
-  if (y < 100) y += y < 50 ? 2000 : 1900;
-  return new Date(y, m-1, d);
+  if (isNaN(m) || isNaN(d) || isNaN(y)) return null;
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  if (y < 100) {
+    const cutoff = (new Date().getFullYear() % 100) + 10;
+    y += y < cutoff ? 2000 : 1900;
+  }
+  const date = new Date(y, m - 1, d);
+  if (date.getMonth() !== m - 1) return null; // rolled over — invalid
+  return date;
 }
 
 function extractBrand(model) {
@@ -517,7 +544,7 @@ function getSorted(rows) {
     let av = a[sortCol], bv = b[sortCol];
     if (av == null && bv == null) return 0;
     if (av == null) return 1; if (bv == null) return -1;
-    if (av instanceof Date) av = av.getTime(), bv = (bv||new Date(0)).getTime();
+    if (av instanceof Date) { av = av.getTime(); bv = bv instanceof Date ? bv.getTime() : 0; }
     if (typeof av === 'string') return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
     return sortAsc ? av - bv : bv - av;
   });
@@ -525,7 +552,8 @@ function getSorted(rows) {
 
 // ── Colors ────────────────────────────────────────────────────────────────
 const FE_COLOR = { A:'#1D9E75', B:'#378ADD', C:'#EF9F27', D:'#D85A30' };
-function ptColor(fe) { return FE_COLOR[fe] || '#888780'; }
+const UNKNOWN_COLOR = '#888780';
+function ptColor(fe) { return FE_COLOR[fe] || UNKNOWN_COLOR; }
 function drColor(v) {
   if (v >= 105) return '#1D9E75'; if (v >= 95) return '#378ADD';
   if (v >= 85)  return '#EF9F27'; if (v >= 75) return '#D85A30';
@@ -542,6 +570,7 @@ function setHighlight(model) {
   });
   document.getElementById('clear-btn').style.display = selectedModels.size ? 'inline-block' : 'none';
   rebuildChartHighlight();
+  updateSelBadge();
 }
 
 function clearSelection() {
@@ -549,6 +578,7 @@ function clearSelection() {
   document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('highlighted'));
   document.getElementById('clear-btn').style.display = 'none';
   rebuildChartHighlight();
+  updateSelBadge();
 }
 
 function rebuildChartHighlight() {
@@ -584,6 +614,15 @@ function updateScatterHighlight(chart) {
   chart.update('none');
 }
 
+function chartColors() {
+  const dark = isDark();
+  return {
+    grid: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)',
+    text: dark ? '#9c9a92' : '#73726c',
+    line: dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)'
+  };
+}
+
 // ── Chart helpers ─────────────────────────────────────────────────────────
 function pointDatasets(rows, xKey, yKey) {
   return ['A','B','C','D',null].map(g => {
@@ -605,9 +644,10 @@ function pointDatasets(rows, xKey, yKey) {
   }).filter(d => d.data.length);
 }
 
-function diagDataset(lc) {
+function diagDataset(lc, lo, hi) {
+  lo = lo || 40; hi = hi || 120;
   return {
-    label: '_diag', data: [{x:40,y:40},{x:120,y:120}],
+    label: '_diag', data: [{x:lo,y:lo},{x:hi,y:hi}],
     type:'line', borderColor:lc, borderWidth:1,
     borderDash:[4,4], pointRadius:0, pointHoverRadius:0,
     fill:false, tension:0
@@ -625,24 +665,33 @@ function chartOptions(xLabel, yLabel, gc, tc, filterDiag) {
       }
     },
     scales:{
-      x:{ title:{display:true,text:xLabel,color:tc,font:{size:11}}, ticks:{color:tc,font:{size:10}}, grid:{color:gc} },
-      y:{ title:{display:true,text:yLabel,color:tc,font:{size:11}}, ticks:{color:tc,font:{size:10}}, grid:{color:gc} }
+      x:{ title:{display:true,text:xLabel,color:tc,font:{size:13}}, ticks:{color:tc,font:{size:12}}, grid:{color:gc} },
+      y:{ title:{display:true,text:yLabel,color:tc,font:{size:13}}, ticks:{color:tc,font:{size:12}}, grid:{color:gc} }
     }
   };
 }
 
 // ── Chart: wide vs narrow DR scatter ─────────────────────────────────────
+function scaleRange(rows, key, defaultMin, defaultMax, pad) {
+  const vals = rows.filter(r => r[key] != null).map(r => r[key]);
+  if (!vals.length) return { min: defaultMin, max: defaultMax };
+  return {
+    min: Math.min(defaultMin, Math.floor(Math.min(...vals) / pad) * pad),
+    max: Math.max(defaultMax, Math.ceil(Math.max(...vals) / pad) * pad)
+  };
+}
+
 function buildScatter(rows) {
   if (SC) { SC.destroy(); SC = null; }
-  const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-  const tc = isDark() ? '#9c9a92' : '#73726c';
-  const lc = isDark() ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)';
-  const opts = chartOptions('Wide DR (dB)', 'Narrow DR (dB)', gc, tc, true);
-  opts.scales.x.min = 40; opts.scales.x.max = 120;
-  opts.scales.y.min = 40; opts.scales.y.max = 120;
+  const cc = chartColors();
+  const opts = chartOptions('Wide DR (dB)', 'Narrow DR (dB)', cc.grid, cc.text, true);
+  const xr = scaleRange(rows, 'drWide', 40, 120, 10);
+  const yr = scaleRange(rows, 'drNarrow', 40, 120, 10);
+  opts.scales.x.min = xr.min; opts.scales.x.max = xr.max;
+  opts.scales.y.min = yr.min; opts.scales.y.max = yr.max;
   SC = new Chart(document.getElementById('scatter'), {
     type:'scatter',
-    data:{ datasets:[ diagDataset(lc), ...pointDatasets(rows,'drWide','drNarrow') ] },
+    data:{ datasets:[ diagDataset(cc.line, Math.min(xr.min,yr.min), Math.max(xr.max,yr.max)), ...pointDatasets(rows,'drWide','drNarrow') ] },
     options: opts
   });
 }
@@ -650,9 +699,10 @@ function buildScatter(rows) {
 // ── Chart: top 15 bar ────────────────────────────────────────────────────
 function buildBar(rows) {
   if (BC) { BC.destroy(); BC = null; }
-  const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-  const tc = isDark() ? '#9c9a92' : '#73726c';
+  const cc = chartColors();
   const top = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
+  if (!top.length) return;
+  const barMin = Math.max(0, Math.floor(top[top.length - 1].drNarrow / 5) * 5 - 5);
   const baseColors = top.map(r => ptColor(r.fe));
   const fullLabels = top.map(r => r.model);
   const hasSel = selectedModels.size > 0;
@@ -673,8 +723,8 @@ function buildBar(rows) {
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{callbacks:{label:d=>'Narrow DR: '+d.raw+' dB'}} },
       scales:{
-        x:{ ticks:{color:tc,font:{size:10}}, grid:{color:gc}, min:80 },
-        y:{ ticks:{color:tc,font:{size:10},maxRotation:0,autoSkip:false}, grid:{display:false} }
+        x:{ ticks:{color:cc.text,font:{size:12}}, grid:{color:cc.grid}, min:barMin },
+        y:{ ticks:{color:cc.text,font:{size:12},maxRotation:0,autoSkip:false}, grid:{display:false} }
       }
     }
   });
@@ -683,11 +733,12 @@ function buildBar(rows) {
 // ── Chart: LO noise vs narrow DR ─────────────────────────────────────────
 function buildLOScatter(rows) {
   if (LOC) { LOC.destroy(); LOC = null; }
-  const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-  const tc = isDark() ? '#9c9a92' : '#73726c';
-  const opts = chartOptions('LO noise (dBc/Hz)', 'Narrow DR (dB)', gc, tc, false);
-  opts.scales.x.min = 95; opts.scales.x.max = 165;
-  opts.scales.y.min = 40; opts.scales.y.max = 120;
+  const cc = chartColors();
+  const opts = chartOptions('LO noise (dBc/Hz)', 'Narrow DR (dB)', cc.grid, cc.text, false);
+  const lxr = scaleRange(rows, 'loNoise', 95, 165, 5);
+  const lyr = scaleRange(rows, 'drNarrow', 40, 120, 10);
+  opts.scales.x.min = lxr.min; opts.scales.x.max = lxr.max;
+  opts.scales.y.min = lyr.min; opts.scales.y.max = lyr.max;
   opts.plugins.tooltip.callbacks.label = d => d.raw.label + ': LO ' + d.raw.x + ' dBc/Hz, narrow DR ' + d.raw.y + ' dB';
   LOC = new Chart(document.getElementById('lo-scatter'), {
     type:'scatter',
@@ -699,7 +750,8 @@ function buildLOScatter(rows) {
 // ── Table ─────────────────────────────────────────────────────────────────
 function buildTable(rows) {
   const s = getSorted(rows);
-  const maxN = Math.max(...s.map(r => r.drNarrow || 0));
+  const drValues = s.filter(r => r.drNarrow != null).map(r => r.drNarrow);
+  const maxN = drValues.length ? Math.max(...drValues) : 1;
   document.getElementById('row-count').textContent = s.length + ' radio' + (s.length !== 1 ? 's' : '');
 
   document.getElementById('tbody').innerHTML = s.map(r => {
@@ -710,7 +762,7 @@ function buildTable(rows) {
       ? r.dateAdded.toLocaleDateString('en-US',{year:'numeric',month:'short'})
       : '—';
     const isHl = selectedModels.has(r.model);
-    return '<tr data-model="' + escHtml(r.model) + '" onclick="setHighlight(this.dataset.model)" class="' + (isHl?'highlighted':'') + '">' +
+    return '<tr data-model="' + escHtml(r.model) + '" tabindex="0" role="row" class="' + (isHl?'highlighted':'') + '">' +
       '<td class="model-cell">' + escHtml(r.model) + '</td>' +
       '<td style="color:var(--text3);font-size:12px">' + dateStr + '</td>' +
       '<td><div class="dr-bar"><span style="min-width:30px;font-weight:500">' + (r.drNarrow ?? '—') + '</span>' +
@@ -745,7 +797,30 @@ function update() {
   buildBar(rows);
   buildLOScatter(rows);
   buildTable(rows);
+  updateSelBadge();
 }
+
+function updateSelBadge() {
+  const badge = document.getElementById('sel-badge');
+  if (selectedModels.size) {
+    badge.textContent = selectedModels.size + ' selected';
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── Event delegation for table rows ──────────────────────────────────────
+document.getElementById('tbody').addEventListener('click', function(e) {
+  const tr = e.target.closest('tr[data-model]');
+  if (tr) setHighlight(tr.dataset.model);
+});
+document.getElementById('tbody').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const tr = e.target.closest('tr[data-model]');
+    if (tr) { e.preventDefault(); setHighlight(tr.dataset.model); }
+  }
+});
 </script>
 </body>
 </html>
