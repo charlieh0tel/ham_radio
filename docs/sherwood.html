@@ -9,223 +9,81 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #ffffff;
-    --bg2: #f5f5f3;
-    --bg3: #eeede9;
-    --text: #1a1a18;
-    --text2: #6b6a64;
-    --text3: #9c9a92;
-    --border: rgba(0,0,0,0.1);
-    --border2: rgba(0,0,0,0.18);
-    --radius: 8px;
-    --radius-lg: 12px;
-    --col-A: #1D9E75;
-    --col-B: #378ADD;
-    --col-C: #EF9F27;
-    --col-D: #D85A30;
-    --col-unknown: #888780;
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede9;
+    --text: #1a1a18; --text2: #6b6a64; --text3: #9c9a92;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --radius: 8px; --radius-lg: 12px;
+    --col-A: #1D9E75; --col-B: #378ADD; --col-C: #EF9F27; --col-D: #D85A30;
   }
-
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1c1c1a;
-      --bg2: #252523;
-      --bg3: #2e2e2b;
-      --text: #e8e6de;
-      --text2: #9c9a92;
-      --text3: #6b6a64;
-      --border: rgba(255,255,255,0.1);
-      --border2: rgba(255,255,255,0.18);
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #e8e6de; --text2: #9c9a92; --text3: #6b6a64;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
     }
   }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 15px;
-    line-height: 1.5;
-  }
-
-  /* ── Permission screen ── */
-  #permission-screen {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-  }
-  .permission-card {
-    background: var(--bg2);
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 2.5rem;
-    max-width: 520px;
-    width: 100%;
-  }
-  .permission-card h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.5rem; }
-  .permission-card p { font-size: 14px; color: var(--text2); margin-bottom: 1rem; line-height: 1.6; }
-  .permission-card a { color: var(--col-B); text-decoration: none; }
-  .permission-card a:hover { text-decoration: underline; }
-  .notice {
-    background: var(--bg3);
-    border-left: 3px solid var(--col-B);
-    border-radius: 0 var(--radius) var(--radius) 0;
-    padding: 0.75rem 1rem;
-    font-size: 13px;
-    color: var(--text2);
-    margin-bottom: 1.5rem;
-  }
-  .btn-row { display: flex; gap: 10px; }
-  .btn {
-    height: 38px; padding: 0 20px; border-radius: var(--radius);
-    font-size: 14px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border2);
-    background: var(--bg); color: var(--text); transition: background 0.15s;
-  }
+  .screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .card { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 2.5rem; max-width: 520px; width: 100%; }
+  .card h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.5rem; }
+  .card h2 { font-size: 17px; font-weight: 500; margin-bottom: 0.5rem; }
+  .card p { font-size: 14px; color: var(--text2); margin-bottom: 1rem; line-height: 1.6; }
+  .card a { color: var(--col-B); text-decoration: none; }
+  .card a:hover { text-decoration: underline; }
+  .notice { background: var(--bg3); border-left: 3px solid var(--col-B); border-radius: 0 var(--radius) var(--radius) 0; padding: 0.75rem 1rem; font-size: 13px; color: var(--text2); margin-bottom: 1.5rem; line-height: 1.6; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { height: 38px; padding: 0 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); transition: background 0.15s; }
   .btn:hover { background: var(--bg3); }
-  .btn-primary {
-    background: var(--text); color: var(--bg); border-color: transparent;
-  }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: transparent; }
   .btn-primary:hover { opacity: 0.85; }
+  .error-detail { font-family: monospace; font-size: 12px; background: var(--bg3); padding: 0.75rem; border-radius: var(--radius); color: var(--text2); margin-bottom: 1rem; word-break: break-all; white-space: pre-wrap; }
 
-  /* ── Loading ── */
-  #loading-screen {
-    display: none;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 1rem;
-    color: var(--text2);
-    font-size: 14px;
-  }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border2);
-    border-top-color: var(--col-B);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
+  #loading-screen { flex-direction: column; gap: 1rem; }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border2); border-top-color: var(--col-B); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-msg { font-size: 14px; color: var(--text2); }
 
-  /* ── Error ── */
-  #error-screen {
-    display: none;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-  }
-  .error-card {
-    background: var(--bg2);
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    max-width: 480px;
-    width: 100%;
-  }
-  .error-card h2 { font-size: 17px; font-weight: 500; margin-bottom: 0.5rem; }
-  .error-card p { font-size: 14px; color: var(--text2); margin-bottom: 1rem; }
-  .error-detail {
-    font-family: monospace; font-size: 12px;
-    background: var(--bg3); padding: 0.75rem; border-radius: var(--radius);
-    color: var(--text2); margin-bottom: 1rem; word-break: break-all;
-  }
-
-  /* ── Dashboard ── */
-  #dashboard { display: none; }
-
-  header {
-    border-bottom: 0.5px solid var(--border);
-    padding: 1.25rem 2rem;
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
+  header { border-bottom: 0.5px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
   header h1 { font-size: 18px; font-weight: 500; }
   header .meta { font-size: 13px; color: var(--text3); }
   header a { color: var(--col-B); text-decoration: none; font-size: 13px; }
   header a:hover { text-decoration: underline; }
-
   .main { padding: 1.5rem 2rem; max-width: 1400px; }
 
-  /* Controls */
-  .controls {
-    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.25rem; align-items: center;
-  }
-  .controls input, .controls select {
-    height: 34px; font-size: 13px; padding: 0 10px;
-    border: 0.5px solid var(--border2); border-radius: var(--radius);
-    background: var(--bg); color: var(--text); outline: none;
-  }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.25rem; align-items: center; }
+  .controls input, .controls select { height: 34px; font-size: 13px; padding: 0 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; }
   .controls input { flex: 1; min-width: 200px; }
   .controls select { min-width: 160px; }
   .controls input:focus, .controls select:focus { border-color: var(--col-B); }
 
-  /* Stats */
-  .stat-row {
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px; margin-bottom: 1.25rem;
-  }
-  .stat {
-    background: var(--bg2); border-radius: var(--radius);
-    padding: 10px 14px;
-  }
+  .stat-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .stat { background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; }
   .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 3px; }
   .stat-val { font-size: 22px; font-weight: 500; }
 
-  /* Charts */
-  .chart-row {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 16px; margin-bottom: 1.25rem;
-  }
-  .chart-box {
-    background: var(--bg);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 14px;
-  }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.25rem; }
+  .chart-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
   .chart-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
   .chart-note { font-size: 11px; color: var(--text3); margin-top: 6px; }
-  .legend-row {
-    display: flex; flex-wrap: wrap; gap: 10px;
-    margin-bottom: 8px; font-size: 11px; color: var(--text2);
-  }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; font-size: 11px; color: var(--text2); }
   .legend-row span { display: flex; align-items: center; gap: 4px; }
   .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-  /* Table */
-  .table-wrap {
-    overflow-x: auto;
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    margin-bottom: 2rem;
-  }
+  .table-wrap { overflow-x: auto; border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 2rem; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th {
-    background: var(--bg2); padding: 9px 12px;
-    text-align: left; font-weight: 500; font-size: 11px;
-    color: var(--text2); white-space: nowrap;
-    border-bottom: 0.5px solid var(--border);
-    cursor: pointer; user-select: none;
-  }
+  thead th { background: var(--bg2); padding: 9px 12px; text-align: left; font-weight: 500; font-size: 11px; color: var(--text2); white-space: nowrap; border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none; }
   thead th:hover { color: var(--text); }
   thead th.sorted { color: var(--text); }
   tbody tr { border-bottom: 0.5px solid var(--border); }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--bg2); }
   td { padding: 8px 12px; white-space: nowrap; }
-  td.model-cell { white-space: normal; font-weight: 500; max-width: 180px; }
-
+  td.model-cell { white-space: normal; font-weight: 500; max-width: 200px; }
   .dr-bar { display: flex; align-items: center; gap: 8px; }
   .bar-bg { height: 8px; border-radius: 4px; background: var(--bg3); flex: 1; min-width: 60px; }
   .bar-fill { height: 8px; border-radius: 4px; }
-
-  .badge {
-    display: inline-block; font-size: 10px; padding: 2px 7px;
-    border-radius: var(--radius); font-weight: 500;
-  }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: var(--radius); font-weight: 500; }
   .badge-A { background: #E1F5EE; color: #085041; }
   .badge-B { background: #E6F1FB; color: #0C447C; }
   .badge-C { background: #FAEEDA; color: #633806; }
@@ -236,9 +94,7 @@
     .badge-C { background: #412402; color: #EF9F27; }
     .badge-D { background: #501313; color: #F09595; }
   }
-
   .row-count { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
-
   @media (max-width: 700px) {
     header, .main { padding: 1rem; }
     .chart-row, .stat-row { grid-template-columns: 1fr; }
@@ -247,21 +103,21 @@
 </head>
 <body>
 
-<!-- ── Permission screen ── -->
-<div id="permission-screen">
-  <div class="permission-card">
+<!-- Permission -->
+<div id="permission-screen" class="screen">
+  <div class="card">
     <h1>Sherwood Receiver Performance Table</h1>
-    <p>This page can fetch the latest receiver test data directly from
+    <p>This page fetches the latest receiver test data directly from
       <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com</a>,
-      maintained by Rob Sherwood (NC0B). The data belongs to Sherwood Engineering — this tool
-      just displays it.
+      maintained by Rob Sherwood NC0B. The data belongs to Sherwood Engineering — this tool just displays it.
     </p>
     <div class="notice">
-      A CORS proxy (<strong>allorigins.win</strong>) will relay the request, since browsers
-      block mixed HTTP/HTTPS fetches. Your IP will be visible to both services.
-      No data is stored or sent anywhere else.
+      Since sherweng.com is plain HTTP, a CORS proxy is needed to relay the request from this HTTPS page.
+      It will try <strong>corsproxy.io</strong>, then <strong>allorigins.win</strong>, then
+      <strong>thingproxy.freeboard.io</strong> in sequence. Your IP is visible to whichever
+      service succeeds. No data is stored elsewhere.
     </div>
-    <p>Do you want to fetch the latest data now?</p>
+    <p>Fetch the latest data now?</p>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="startFetch()">Yes, fetch data</button>
       <button class="btn" onclick="showNoConsent()">No thanks</button>
@@ -269,18 +125,19 @@
   </div>
 </div>
 
-<!-- ── Loading ── -->
-<div id="loading-screen" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:1rem;">
+<!-- Loading -->
+<div id="loading-screen" class="screen" style="display:none;">
   <div class="spinner"></div>
-  <p style="font-size:14px;color:var(--text2)" id="loading-msg">Fetching data from sherweng.com…</p>
+  <p id="loading-msg">Connecting…</p>
 </div>
 
-<!-- ── Error ── -->
-<div id="error-screen" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:2rem;">
-  <div class="error-card">
+<!-- Error -->
+<div id="error-screen" class="screen" style="display:none;">
+  <div class="card">
     <h2>Could not load data</h2>
-    <p>The fetch from sherweng.com failed. You can visit the original page directly:</p>
-    <p><a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener" style="color:var(--col-B)">http://www.sherweng.com/table.html</a></p>
+    <p>All proxies failed. Visit the original page directly:<br>
+      <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">http://www.sherweng.com/table.html</a>
+    </p>
     <div class="error-detail" id="error-detail"></div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="startFetch()">Try again</button>
@@ -289,16 +146,14 @@
   </div>
 </div>
 
-<!-- ── Dashboard ── -->
+<!-- Dashboard -->
 <div id="dashboard" style="display:none;">
   <header>
     <h1>Sherwood Receiver Performance Table</h1>
     <span class="meta" id="data-date"></span>
     <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">Source: sherweng.com ↗</a>
   </header>
-
   <div class="main">
-
     <div class="controls">
       <input type="text" id="search" placeholder="Search model or brand…" oninput="update()">
       <select id="brand-filter" onchange="update()"><option value="">All brands</option></select>
@@ -317,14 +172,12 @@
         <option value="filterUlt">Sort: Filter ultimate</option>
       </select>
     </div>
-
     <div class="stat-row">
       <div class="stat"><div class="stat-label">Radios shown</div><div class="stat-val" id="s-count">—</div></div>
       <div class="stat"><div class="stat-label">Best narrow DR</div><div class="stat-val" id="s-best">—</div></div>
       <div class="stat"><div class="stat-label">Avg narrow DR</div><div class="stat-val" id="s-avg">—</div></div>
       <div class="stat"><div class="stat-label">Avg wide DR</div><div class="stat-val" id="s-wide">—</div></div>
     </div>
-
     <div class="chart-row">
       <div class="chart-box">
         <div class="chart-title">Wide DR vs narrow DR — each dot is one radio</div>
@@ -336,7 +189,7 @@
           <span><span class="leg-dot" style="background:#888780"></span>unknown</span>
         </div>
         <div style="position:relative;height:260px"><canvas id="scatter"></canvas></div>
-        <p class="chart-note">Dots well above the diagonal = large gap between wide and narrow DR (phase-noise limited)</p>
+        <p class="chart-note">Dots above the diagonal = wide DR much better than narrow DR (phase-noise limited)</p>
       </div>
       <div class="chart-box">
         <div class="chart-title">Top 15 by narrow dynamic range</div>
@@ -349,168 +202,143 @@
         <div style="position:relative;height:260px"><canvas id="bar"></canvas></div>
       </div>
     </div>
-
     <div class="row-count" id="row-count"></div>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th data-col="model" onclick="setSort('model')">Model</th>
-            <th data-col="drNarrow" onclick="setSort('drNarrow')" class="sorted">Narrow DR ↓</th>
-            <th data-col="drWide" onclick="setSort('drWide')">Wide DR</th>
-            <th data-col="blocking" onclick="setSort('blocking')">Blocking (dB)</th>
-            <th data-col="loNoise" onclick="setSort('loNoise')">LO noise (dBc/Hz)</th>
-            <th data-col="filterUlt" onclick="setSort('filterUlt')">Filter ult. (dB)</th>
-            <th>Front end</th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th data-col="model"     onclick="setSort('model')">Model</th>
+          <th data-col="drNarrow"  onclick="setSort('drNarrow')" class="sorted">Narrow DR ↓</th>
+          <th data-col="drWide"    onclick="setSort('drWide')">Wide DR</th>
+          <th data-col="blocking"  onclick="setSort('blocking')">Blocking (dB)</th>
+          <th data-col="loNoise"   onclick="setSort('loNoise')">LO noise (dBc/Hz)</th>
+          <th data-col="filterUlt" onclick="setSort('filterUlt')">Filter ult. (dB)</th>
+          <th>Front end</th>
+        </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
-
-  </div><!-- /.main -->
-</div><!-- /#dashboard -->
+  </div>
+</div>
 
 <script>
-// ── State ──────────────────────────────────────────────
-let ALL_DATA = [];
-let sortCol = 'drNarrow';
-let sortAsc = false;
+const TARGET = 'http://www.sherweng.com/table.html';
 
-// ── Screen helpers ─────────────────────────────────────
+const PROXIES = [
+  {
+    label: 'corsproxy.io',
+    fetch: async url => {
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }
+  },
+  {
+    label: 'allorigins.win',
+    fetch: async url => {
+      const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!j.contents) throw new Error('empty response');
+      return j.contents;
+    }
+  },
+  {
+    label: 'thingproxy.freeboard.io',
+    fetch: async url => {
+      const r = await fetch('https://thingproxy.freeboard.io/fetch/' + url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }
+  }
+];
+
+let ALL_DATA = [], sortCol = 'drNarrow', sortAsc = false;
+
 function show(id) {
-  ['permission-screen','loading-screen','error-screen','dashboard'].forEach(s => {
+  for (const s of ['permission-screen','loading-screen','error-screen','dashboard']) {
     const el = document.getElementById(s);
-    el.style.display = (s === id) ? (s === 'loading-screen' ? 'flex' : 'block') : 'none';
-  });
+    el.style.display = 'none';
+  }
+  const target = document.getElementById(id);
+  target.style.display = (id === 'loading-screen') ? 'flex' : 'block';
 }
 
 function showNoConsent() {
-  document.getElementById('permission-screen').innerHTML = `
-    <div class="permission-card">
-      <h1>No problem</h1>
-      <p>You can visit the original table directly at
-        <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com/table.html</a>.
-      </p>
-      <div class="btn-row">
-        <button class="btn" onclick="location.reload()">Go back</button>
-      </div>
-    </div>`;
+  document.getElementById('permission-screen').innerHTML =
+    '<div class="card"><h2>No problem</h2><p>Visit the original table at <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com/table.html</a>.</p><div class="btn-row"><button class="btn" onclick="location.reload()">Go back</button></div></div>';
 }
 
-// ── Fetch & parse ──────────────────────────────────────
 async function startFetch() {
   show('loading-screen');
-  const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('http://www.sherweng.com/table.html');
-  try {
-    document.getElementById('loading-msg').textContent = 'Contacting allorigins.win proxy…';
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error(`Proxy returned HTTP ${res.status}`);
-    const json = await res.json();
-    document.getElementById('loading-msg').textContent = 'Parsing table data…';
-    const data = parseSherwoodHTML(json.contents);
-    if (!data.length) throw new Error('Parsed 0 rows — page structure may have changed.');
-    ALL_DATA = data;
-    buildBrandFilter();
-    show('dashboard');
-    // Try to extract update date from page
-    const dateMatch = json.contents.match(/Updated\s+([\d]+\s+\w+\s+[\d]{4})/i);
-    if (dateMatch) document.getElementById('data-date').textContent = 'Data updated: ' + dateMatch[1];
-    update();
-  } catch (err) {
-    document.getElementById('error-detail').textContent = err.message || String(err);
-    show('error-screen');
-    document.getElementById('error-screen').style.display = 'flex';
+  const errors = [];
+  for (const proxy of PROXIES) {
+    try {
+      document.getElementById('loading-msg').textContent = 'Trying ' + proxy.label + '…';
+      const html = await proxy.fetch(TARGET);
+      document.getElementById('loading-msg').textContent = 'Parsing table…';
+      const data = parseSherwoodHTML(html);
+      if (!data.length) throw new Error('Parsed 0 rows — page structure may have changed');
+      ALL_DATA = data;
+      buildBrandFilter();
+      const dm = html.match(/Updated\s+([\d]+\s+\w+\s+[\d]{4})/i);
+      if (dm) document.getElementById('data-date').textContent = 'Updated: ' + dm[1];
+      show('dashboard');
+      update();
+      return;
+    } catch(e) {
+      errors.push(proxy.label + ': ' + e.message);
+    }
   }
+  document.getElementById('error-detail').textContent = errors.join('\n');
+  show('error-screen');
 }
 
-// ── HTML parser ────────────────────────────────────────
 function parseSherwoodHTML(html) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = new DOMParser().parseFromString(html, 'text/html');
   const rows = [];
-
-  // Find all <tr> elements in the main data table
-  const trs = Array.from(doc.querySelectorAll('tr'));
-
-  for (const tr of trs) {
+  for (const tr of doc.querySelectorAll('tr')) {
     const cells = Array.from(tr.querySelectorAll('td'));
     if (cells.length < 13) continue;
-
-    const modelCell = cells[0].textContent.trim();
-    // Skip header repeat rows
-    if (modelCell.includes('Device') && modelCell.includes('Under Test')) continue;
-    // Skip empty rows
-    if (!modelCell) continue;
-
-    // Model: strip "Added xx/xx/xx" and "Updated xx/xx/xx" prefixes
-    const modelRaw = modelCell.replace(/^(Added|Updated|Corrected|Edited)\s+[\d\/]+\s*/i, '').trim();
+    const raw = cells[0].textContent.trim();
+    if (!raw || (raw.includes('Device') && raw.includes('Under Test'))) continue;
+    const modelRaw = raw.replace(/^(Added|Updated|Corrected|Edited)\s+[\d\/]+\s*/i, '').trim();
     if (!modelRaw) continue;
-
-    // Brand: first word(s) before the model number
-    // Try to identify brand from known list
-    const brand = extractBrand(modelRaw);
-
-    function firstNum(cell) {
-      const t = cell.textContent.trim();
-      // Grab the first number (possibly negative)
-      const m = t.match(/-?[\d]+/);
-      return m ? parseInt(m[0], 10) : null;
-    }
-
-    // Narrow DR is col 12, Wide DR is col 10
-    // Front end selectivity is col 8
-    // Filter ultimate is col 9
-    // Blocking is col 4
-    // LO noise is col 6
-    const drNarrow = firstNum(cells[12]);
-    const drWide   = firstNum(cells[10]);
-    const blocking = firstNum(cells[4]);
-    const loNoise  = firstNum(cells[6]);
-    const filterUlt = firstNum(cells[9]);
-
-    // Front end grade: cell 8, extract leading letter A-F
+    function firstInt(cell) { const m = cell.textContent.trim().match(/-?\d+/); return m ? parseInt(m[0],10) : null; }
+    const drNarrow = firstInt(cells[12]);
+    if (drNarrow == null) continue;
     const feText = cells[8].textContent.trim();
     const feMatch = feText.match(/^([A-F])/);
-    const fe = feMatch ? feMatch[1] : null;
-
-    // Only include rows that have at least narrow DR
-    if (drNarrow == null) continue;
-
-    rows.push({ model: modelRaw, brand, drNarrow, drWide, blocking, loNoise, filterUlt, fe });
+    rows.push({
+      model: modelRaw,
+      brand: extractBrand(modelRaw),
+      drNarrow,
+      drWide:    firstInt(cells[10]),
+      blocking:  firstInt(cells[4]),
+      loNoise:   firstInt(cells[6]),
+      filterUlt: firstInt(cells[9]),
+      fe: feMatch ? feMatch[1] : null
+    });
   }
-
   return rows;
 }
 
 function extractBrand(model) {
-  // Known brands to match against
-  const brands = [
-    'Yaesu','Icom','Kenwood','Elecraft','FlexRadio','Apache','Ten-Tec','Drake',
+  const known = ['Yaesu','Icom','Kenwood','Elecraft','FlexRadio','Apache','Ten-Tec','Drake',
     'Collins','JRC','Hilberling','Atlas','Microtelecom','AOR','Heath','Watkins-Johnson',
     'Signal/One','Racal','Lowe','Palstar','Grundig','Lab599','Aerial-51','Expert',
-    'Xiegu','Elad','CommRadio','KWZ','Perseus'
-  ];
-  for (const b of brands) {
-    if (model.toLowerCase().includes(b.toLowerCase())) return b;
-  }
-  // Fall back to first word
+    'Xiegu','Elad','CommRadio','KWZ','Perseus'];
+  for (const b of known) if (model.toLowerCase().includes(b.toLowerCase())) return b;
   return model.split(/\s+/)[0];
 }
 
-// ── Brand filter dropdown ──────────────────────────────
 function buildBrandFilter() {
-  const brands = [...new Set(ALL_DATA.map(r => r.brand))].sort();
   const sel = document.getElementById('brand-filter');
   sel.innerHTML = '<option value="">All brands</option>';
-  brands.forEach(b => {
-    const o = document.createElement('option');
-    o.value = b; o.textContent = b;
-    sel.appendChild(o);
+  [...new Set(ALL_DATA.map(r => r.brand))].sort().forEach(b => {
+    const o = document.createElement('option'); o.value = b; o.textContent = b; sel.appendChild(o);
   });
 }
 
-// ── Filtering & sorting ────────────────────────────────
 function getFiltered() {
   const q  = document.getElementById('search').value.toLowerCase();
   const br = document.getElementById('brand-filter').value;
@@ -518,71 +346,61 @@ function getFiltered() {
   return ALL_DATA.filter(r => {
     if (q  && !r.model.toLowerCase().includes(q) && !r.brand.toLowerCase().includes(q)) return false;
     if (br && r.brand !== br) return false;
-    if (fe && r.fe !== fe)   return false;
+    if (fe && r.fe   !== fe) return false;
     return true;
   });
 }
 
 function setSort(col) {
-  if (sortCol === col) { sortAsc = !sortAsc; }
-  else { sortCol = col; sortAsc = col === 'model'; }
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
-  const th = document.querySelector(`thead th[data-col="${col}"]`);
-  if (th) {
-    th.classList.add('sorted');
-    th.textContent = th.textContent.replace(/ [↑↓]$/, '') + (sortAsc ? ' ↑' : ' ↓');
-  }
+  sortAsc = sortCol === col ? !sortAsc : col === 'model';
+  sortCol = col;
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sorted');
+    th.textContent = th.textContent.replace(/ [↑↓]$/, '');
+  });
+  const th = document.querySelector('thead th[data-col="' + col + '"]');
+  if (th) { th.classList.add('sorted'); th.textContent += sortAsc ? ' ↑' : ' ↓'; }
   update();
 }
 
-function sorted(rows) {
+function getSorted(rows) {
   return [...rows].sort((a, b) => {
     const av = a[sortCol], bv = b[sortCol];
     if (av == null && bv == null) return 0;
-    if (av == null) return 1;
-    if (bv == null) return -1;
+    if (av == null) return 1; if (bv == null) return -1;
     if (typeof av === 'string') return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
     return sortAsc ? av - bv : bv - av;
   });
 }
 
-// ── Colors ─────────────────────────────────────────────
 const FE_COLOR = { A:'#1D9E75', B:'#378ADD', C:'#EF9F27', D:'#D85A30' };
 function ptColor(fe) { return FE_COLOR[fe] || '#888780'; }
 function drColor(v) {
-  if (v >= 105) return '#1D9E75';
-  if (v >= 95)  return '#378ADD';
-  if (v >= 85)  return '#EF9F27';
-  if (v >= 75)  return '#D85A30';
+  if (v >= 105) return '#1D9E75'; if (v >= 95) return '#378ADD';
+  if (v >= 85)  return '#EF9F27'; if (v >= 75) return '#D85A30';
   return '#888780';
 }
 
-// ── Charts ─────────────────────────────────────────────
 let SC = null, BC = null;
-
 function isDark() { return matchMedia('(prefers-color-scheme:dark)').matches; }
 
 function buildScatter(rows) {
   if (SC) { SC.destroy(); SC = null; }
   const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
   const tc = isDark() ? '#9c9a92' : '#73726c';
-  const grades = ['A','B','C','D',null];
-  const datasets = grades.map(g => ({
-    label: g || '?',
-    data: rows.filter(r => r.fe === g && r.drNarrow != null && r.drWide != null)
-              .map(r => ({ x: r.drWide, y: r.drNarrow, label: r.model })),
-    backgroundColor: ptColor(g),
-    pointRadius: 5, pointHoverRadius: 7
-  })).filter(d => d.data.length > 0);
-
   SC = new Chart(document.getElementById('scatter'), {
-    type: 'scatter', data: { datasets },
+    type: 'scatter',
+    data: {
+      datasets: ['A','B','C','D',null].map(g => ({
+        label: g || '?',
+        data: rows.filter(r => r.fe === g && r.drNarrow != null && r.drWide != null)
+                  .map(r => ({ x: r.drWide, y: r.drNarrow, label: r.model })),
+        backgroundColor: ptColor(g), pointRadius: 5, pointHoverRadius: 7
+      })).filter(d => d.data.length)
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: d => `${d.raw.label}: wide ${d.raw.x} / narrow ${d.raw.y} dB` } }
-      },
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:d=>`${d.raw.label}: wide ${d.raw.x} / narrow ${d.raw.y} dB`}} },
       scales: {
         x: { title:{display:true,text:'Wide DR (dB)',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:10}}, grid:{color:gc}, min:40, max:120 },
         y: { title:{display:true,text:'Narrow DR (dB)',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:10}}, grid:{color:gc}, min:40, max:120 }
@@ -595,17 +413,12 @@ function buildBar(rows) {
   if (BC) { BC.destroy(); BC = null; }
   const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
   const tc = isDark() ? '#9c9a92' : '#73726c';
-  const top15 = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
-
+  const top = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
   BC = new Chart(document.getElementById('bar'), {
     type: 'bar',
     data: {
-      labels: top15.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
-      datasets: [{
-        data: top15.map(r => r.drNarrow),
-        backgroundColor: top15.map(r => ptColor(r.fe)),
-        borderRadius: 3, borderSkipped: false
-      }]
+      labels: top.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
+      datasets: [{ data: top.map(r => r.drNarrow), backgroundColor: top.map(r => ptColor(r.fe)), borderRadius: 3, borderSkipped: false }]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -618,29 +431,24 @@ function buildBar(rows) {
   });
 }
 
-// ── Table ──────────────────────────────────────────────
 function buildTable(rows) {
-  const s = sorted(rows);
+  const s = getSorted(rows);
   const maxN = Math.max(...s.map(r => r.drNarrow || 0));
-  document.getElementById('row-count').textContent = `${s.length} radio${s.length !== 1 ? 's' : ''}`;
-  document.getElementById('tbody').innerHTML = s.map(r => `
-    <tr>
-      <td class="model-cell">${r.model}</td>
-      <td>
-        <div class="dr-bar">
-          <span style="min-width:30px;font-weight:500">${r.drNarrow ?? '—'}</span>
-          <div class="bar-bg"><div class="bar-fill" style="width:${r.drNarrow ? Math.round(r.drNarrow/maxN*100) : 0}%;background:${drColor(r.drNarrow||0)}"></div></div>
-        </div>
-      </td>
-      <td>${r.drWide ?? '—'}</td>
-      <td>${r.blocking ?? '—'}</td>
-      <td>${r.loNoise ?? '—'}</td>
-      <td>${r.filterUlt ?? '—'}</td>
-      <td>${r.fe ? `<span class="badge badge-${r.fe}">${r.fe}</span>` : '—'}</td>
-    </tr>`).join('');
+  document.getElementById('row-count').textContent = s.length + ' radio' + (s.length !== 1 ? 's' : '');
+  document.getElementById('tbody').innerHTML = s.map(r =>
+    '<tr>' +
+    '<td class="model-cell">' + r.model + '</td>' +
+    '<td><div class="dr-bar"><span style="min-width:30px;font-weight:500">' + (r.drNarrow ?? '—') + '</span>' +
+    '<div class="bar-bg"><div class="bar-fill" style="width:' + (r.drNarrow ? Math.round(r.drNarrow/maxN*100) : 0) + '%;background:' + drColor(r.drNarrow||0) + '"></div></div></div></td>' +
+    '<td>' + (r.drWide ?? '—') + '</td>' +
+    '<td>' + (r.blocking ?? '—') + '</td>' +
+    '<td>' + (r.loNoise ?? '—') + '</td>' +
+    '<td>' + (r.filterUlt ?? '—') + '</td>' +
+    '<td>' + (r.fe ? '<span class="badge badge-' + r.fe + '">' + r.fe + '</span>' : '—') + '</td>' +
+    '</tr>'
+  ).join('');
 }
 
-// ── Stats ──────────────────────────────────────────────
 function updateStats(rows) {
   const ns = rows.filter(r => r.drNarrow != null).map(r => r.drNarrow);
   const ws = rows.filter(r => r.drWide   != null).map(r => r.drWide);
@@ -650,7 +458,6 @@ function updateStats(rows) {
   document.getElementById('s-wide').textContent  = ws.length ? Math.round(ws.reduce((a,b)=>a+b)/ws.length) + ' dB' : '—';
 }
 
-// ── Main update ────────────────────────────────────────
 function update() {
   const rows = getFiltered();
   updateStats(rows);
