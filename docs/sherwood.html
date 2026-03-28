@@ -550,11 +550,45 @@ function setHighlight(model) {
 }
 
 function rebuildChartHighlight() {
-  // Re-render all three charts so the highlighted point is visually distinct
-  const rows = getFiltered();
-  buildScatter(rows);
-  buildBar(rows);
-  buildLOScatter(rows);
+  // Mutate point styles in-place — no destroy/recreate, no flicker
+  updateScatterHighlight(SC);
+  updateScatterHighlight(LOC);
+  updateBarHighlight();
+}
+
+function updateScatterHighlight(chart) {
+  if (!chart) return;
+  // Skip dataset 0 if it's the diagonal line (_diag)
+  chart.data.datasets.forEach(ds => {
+    if (ds.label === '_diag') return;
+    const fe = ds.label === '?' ? null : ds.label;
+    const base = ptColor(fe);
+    ds.backgroundColor  = ds.data.map(p => p.label === highlightedModel ? '#ffffff' : base);
+    ds.pointRadius       = ds.data.map(p => p.label === highlightedModel ? 9 : 5);
+    ds.pointBorderColor  = ds.data.map(p => p.label === highlightedModel ? base : 'transparent');
+    ds.pointBorderWidth  = ds.data.map(p => p.label === highlightedModel ? 2 : 0);
+  });
+  chart.update('none');
+}
+
+function updateBarHighlight() {
+  if (!BC) return;
+  const ds = BC.data.datasets[0];
+  const labels = BC.data.labels;
+  // Match by truncated label since bar uses truncated model names
+  ds.backgroundColor = labels.map((lbl, i) => {
+    const full = BC.data.datasets[0]._fullLabels ? BC.data.datasets[0]._fullLabels[i] : lbl;
+    return full === highlightedModel ? '#ffffff' : ds._baseColors[i];
+  });
+  ds.borderColor = labels.map((lbl, i) => {
+    const full = BC.data.datasets[0]._fullLabels ? BC.data.datasets[0]._fullLabels[i] : lbl;
+    return full === highlightedModel ? ds._baseColors[i] : 'transparent';
+  });
+  ds.borderWidth = labels.map((lbl, i) => {
+    const full = BC.data.datasets[0]._fullLabels ? BC.data.datasets[0]._fullLabels[i] : lbl;
+    return full === highlightedModel ? 2 : 0;
+  });
+  BC.update('none');
 }
 
 // ── Chart helpers ─────────────────────────────────────────────────────────
@@ -626,16 +660,20 @@ function buildBar(rows) {
   const gc = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
   const tc = isDark() ? '#9c9a92' : '#73726c';
   const top = [...rows].filter(r => r.drNarrow != null).sort((a,b) => b.drNarrow - a.drNarrow).slice(0,15);
+  const baseColors = top.map(r => ptColor(r.fe));
+  const fullLabels = top.map(r => r.model);
   BC = new Chart(document.getElementById('bar'), {
     type:'bar',
     data:{
       labels: top.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
       datasets:[{
         data: top.map(r => r.drNarrow),
-        backgroundColor: top.map(r => r.model === highlightedModel ? '#ffffff' : ptColor(r.fe)),
-        borderColor: top.map(r => r.model === highlightedModel ? ptColor(r.fe) : 'transparent'),
+        backgroundColor: top.map((r,i) => r.model === highlightedModel ? '#ffffff' : baseColors[i]),
+        borderColor: top.map((r,i) => r.model === highlightedModel ? baseColors[i] : 'transparent'),
         borderWidth: top.map(r => r.model === highlightedModel ? 2 : 0),
-        borderRadius:3, borderSkipped:false
+        borderRadius:3, borderSkipped:false,
+        _baseColors: baseColors,
+        _fullLabels: fullLabels
       }]
     },
     options:{
