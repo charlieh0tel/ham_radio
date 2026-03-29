@@ -130,6 +130,13 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 @media (max-width:700px) {
   header,.main { padding:1rem; }
   .stat-row { grid-template-columns:1fr 1fr; }
+  .controls { flex-direction:column; }
+  .controls input,.controls select { width:100%; min-width:0; }
+  .table-wrap { -webkit-overflow-scrolling:touch; }
+}
+@media (max-width:420px) {
+  .stat-row { grid-template-columns:1fr; }
+  header h1 { font-size:16px; }
 }
 </style>
 </head>
