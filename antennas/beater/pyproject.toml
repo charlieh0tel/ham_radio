@@ -21,3 +21,5 @@ select = ["E", "F", "I", "W", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 # The nec2c sample output is a fixed-column fixture and must not be reflowed.
 "tests/test_nec.py" = ["E501"]
+# plot.py embeds an HTML/CSS template whose lines should not be reflowed.
+"src/beater/plot.py" = ["E501"]

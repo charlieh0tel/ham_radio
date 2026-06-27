@@ -39,6 +39,18 @@ def test_deck_rejects_multi_design(tmp_path, capsys):
 
 
 @needs_nec2c
+def test_plot_artifact_structure():
+    from beater.plot import render_artifact
+
+    result = design(replace(_spec(PHASING_SELF), reflector="ground", label="2 m"))
+    page = render_artifact([result])
+    assert page.count("<svg") == 4
+    assert page.count("<polyline") == 4  # one trace per chart for one design
+    assert "2 m" in page
+    assert "<title>" in page
+
+
+@needs_nec2c
 def test_main_reads_stdin(monkeypatch, capsys):
     import io
 

@@ -68,6 +68,8 @@ A JSON document may hold one spec object or a list of them; a list runs each
 - `--optimize-reflector` grid-search reflector spacing and droop for the lowest
   post-match VSWR (keeping axial ratio within budget).
 - `--deck <path>` write the tuned NEC deck (single-design specs only).
+- `--plot <path>` write a performance-plot page (HTML) for the design(s);
+  multiple designs are overlaid.
 - `--nec2c <path>` nec2c executable (default `nec2c`).
 
 ## How it works

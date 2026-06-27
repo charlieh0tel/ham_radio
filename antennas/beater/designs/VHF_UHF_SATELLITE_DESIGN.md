@@ -70,11 +70,19 @@ axial-ratio band as the operational coverage.
 
 ## Reproduce
 
+This design is `satellite_pair.json` in this directory (both bands, with the
+optimized reflector baked in).
+
 ```
-uv run beater --freq 145.9 --conductor round:5.0 --reflector radials --sense rhcp \
-    --optimize-reflector --sweep --deck designs/eggbeater_2m.nec
-uv run beater --freq 436 --conductor round:3.0 --reflector radials --sense rhcp \
-    --optimize-reflector --sweep --deck designs/eggbeater_70cm.nec
+# cut sheets and bandwidths for both bands
+uv run beater designs/satellite_pair.json --sweep
+
+# performance-plot page (HTML)
+uv run beater designs/satellite_pair.json --plot designs/eggbeater-performance.html
+
+# tuned NEC decks, one design at a time (--deck is single-design only)
+jq '.[0]' designs/satellite_pair.json | uv run beater - --deck designs/eggbeater_2m.nec
+jq '.[1]' designs/satellite_pair.json | uv run beater - --deck designs/eggbeater_70cm.nec
 ```
 
 The tuned NEC decks are `eggbeater_2m.nec` and `eggbeater_70cm.nec` in this

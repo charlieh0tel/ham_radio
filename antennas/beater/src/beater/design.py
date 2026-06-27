@@ -209,12 +209,14 @@ def analyze(
     factor_b: float,
     phase_b_deg: float,
     run_freq_mhz: float | None = None,
+    grid: RadiationGrid | None = None,
 ) -> tuple[NecResult, str]:
     """Run nec2c once for the given perimeters and feed phase.
 
     Geometry is always scaled to the design frequency; run_freq_mhz overrides
     only the analysis frequency (the FR card), so the fixed physical antenna can
-    be swept across a band.  Sources are ordered loop A then loop B, matching
+    be swept across a band.  grid overrides the radiation-pattern sampling (for
+    a fine elevation cut).  Sources are ordered loop A then loop B, matching
     nec2c's reporting order.
     """
     wavelength = wavelength_m(spec.freq_mhz)
@@ -236,7 +238,7 @@ def analyze(
         sources,
         ground=spec.reflector == REFLECTOR_GROUND,
         freq_mhz=run_freq_mhz if run_freq_mhz is not None else spec.freq_mhz,
-        grid=DEFAULT_GRID,
+        grid=grid if grid is not None else DEFAULT_GRID,
     )
     return run_nec(deck, spec.nec2c), deck
 

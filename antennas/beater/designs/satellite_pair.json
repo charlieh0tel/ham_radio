@@ -1,0 +1,26 @@
+[
+  {
+    "label": "2 m",
+    "freq_mhz": 145.9,
+    "conductor": {"kind": "round", "diameter_mm": 5.0},
+    "phasing": "self",
+    "sense": "rhcp",
+    "reflector": "radials",
+    "reflector_spacing_wl": 0.20,
+    "radial_count": 8,
+    "radial_length_wl": 0.27,
+    "radial_droop_deg": 45.0
+  },
+  {
+    "label": "70 cm",
+    "freq_mhz": 436.0,
+    "conductor": {"kind": "round", "diameter_mm": 3.0},
+    "phasing": "self",
+    "sense": "rhcp",
+    "reflector": "radials",
+    "reflector_spacing_wl": 0.20,
+    "radial_count": 8,
+    "radial_length_wl": 0.27,
+    "radial_droop_deg": 45.0
+  }
+]

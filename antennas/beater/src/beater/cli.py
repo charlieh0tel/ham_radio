@@ -25,6 +25,7 @@ from .design import (
     vswr,
 )
 from .geometry import loop_radius_m, wavelength_m
+from .plot import render_artifact
 from .spec import specs_from_json
 
 # Fraction of a wavelength in a quarter-wave phasing line.
@@ -160,6 +161,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--deck",
         help="write the tuned NEC deck to this path (single-design specs only)",
     )
+    parser.add_argument(
+        "--plot",
+        help="write a performance plot page (HTML) for the design(s) to this path",
+    )
     parser.add_argument("--nec2c", default="nec2c", help="nec2c executable")
     return parser
 
@@ -204,10 +209,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.deck and len(specs) > 1:
         parser.error("--deck requires a single-design spec")
 
+    results = []
     for index, spec in enumerate(specs):
         if args.optimize_reflector and spec.reflector == REFLECTOR_NONE:
             parser.error("--optimize-reflector requires a reflector")
         result = optimize_reflector(spec) if args.optimize_reflector else design(spec)
+        results.append(result)
         if index:
             print()
         print(format_cut_sheet(result), end="")
@@ -217,6 +224,11 @@ def main(argv: list[str] | None = None) -> int:
             with open(args.deck, "w") as handle:
                 handle.write(result.deck)
             print(f"Wrote NEC deck to {args.deck}")
+
+    if args.plot:
+        with open(args.plot, "w") as handle:
+            handle.write(render_artifact(results))
+        print(f"Wrote plot page to {args.plot}")
     return 0
 
 
