@@ -20,6 +20,7 @@ from .design import (
     bandwidth_2to1,
     design,
     nearest_standard_coax,
+    optimize_reflector,
     quarter_wave_match_z0,
     series_match_element,
     vswr,
@@ -221,6 +222,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="matching-section coax velocity factor",
     )
     parser.add_argument(
+        "--optimize-reflector",
+        action="store_true",
+        help="grid-search reflector spacing and droop for the best match",
+    )
+    parser.add_argument(
         "--sweep",
         action="store_true",
         help="sweep frequency and report the 2:1 VSWR bandwidth",
@@ -268,7 +274,12 @@ def main(argv: list[str] | None = None) -> int:
         radial_droop_deg=args.radial_droop,
         nec2c=args.nec2c,
     )
-    result = design(spec)
+    if args.optimize_reflector and spec.reflector == REFLECTOR_NONE:
+        build_parser().error("--optimize-reflector requires a reflector")
+    if args.optimize_reflector:
+        result = optimize_reflector(spec)
+    else:
+        result = design(spec)
     print(format_cut_sheet(result), end="")
     if args.sweep:
         print(format_bandwidth(result), end="")

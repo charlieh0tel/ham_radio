@@ -11,7 +11,7 @@ sources; the scheme only changes how the two sources relate:
 
 import cmath
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .conductor import Conductor
 from .geometry import (
@@ -71,6 +71,13 @@ DELTA_TOLERANCE = 1e-3
 BORESIGHT_THETA_DEG = 30.0
 # Total gains at or below this level mark pattern nulls and are ignored.
 NULL_GAIN_DB = -100.0
+
+# Reflector optimization: search grids and the axial-ratio budget.
+SPACING_GRID_WL = (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
+DROOP_GRID_DEG = (0.0, 15.0, 30.0, 45.0)
+AR_TARGET_DB = 3.0
+# Cost penalty per dB of axial ratio above AR_TARGET_DB.
+AR_PENALTY_PER_DB = 1.0
 
 # Frequency-sweep defaults and the SWR threshold whose bandwidth is reported.
 SWEEP_SPAN_FRACTION = 0.10
@@ -390,6 +397,17 @@ def nearest_standard_coax(z0: float) -> float:
     return min(STANDARD_COAX_OHMS, key=lambda c: abs(c - z0))
 
 
+def post_match_vswr(z: complex, reference: float = REFERENCE_IMPEDANCE_OHMS) -> float:
+    """SWR at the design frequency after the standard-coax match network.
+
+    The series element cancels the reactance and a nearest-standard-coax
+    quarter-wave transformer scales the resistance toward the reference.
+    """
+    z0 = nearest_standard_coax(quarter_wave_match_z0(z))
+    transformed = z0 * z0 / z.real
+    return vswr(complex(transformed, 0.0), reference)
+
+
 def _operating_point(
     base_factor: float, delta: float, phasing: str, flip: bool
 ) -> tuple[float, float, float]:
@@ -447,6 +465,34 @@ def design(spec: DesignSpec) -> DesignResult:
         ar_peak_db=ar_peak,
         deck=deck,
     )
+
+
+def _reflector_cost(result: DesignResult) -> float:
+    """Optimization cost: post-match SWR, penalized for excess axial ratio."""
+    excess = max(0.0, result.ar_boresight_db - AR_TARGET_DB)
+    return post_match_vswr(result.z_in) + AR_PENALTY_PER_DB * excess
+
+
+def optimize_reflector(spec: DesignSpec) -> DesignResult:
+    """Grid-search reflector spacing and droop for the lowest match cost.
+
+    Spacing is searched for both reflector types; droop applies only to radials.
+    The returned result carries the winning spacing and droop in its spec.
+    """
+    droops = DROOP_GRID_DEG if spec.reflector == REFLECTOR_RADIALS else (0.0,)
+    best = None
+    best_cost = math.inf
+    for spacing in SPACING_GRID_WL:
+        for droop in droops:
+            candidate = replace(
+                spec, reflector_spacing_wl=spacing, radial_droop_deg=droop
+            )
+            result = design(candidate)
+            cost = _reflector_cost(result)
+            if cost < best_cost:
+                best_cost = cost
+                best = result
+    return best
 
 
 def _matched_input_z(

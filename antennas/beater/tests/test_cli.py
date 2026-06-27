@@ -13,6 +13,8 @@ from beater.design import (
     DesignSpec,
     bandwidth_2to1,
     design,
+    optimize_reflector,
+    post_match_vswr,
     vswr_sweep,
 )
 
@@ -79,6 +81,11 @@ def test_sense_selection_flips_handedness():
     assert lhcp.sense == "LEFT"
 
 
+def test_post_match_vswr_ideal():
+    # 112.5 ohm transforms through a 75 ohm quarter wave to exactly 50 ohm.
+    assert math.isclose(post_match_vswr(complex(112.5, 0.0)), 1.0, abs_tol=1e-6)
+
+
 def test_bandwidth_interpolates_edges():
     sweep = [(100.0, 3.0), (101.0, 1.5), (102.0, 1.0), (103.0, 1.5), (104.0, 3.0)]
     low, high = bandwidth_2to1(sweep)
@@ -89,6 +96,13 @@ def test_bandwidth_interpolates_edges():
 def test_bandwidth_none_when_center_mismatched():
     sweep = [(100.0, 3.0), (101.0, 2.5), (102.0, 2.2)]
     assert bandwidth_2to1(sweep) is None
+
+
+@needs_nec2c
+def test_optimize_reflector_picks_grid_point():
+    best = optimize_reflector(replace(_spec(PHASING_SELF), reflector="radials"))
+    assert best.spec.reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
+    assert best.spec.radial_droop_deg in (0.0, 15.0, 30.0, 45.0)
 
 
 @needs_nec2c
