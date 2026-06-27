@@ -41,8 +41,8 @@ uv run beater --freq 145.9 --conductor round:5.0 --reflector radials --radial-dr
 - `--radial-droop` radial downward tilt in degrees (default 0).
 - `--optimize-reflector` grid-search reflector spacing and droop for the lowest
   post-match VSWR (keeping axial ratio within budget).
-- `--sweep` sweep frequency and report the 2:1 VSWR bandwidth of the matched
-  antenna.
+- `--sweep` sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio
+  bandwidths of the matched antenna.
 - `--coax-vf` velocity factor of the phasing-line coax (default 0.66).
 - `--match-vf` velocity factor of the matching-section coax (default 0.66).
 - `--segments` polygon sides per loop (default 36).
@@ -73,10 +73,10 @@ feedpoint resistance toward the transformer's sweet spot (about 112 ohm for
 75 ohm coax), minimizing post-match VSWR while keeping axial ratio under budget.
 
 `--sweep` holds the tuned physical antenna fixed, sweeps the analysis frequency,
-runs the feedpoint impedance through the fixed match network, and reports the
-band where VSWR stays under 2:1. That is the impedance bandwidth with an
-idealized lossless match; the usable circular-polarization (axial-ratio)
-bandwidth is narrower.
+and reports two bandwidths: the band where the matched VSWR stays under 2:1
+(impedance bandwidth, with an idealized lossless match) and the band where the
+boresight axial ratio stays under 3 dB (the usable circular-polarization
+bandwidth, which is the narrower, and usually the binding, limit).
 
 ## Development
 

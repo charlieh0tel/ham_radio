@@ -524,15 +524,30 @@ def _matched_input_z(
     )
 
 
-def vswr_sweep(
+@dataclass(frozen=True)
+class SweepPoint:
+    """One frequency-sweep sample.
+
+    Fields:
+        freq_mhz: analysis frequency.
+        vswr: SWR at 50 ohm after the fixed match network.
+        ar_db: boresight axial ratio (dB; 0 is perfect circular).
+    """
+
+    freq_mhz: float
+    vswr: float
+    ar_db: float
+
+
+def frequency_sweep(
     result: DesignResult,
     span_fraction: float = SWEEP_SPAN_FRACTION,
     points: int = SWEEP_POINTS,
-) -> list[tuple[float, float]]:
-    """SWR versus frequency for the matched antenna across +/- span_fraction.
+) -> list[SweepPoint]:
+    """Matched SWR and boresight axial ratio versus frequency.
 
-    The tuned physical geometry is held fixed and swept; the match network is
-    fixed at the design frequency. Returns (freq_mhz, vswr) pairs.
+    The tuned physical geometry is held fixed and swept across +/- span_fraction;
+    the match network is fixed at the design frequency.
     """
     spec = result.spec
     design_freq = spec.freq_mhz
@@ -547,34 +562,35 @@ def vswr_sweep(
         nec, _ = analyze(spec, factor_a, factor_b, phase_b, run_freq_mhz=freq)
         z_ant = _antenna_feed_z(nec, spec.phasing)
         z_in = _matched_input_z(z_ant, freq, design_freq, result.z_in, spec.match_vf)
-        sweep.append((freq, vswr(z_in)))
+        sweep.append(SweepPoint(freq, vswr(z_in), _boresight_ar_db(nec)))
     return sweep
 
 
-def bandwidth_2to1(
-    sweep: list[tuple[float, float]], limit: float = VSWR_LIMIT
+def bandwidth_within(
+    pairs: list[tuple[float, float]], limit: float
 ) -> tuple[float, float] | None:
-    """Contiguous frequency band around the centre where SWR <= limit.
+    """Contiguous frequency band around the centre where value <= limit.
 
-    Edges are linearly interpolated between samples. Returns (low, high) MHz, or
-    None if the centre sample already exceeds the limit.
+    Each pair is (freq_mhz, value). Edges are linearly interpolated between
+    samples. Returns (low, high) MHz, or None if the centre already exceeds the
+    limit.
     """
-    center = len(sweep) // 2
-    if sweep[center][1] > limit:
+    center = len(pairs) // 2
+    if pairs[center][1] > limit:
         return None
 
     def edge(indices) -> float:
         previous = center
         for i in indices:
-            freq, swr = sweep[i]
-            if swr > limit:
-                f0, s0 = sweep[previous]
+            freq, value = pairs[i]
+            if value > limit:
+                f0, v0 = pairs[previous]
                 # Interpolate the crossing between previous and this sample.
-                frac = (limit - s0) / (swr - s0)
+                frac = (limit - v0) / (value - v0)
                 return f0 + (freq - f0) * frac
             previous = i
-        return sweep[indices[-1]][0]
+        return pairs[indices[-1]][0]
 
     low_edge = edge(range(center - 1, -1, -1))
-    high_edge = edge(range(center + 1, len(sweep)))
+    high_edge = edge(range(center + 1, len(pairs)))
     return low_edge, high_edge

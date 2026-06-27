@@ -4,6 +4,7 @@ import argparse
 
 from .conductor import Conductor, bar_conductor, round_conductor, strip_conductor
 from .design import (
+    AR_TARGET_DB,
     BORESIGHT_THETA_DEG,
     MATCH_REACTANCE_WARN_OHMS,
     NEC_SENSE_TO_HAND,
@@ -17,14 +18,14 @@ from .design import (
     VSWR_LIMIT,
     DesignResult,
     DesignSpec,
-    bandwidth_2to1,
+    bandwidth_within,
     design,
+    frequency_sweep,
     nearest_standard_coax,
     optimize_reflector,
     quarter_wave_match_z0,
     series_match_element,
     vswr,
-    vswr_sweep,
 )
 from .geometry import DEFAULT_SEGMENTS, loop_radius_m, wavelength_m
 
@@ -237,20 +238,29 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def format_bandwidth(result: DesignResult) -> str:
-    """Run a frequency sweep and render the 2:1 VSWR bandwidth."""
-    sweep = vswr_sweep(result)
-    band = bandwidth_2to1(sweep)
-    lines = ["-" * 40, f"Frequency sweep ({len(sweep)} points):"]
+def _band_line(label: str, band: tuple[float, float] | None, center: float) -> str:
+    """One bandwidth line, or a not-met note when the band is empty."""
     if band is None:
-        lines.append(f"  VSWR > {VSWR_LIMIT:g} at the design frequency")
-        return "\n".join(lines) + "\n"
+        return f"  {label:18}: not met at the design frequency"
     low, high = band
     width = high - low
+    return (
+        f"  {label:18}: {low:.2f} - {high:.2f} MHz "
+        f"({width:.2f} MHz, {100 * width / center:.1f} %)"
+    )
+
+
+def format_bandwidth(result: DesignResult) -> str:
+    """Run a frequency sweep and render the VSWR and axial-ratio bandwidths."""
+    sweep = frequency_sweep(result)
     center = result.spec.freq_mhz
-    lines += [
-        f"  {VSWR_LIMIT:g}:1 VSWR band  : {low:.2f} - {high:.2f} MHz",
-        f"  bandwidth         : {width:.2f} MHz ({100 * width / center:.1f} %)",
+    vswr_band = bandwidth_within([(p.freq_mhz, p.vswr) for p in sweep], VSWR_LIMIT)
+    ar_band = bandwidth_within([(p.freq_mhz, p.ar_db) for p in sweep], AR_TARGET_DB)
+    lines = [
+        "-" * 40,
+        f"Frequency sweep ({len(sweep)} points):",
+        _band_line(f"{VSWR_LIMIT:g}:1 VSWR", vswr_band, center),
+        _band_line(f"{AR_TARGET_DB:g} dB axial ratio", ar_band, center),
     ]
     return "\n".join(lines) + "\n"
 

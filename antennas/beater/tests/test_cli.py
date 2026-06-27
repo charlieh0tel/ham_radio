@@ -8,14 +8,16 @@ import pytest
 from beater.cli import parse_conductor
 from beater.conductor import bar_conductor, round_conductor
 from beater.design import (
+    AR_TARGET_DB,
     PHASING_LINE,
     PHASING_SELF,
+    VSWR_LIMIT,
     DesignSpec,
-    bandwidth_2to1,
+    bandwidth_within,
     design,
+    frequency_sweep,
     optimize_reflector,
     post_match_vswr,
-    vswr_sweep,
 )
 
 HAS_NEC2C = shutil.which("nec2c") is not None
@@ -87,15 +89,15 @@ def test_post_match_vswr_ideal():
 
 
 def test_bandwidth_interpolates_edges():
-    sweep = [(100.0, 3.0), (101.0, 1.5), (102.0, 1.0), (103.0, 1.5), (104.0, 3.0)]
-    low, high = bandwidth_2to1(sweep)
+    pairs = [(100.0, 3.0), (101.0, 1.5), (102.0, 1.0), (103.0, 1.5), (104.0, 3.0)]
+    low, high = bandwidth_within(pairs, 2.0)
     assert math.isclose(low, 100.667, abs_tol=1e-3)
     assert math.isclose(high, 103.333, abs_tol=1e-3)
 
 
 def test_bandwidth_none_when_center_mismatched():
-    sweep = [(100.0, 3.0), (101.0, 2.5), (102.0, 2.2)]
-    assert bandwidth_2to1(sweep) is None
+    pairs = [(100.0, 3.0), (101.0, 2.5), (102.0, 2.2)]
+    assert bandwidth_within(pairs, 2.0) is None
 
 
 @needs_nec2c
@@ -106,10 +108,13 @@ def test_optimize_reflector_picks_grid_point():
 
 
 @needs_nec2c
-def test_vswr_sweep_band_contains_center():
+def test_frequency_sweep_reports_both_bandwidths():
     result = design(replace(_spec(PHASING_SELF), reflector="ground"))
-    sweep = vswr_sweep(result, span_fraction=0.05, points=11)
-    band = bandwidth_2to1(sweep)
-    assert band is not None
-    low, high = band
-    assert low <= result.spec.freq_mhz <= high
+    sweep = frequency_sweep(result, span_fraction=0.05, points=11)
+    center = result.spec.freq_mhz
+    vswr_band = bandwidth_within([(p.freq_mhz, p.vswr) for p in sweep], VSWR_LIMIT)
+    ar_band = bandwidth_within([(p.freq_mhz, p.ar_db) for p in sweep], AR_TARGET_DB)
+    assert vswr_band is not None
+    assert ar_band is not None
+    assert vswr_band[0] <= center <= vswr_band[1]
+    assert ar_band[0] <= center <= ar_band[1]
