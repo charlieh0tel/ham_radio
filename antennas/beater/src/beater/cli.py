@@ -5,6 +5,7 @@ import argparse
 from .conductor import Conductor, bar_conductor, round_conductor, strip_conductor
 from .design import (
     BORESIGHT_THETA_DEG,
+    MATCH_REACTANCE_WARN_OHMS,
     PHASING_LINE,
     PHASING_SELF,
     REFLECTOR_GROUND,
@@ -12,6 +13,8 @@ from .design import (
     DesignResult,
     DesignSpec,
     design,
+    nearest_standard_coax,
+    quarter_wave_match_z0,
     vswr,
 )
 from .geometry import DEFAULT_SEGMENTS, loop_radius_m, wavelength_m
@@ -106,6 +109,21 @@ def format_cut_sheet(result: DesignResult) -> str:
         f"(<= {int(BORESIGHT_THETA_DEG)} deg from zenith)",
         f"Axial ratio (gain peak): {result.ar_peak_db:.2f} dB",
     ]
+
+    lines.append("-" * 40)
+    z0 = quarter_wave_match_z0(z)
+    match_len = QUARTER_WAVE * wavelength * spec.match_vf
+    lines += [
+        "Match to 50 ohm via 1/4-wave transformer:",
+        f"  ideal Z0          : {z0:.1f} ohms "
+        f"(nearest standard {nearest_standard_coax(z0):.0f} ohm)",
+        f"  length            : {match_len * 1000:.1f} mm (VF {spec.match_vf:g})",
+    ]
+    if abs(z.imag) > MATCH_REACTANCE_WARN_OHMS:
+        lines.append(
+            f"  note              : tune out {z.imag:+.0f}j ohms reactance "
+            "before the transformer"
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -143,6 +161,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.66,
         help="phasing-line coax velocity factor (line phasing)",
     )
+    parser.add_argument(
+        "--match-vf",
+        type=float,
+        default=0.66,
+        help="matching-section coax velocity factor",
+    )
     parser.add_argument("--segments", type=int, default=DEFAULT_SEGMENTS)
     parser.add_argument("--nec2c", default="nec2c", help="nec2c executable")
     parser.add_argument("--deck", help="write the tuned NEC deck to this path")
@@ -160,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         reflector=args.reflector,
         reflector_spacing_wl=args.reflector_spacing,
         coax_vf=args.coax_vf,
+        match_vf=args.match_vf,
         segments=args.segments,
         nec2c=args.nec2c,
     )

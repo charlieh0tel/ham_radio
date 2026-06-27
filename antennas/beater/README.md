@@ -32,6 +32,7 @@ uv run beater --freq 145.9 --conductor bar:12.7x3.2 --phasing line --reflector g
 - `--reflector` `none` (free space) or `ground` (perfect ground plane below).
 - `--reflector-spacing` loop-center height above ground, wavelengths (default 0.25).
 - `--coax-vf` velocity factor of the phasing-line coax (default 0.66).
+- `--match-vf` velocity factor of the matching-section coax (default 0.66).
 - `--segments` polygon sides per loop (default 36).
 - `--deck` write the tuned NEC deck to a file.
 
@@ -48,6 +49,10 @@ voltage source.
 
 Conductor cross-sections are reduced to a NEC equivalent radius; the resonance
 sweep then corrects for any residual error in that estimate.
+
+The full-wave loop feedpoint runs about 100-130 ohms, so the cut sheet also
+sizes a quarter-wave matching transformer (`Z0 = sqrt(50 * Rin)`) to 50 ohm and
+suggests the nearest standard coax.
 
 ## Development
 

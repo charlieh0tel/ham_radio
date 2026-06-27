@@ -32,6 +32,10 @@ REFLECTOR_GROUND = "ground"
 # Feed phase of loop B for the quarter-wave-line scheme.
 LINE_PHASE_DEG = -90.0
 REFERENCE_IMPEDANCE_OHMS = 50.0
+# Common coax characteristic impedances suggested for the matching section.
+STANDARD_COAX_OHMS = (50.0, 75.0, 93.0)
+# Residual feedpoint reactance above which a series tuning note is warranted.
+MATCH_REACTANCE_WARN_OHMS = 10.0
 
 # Upper-hemisphere sampling grid: theta 0..80 deg, phi 0..90 deg.
 DEFAULT_GRID = RadiationGrid(
@@ -65,6 +69,7 @@ class DesignSpec:
         reflector: REFLECTOR_NONE or REFLECTOR_GROUND.
         reflector_spacing_wl: loop-centre height above ground, wavelengths.
         coax_vf: velocity factor of the phasing-line coax (line scheme).
+        match_vf: velocity factor of the matching-section coax.
         segments: polygon sides per loop.
         nec2c: nec2c executable name or path.
     """
@@ -75,6 +80,7 @@ class DesignSpec:
     reflector: str
     reflector_spacing_wl: float
     coax_vf: float
+    match_vf: float
     segments: int
     nec2c: str = DEFAULT_NEC2C
 
@@ -268,6 +274,22 @@ def vswr(z: complex, reference: float = REFERENCE_IMPEDANCE_OHMS) -> float:
     if gamma >= 1.0:
         return math.inf
     return (1.0 + gamma) / (1.0 - gamma)
+
+
+def quarter_wave_match_z0(
+    z: complex, reference: float = REFERENCE_IMPEDANCE_OHMS
+) -> float:
+    """Characteristic impedance of a quarter-wave transformer.
+
+    Matches the resistive part of z to the reference; any residual reactance
+    must be tuned out separately.
+    """
+    return math.sqrt(reference * z.real)
+
+
+def nearest_standard_coax(z0: float) -> float:
+    """Closest common coax characteristic impedance to z0."""
+    return min(STANDARD_COAX_OHMS, key=lambda c: abs(c - z0))
 
 
 def design(spec: DesignSpec) -> DesignResult:

@@ -34,6 +34,7 @@ def _spec(phasing: str) -> DesignSpec:
         reflector="none",
         reflector_spacing_wl=0.25,
         coax_vf=0.66,
+        match_vf=0.66,
         segments=16,
     )
 
