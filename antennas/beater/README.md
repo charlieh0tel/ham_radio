@@ -50,9 +50,11 @@ voltage source.
 Conductor cross-sections are reduced to a NEC equivalent radius; the resonance
 sweep then corrects for any residual error in that estimate.
 
-The full-wave loop feedpoint runs about 100-130 ohms, so the cut sheet also
-sizes a quarter-wave matching transformer (`Z0 = sqrt(50 * Rin)`) to 50 ohm and
-suggests the nearest standard coax.
+The full-wave loop feedpoint runs about 100-130 ohms, so the cut sheet sizes a
+match to 50 ohm: a series element (inductor or capacitor) to cancel any residual
+feedpoint reactance, then a quarter-wave transformer (`Z0 = sqrt(50 * Rin)`)
+with the nearest standard coax. The reactance is tuned out at the feed rather
+than by resizing the loops, which would move the axial-ratio optimum.
 
 ## Development
 

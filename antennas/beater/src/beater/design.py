@@ -34,8 +34,9 @@ LINE_PHASE_DEG = -90.0
 REFERENCE_IMPEDANCE_OHMS = 50.0
 # Common coax characteristic impedances suggested for the matching section.
 STANDARD_COAX_OHMS = (50.0, 75.0, 93.0)
-# Residual feedpoint reactance above which a series tuning note is warranted.
+# Residual feedpoint reactance above which a series tuning element is sized.
 MATCH_REACTANCE_WARN_OHMS = 10.0
+HZ_PER_MHZ = 1.0e6
 
 # Upper-hemisphere sampling grid: theta 0..80 deg, phi 0..90 deg.
 DEFAULT_GRID = RadiationGrid(
@@ -211,6 +212,31 @@ def _phase_difference(result: NecResult) -> float:
     return result.sources[0].current_phase_deg - result.sources[1].current_phase_deg
 
 
+def _combined_feed_z(result: NecResult) -> complex:
+    """Parallel feedpoint impedance of the self-phased loops (common 1 V feed)."""
+    i_total = complex(result.sources[0].i_real, result.sources[0].i_imag) + complex(
+        result.sources[1].i_real, result.sources[1].i_imag
+    )
+    if i_total == 0:
+        return cmath.inf
+    return 1.0 / i_total
+
+
+def series_match_element(z: complex, freq_mhz: float) -> tuple[str, float]:
+    """Series element that cancels the feedpoint reactance.
+
+    Returns the element kind ('inductor' or 'capacitor') and its value, in
+    henries or farads.  Resizing the loops to null the reactance would move the
+    axial-ratio optimum, so the reactance is instead tuned out at the feed.
+    """
+    omega = 2.0 * math.pi * freq_mhz * HZ_PER_MHZ
+    if z.imag > 0.0:
+        # Inductive feed: a series capacitor of equal reactance cancels it.
+        return "capacitor", 1.0 / (omega * z.imag)
+    # Capacitive feed: a series inductor cancels it.
+    return "inductor", -z.imag / omega
+
+
 def _axial_ratio_db(axial_ratio: float) -> float:
     """Convert NEC minor/major axial ratio to dB (0 dB = perfect circular)."""
     if axial_ratio <= 0.0:
@@ -306,13 +332,9 @@ def design(spec: DesignSpec) -> DesignResult:
         factor_b = base_factor
         phase_b = LINE_PHASE_DEG
     result, deck = analyze(spec, factor_a, factor_b, phase_b)
-    src_a, src_b = result.sources[0], result.sources[1]
+    src_a = result.sources[0]
     if spec.phasing == PHASING_SELF:
-        # Loops are paralleled across a common feed voltage of 1 V.
-        total_current = complex(src_a.i_real, src_a.i_imag) + complex(
-            src_b.i_real, src_b.i_imag
-        )
-        z_in = 1.0 / total_current if total_current != 0 else cmath.inf
+        z_in = _combined_feed_z(result)
     else:
         # Each loop presents its own driving impedance; the tee plus phasing
         # line combine them (see the cut sheet).

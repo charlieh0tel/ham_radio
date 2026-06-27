@@ -15,12 +15,16 @@ from .design import (
     design,
     nearest_standard_coax,
     quarter_wave_match_z0,
+    series_match_element,
     vswr,
 )
 from .geometry import DEFAULT_SEGMENTS, loop_radius_m, wavelength_m
 
 # Fraction of a wavelength in a quarter-wave phasing line.
 QUARTER_WAVE = 0.25
+# Display scale factors for series matching elements.
+PF_PER_FARAD = 1.0e12
+NH_PER_HENRY = 1.0e9
 
 
 def parse_conductor(spec: str) -> Conductor:
@@ -113,17 +117,19 @@ def format_cut_sheet(result: DesignResult) -> str:
     lines.append("-" * 40)
     z0 = quarter_wave_match_z0(z)
     match_len = QUARTER_WAVE * wavelength * spec.match_vf
-    lines += [
-        "Match to 50 ohm via 1/4-wave transformer:",
-        f"  ideal Z0          : {z0:.1f} ohms "
-        f"(nearest standard {nearest_standard_coax(z0):.0f} ohm)",
-        f"  length            : {match_len * 1000:.1f} mm (VF {spec.match_vf:g})",
-    ]
+    lines.append("Match to 50 ohm:")
     if abs(z.imag) > MATCH_REACTANCE_WARN_OHMS:
-        lines.append(
-            f"  note              : tune out {z.imag:+.0f}j ohms reactance "
-            "before the transformer"
-        )
+        kind, value = series_match_element(z, spec.freq_mhz)
+        if kind == "capacitor":
+            sized = f"{value * PF_PER_FARAD:.1f} pF"
+        else:
+            sized = f"{value * NH_PER_HENRY:.0f} nH"
+        lines.append(f"  series {kind:9}  : {sized} to cancel {z.imag:+.0f}j ohms")
+    lines += [
+        f"  1/4-wave Z0       : {z0:.1f} ohms "
+        f"(nearest standard {nearest_standard_coax(z0):.0f} ohm)",
+        f"  1/4-wave length   : {match_len * 1000:.1f} mm (VF {spec.match_vf:g})",
+    ]
     return "\n".join(lines) + "\n"
 
 
