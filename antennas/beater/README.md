@@ -15,38 +15,60 @@ resonance and the 90 degree phasing, finishing with a physical cut sheet.
 
 ## Usage
 
+A design is a JSON spec, read from a file argument or stdin. Only `freq_mhz`
+and `conductor` are required; every other field defaults.
+
 ```
-uv run beater --freq 145.9 --conductor round:3.0
-uv run beater --freq 145.9 --conductor bar:12.7x3.2 --phasing line --reflector ground
-uv run beater --freq 145.9 --conductor round:5.0 --reflector radials --radial-droop 30
+uv run beater designs/satellite_pair.json --sweep
+echo '{"freq_mhz":145.9,"conductor":{"kind":"round","diameter_mm":5}}' | uv run beater -
+uv run beater my_design.json --optimize-reflector --deck my_design.nec
 ```
 
-### Options
+### Spec (JSON)
 
-- `--freq` design frequency in MHz (required).
-- `--conductor` cross-section (required):
-  - `round:<dia_mm>` round wire or tube.
-  - `strip:<width_mm>` thin flat strip (equivalent radius = width / 4).
-  - `bar:<width_mm>x<thick_mm>` rectangular bar stock (GMD equivalent radius).
-- `--phasing` `self` (detuned big/small loops, no harness) or `line`
-  (equal loops plus a quarter-wave coax phasing line). Default `self`.
-- `--sense` polarization sense, `rhcp` or `lhcp` (default `rhcp`). The achieved
-  sense is verified against the NEC pattern.
-- `--reflector` `none` (free space), `ground` (perfect ground plane below), or
+```json
+{
+  "freq_mhz": 145.9,
+  "conductor": {"kind": "round", "diameter_mm": 5.0},
+  "phasing": "self",
+  "sense": "rhcp",
+  "reflector": "radials",
+  "reflector_spacing_wl": 0.20,
+  "radial_count": 8,
+  "radial_length_wl": 0.27,
+  "radial_droop_deg": 45.0,
+  "coax_vf": 0.66,
+  "match_vf": 0.66,
+  "segments": 36,
+  "label": "2 m"
+}
+```
+
+- `conductor` is `{"kind":"round","diameter_mm":d}`,
+  `{"kind":"strip","width_mm":w}` (equiv radius = width / 4), or
+  `{"kind":"bar","width_mm":w,"thickness_mm":t}` (GMD equiv radius).
+- `phasing`: `self` (detuned big/small loops, no harness) or `line` (equal
+  loops plus a quarter-wave coax phasing line). Default `self`.
+- `sense`: `rhcp` or `lhcp` (default `rhcp`); verified against the NEC pattern.
+- `reflector`: `none` (free space), `ground` (perfect ground plane), or
   `radials` (finite radial-wire reflector, ON6WG/M2 style).
-- `--reflector-spacing` loop-center height above the reflector, wavelengths
-  (default 0.25).
-- `--radial-count` number of reflector radials (default 8).
-- `--radial-length` radial length in wavelengths (default 0.27).
-- `--radial-droop` radial downward tilt in degrees (default 0).
-- `--optimize-reflector` grid-search reflector spacing and droop for the lowest
-  post-match VSWR (keeping axial ratio within budget).
+- `reflector_spacing_wl`: loop-center height above the reflector (default 0.25).
+- `radial_*`: count (8), length in wavelengths (0.27), droop in degrees (0).
+- `coax_vf` / `match_vf`: phasing-line and matching-section velocity factors.
+- `segments`: polygon sides per loop (default 36).
+- `label`: optional name for output; defaults to none.
+
+A JSON document may hold one spec object or a list of them; a list runs each
+(and overlays them in plots).
+
+### Actions
+
 - `--sweep` sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio
   bandwidths of the matched antenna.
-- `--coax-vf` velocity factor of the phasing-line coax (default 0.66).
-- `--match-vf` velocity factor of the matching-section coax (default 0.66).
-- `--segments` polygon sides per loop (default 36).
-- `--deck` write the tuned NEC deck to a file.
+- `--optimize-reflector` grid-search reflector spacing and droop for the lowest
+  post-match VSWR (keeping axial ratio within budget).
+- `--deck <path>` write the tuned NEC deck (single-design specs only).
+- `--nec2c <path>` nec2c executable (default `nec2c`).
 
 ## How it works
 

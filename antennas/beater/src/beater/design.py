@@ -15,6 +15,7 @@ from dataclasses import dataclass, replace
 
 from .conductor import Conductor
 from .geometry import (
+    DEFAULT_SEGMENTS,
     loop_radius_m,
     make_eggbeater,
     make_radials,
@@ -102,21 +103,26 @@ class DesignSpec:
         radial_count: number of reflector radials (radials scheme).
         radial_length_wl: length of each radial, wavelengths.
         radial_droop_deg: downward tilt of the radials from horizontal.
+        label: optional human-readable name for output (e.g. "2 m").
         nec2c: nec2c executable name or path.
+
+    Only freq_mhz and conductor are required; every other field has a default
+    that serves as the single source of defaults for both the CLI and JSON.
     """
 
     freq_mhz: float
     conductor: Conductor
-    phasing: str
-    reflector: str
-    reflector_spacing_wl: float
-    coax_vf: float
-    match_vf: float
-    sense: str
-    segments: int
+    phasing: str = PHASING_SELF
+    reflector: str = REFLECTOR_NONE
+    reflector_spacing_wl: float = 0.25
+    coax_vf: float = 0.66
+    match_vf: float = 0.66
+    sense: str = SENSE_RHCP
+    segments: int = DEFAULT_SEGMENTS
     radial_count: int = 8
     radial_length_wl: float = 0.27
     radial_droop_deg: float = 0.0
+    label: str | None = None
     nec2c: str = DEFAULT_NEC2C
 
 

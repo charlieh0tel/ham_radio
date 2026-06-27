@@ -1,20 +1,17 @@
-"""Command-line interface: tune an eggbeater and print a physical cut sheet."""
+"""Command-line interface: tune eggbeater designs from a JSON spec."""
 
 import argparse
+import sys
+from dataclasses import replace
 
-from .conductor import Conductor, bar_conductor, round_conductor, strip_conductor
 from .design import (
     AR_TARGET_DB,
     BORESIGHT_THETA_DEG,
     MATCH_REACTANCE_WARN_OHMS,
     NEC_SENSE_TO_HAND,
-    PHASING_LINE,
     PHASING_SELF,
-    REFLECTOR_GROUND,
     REFLECTOR_NONE,
     REFLECTOR_RADIALS,
-    SENSE_LHCP,
-    SENSE_RHCP,
     VSWR_LIMIT,
     DesignResult,
     DesignSpec,
@@ -27,37 +24,14 @@ from .design import (
     series_match_element,
     vswr,
 )
-from .geometry import DEFAULT_SEGMENTS, loop_radius_m, wavelength_m
+from .geometry import loop_radius_m, wavelength_m
+from .spec import specs_from_json
 
 # Fraction of a wavelength in a quarter-wave phasing line.
 QUARTER_WAVE = 0.25
 # Display scale factors for series matching elements.
 PF_PER_FARAD = 1.0e12
 NH_PER_HENRY = 1.0e9
-
-
-def parse_conductor(spec: str) -> Conductor:
-    """Parse a conductor spec string.
-
-    Forms: 'round:<dia_mm>', 'strip:<width_mm>', 'bar:<width_mm>x<thick_mm>'.
-    All dimensions are millimetres.
-    """
-    kind, _, rest = spec.partition(":")
-    if not rest:
-        raise argparse.ArgumentTypeError(f"missing dimensions in conductor '{spec}'")
-    try:
-        if kind == "round":
-            return round_conductor(float(rest))
-        if kind == "strip":
-            return strip_conductor(float(rest))
-        if kind == "bar":
-            width, _, thick = rest.partition("x")
-            return bar_conductor(float(width), float(thick))
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError(f"bad conductor '{spec}': {exc}") from exc
-    raise argparse.ArgumentTypeError(
-        f"unknown conductor kind '{kind}' (use round, strip, or bar)"
-    )
 
 
 def loop_diameter_m(perimeter_m: float) -> float:
@@ -79,8 +53,11 @@ def format_cut_sheet(result: DesignResult) -> str:
     spec = result.spec
     wavelength = wavelength_m(spec.freq_mhz)
     z = result.z_in
+    title = (
+        f"Eggbeater cut sheet: {spec.label}" if spec.label else "Eggbeater cut sheet"
+    )
     lines = [
-        "Eggbeater antenna cut sheet",
+        title,
         "=" * 40,
         f"Frequency           : {spec.freq_mhz:.4g} MHz",
         f"Wavelength          : {wavelength * 1000:.1f} mm",
@@ -161,66 +138,13 @@ def format_cut_sheet(result: DesignResult) -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="beater",
-        description="Generate and nec2c-tune eggbeater antenna dimensions.",
-    )
-    parser.add_argument("--freq", type=float, required=True, help="frequency in MHz")
-    parser.add_argument(
-        "--conductor",
-        type=parse_conductor,
-        required=True,
-        help="round:<dia_mm> | strip:<width_mm> | bar:<width_mm>x<thick_mm>",
+        description="Tune eggbeater antenna designs from a JSON spec.",
     )
     parser.add_argument(
-        "--phasing",
-        choices=(PHASING_SELF, PHASING_LINE),
-        default=PHASING_SELF,
-    )
-    parser.add_argument(
-        "--sense",
-        choices=(SENSE_RHCP, SENSE_LHCP),
-        default=SENSE_RHCP,
-        help="circular polarization sense",
-    )
-    parser.add_argument(
-        "--reflector",
-        choices=(REFLECTOR_NONE, REFLECTOR_GROUND, REFLECTOR_RADIALS),
-        default=REFLECTOR_NONE,
-    )
-    parser.add_argument(
-        "--reflector-spacing",
-        type=float,
-        default=0.25,
-        help="loop-center height above the reflector in wavelengths",
-    )
-    parser.add_argument(
-        "--radial-count",
-        type=int,
-        default=8,
-        help="number of reflector radials (radials reflector)",
-    )
-    parser.add_argument(
-        "--radial-length",
-        type=float,
-        default=0.27,
-        help="radial length in wavelengths (radials reflector)",
-    )
-    parser.add_argument(
-        "--radial-droop",
-        type=float,
-        default=0.0,
-        help="radial downward tilt in degrees (radials reflector)",
-    )
-    parser.add_argument(
-        "--coax-vf",
-        type=float,
-        default=0.66,
-        help="phasing-line coax velocity factor (line phasing)",
-    )
-    parser.add_argument(
-        "--match-vf",
-        type=float,
-        default=0.66,
-        help="matching-section coax velocity factor",
+        "spec",
+        nargs="?",
+        default="-",
+        help="path to a JSON spec (one design or a list); '-' or omitted reads stdin",
     )
     parser.add_argument(
         "--optimize-reflector",
@@ -230,12 +154,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--sweep",
         action="store_true",
-        help="sweep frequency and report the 2:1 VSWR bandwidth",
+        help="sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio bands",
     )
-    parser.add_argument("--segments", type=int, default=DEFAULT_SEGMENTS)
+    parser.add_argument(
+        "--deck",
+        help="write the tuned NEC deck to this path (single-design specs only)",
+    )
     parser.add_argument("--nec2c", default="nec2c", help="nec2c executable")
-    parser.add_argument("--deck", help="write the tuned NEC deck to this path")
     return parser
+
+
+def load_specs(path: str) -> list[DesignSpec]:
+    """Read specs from a file path, or stdin when path is '-'."""
+    text = sys.stdin.read() if path == "-" else open(path).read()
+    return specs_from_json(text)
 
 
 def _band_line(label: str, band: tuple[float, float] | None, center: float) -> str:
@@ -266,37 +198,25 @@ def format_bandwidth(result: DesignResult) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    if args.freq <= 0.0:
-        build_parser().error("--freq must be positive")
-    spec = DesignSpec(
-        freq_mhz=args.freq,
-        conductor=args.conductor,
-        phasing=args.phasing,
-        reflector=args.reflector,
-        reflector_spacing_wl=args.reflector_spacing,
-        coax_vf=args.coax_vf,
-        match_vf=args.match_vf,
-        sense=args.sense,
-        segments=args.segments,
-        radial_count=args.radial_count,
-        radial_length_wl=args.radial_length,
-        radial_droop_deg=args.radial_droop,
-        nec2c=args.nec2c,
-    )
-    if args.optimize_reflector and spec.reflector == REFLECTOR_NONE:
-        build_parser().error("--optimize-reflector requires a reflector")
-    if args.optimize_reflector:
-        result = optimize_reflector(spec)
-    else:
-        result = design(spec)
-    print(format_cut_sheet(result), end="")
-    if args.sweep:
-        print(format_bandwidth(result), end="")
-    if args.deck:
-        with open(args.deck, "w") as handle:
-            handle.write(result.deck)
-        print(f"Wrote NEC deck to {args.deck}")
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    specs = [replace(spec, nec2c=args.nec2c) for spec in load_specs(args.spec)]
+    if args.deck and len(specs) > 1:
+        parser.error("--deck requires a single-design spec")
+
+    for index, spec in enumerate(specs):
+        if args.optimize_reflector and spec.reflector == REFLECTOR_NONE:
+            parser.error("--optimize-reflector requires a reflector")
+        result = optimize_reflector(spec) if args.optimize_reflector else design(spec)
+        if index:
+            print()
+        print(format_cut_sheet(result), end="")
+        if args.sweep:
+            print(format_bandwidth(result), end="")
+        if args.deck:
+            with open(args.deck, "w") as handle:
+                handle.write(result.deck)
+            print(f"Wrote NEC deck to {args.deck}")
     return 0
 
 

@@ -1,12 +1,12 @@
-import argparse
+import json
 import math
 import shutil
 from dataclasses import replace
 
 import pytest
 
-from beater.cli import parse_conductor
-from beater.conductor import bar_conductor, round_conductor
+from beater.cli import main
+from beater.conductor import round_conductor
 from beater.design import (
     AR_TARGET_DB,
     PHASING_LINE,
@@ -23,18 +23,29 @@ from beater.design import (
 HAS_NEC2C = shutil.which("nec2c") is not None
 needs_nec2c = pytest.mark.skipif(not HAS_NEC2C, reason="nec2c not installed")
 
+PAIR_JSON = json.dumps(
+    [
+        {"freq_mhz": 145.9, "conductor": {"kind": "round", "diameter_mm": 5.0}},
+        {"freq_mhz": 436.0, "conductor": {"kind": "round", "diameter_mm": 3.0}},
+    ]
+)
 
-def test_parse_conductor_forms():
-    assert parse_conductor("round:3").equivalent_radius_mm == 1.5
-    assert (
-        parse_conductor("bar:12x3").equivalent_radius_mm
-        == bar_conductor(12.0, 3.0).equivalent_radius_mm
-    )
+
+def test_deck_rejects_multi_design(tmp_path, capsys):
+    path = tmp_path / "pair.json"
+    path.write_text(PAIR_JSON)
+    with pytest.raises(SystemExit):
+        main([str(path), "--deck", str(tmp_path / "out.nec")])
 
 
-def test_parse_conductor_rejects_unknown():
-    with pytest.raises(argparse.ArgumentTypeError):
-        parse_conductor("triangle:5")
+@needs_nec2c
+def test_main_reads_stdin(monkeypatch, capsys):
+    import io
+
+    spec = '{"freq_mhz": 145.9, "conductor": {"kind": "round", "diameter_mm": 5.0}}'
+    monkeypatch.setattr("sys.stdin", io.StringIO(spec))
+    assert main(["-"]) == 0
+    assert "Eggbeater cut sheet" in capsys.readouterr().out
 
 
 def _spec(phasing: str) -> DesignSpec:
