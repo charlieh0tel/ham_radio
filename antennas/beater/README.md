@@ -39,6 +39,8 @@ uv run beater --freq 145.9 --conductor round:5.0 --reflector radials --radial-dr
 - `--radial-count` number of reflector radials (default 8).
 - `--radial-length` radial length in wavelengths (default 0.27).
 - `--radial-droop` radial downward tilt in degrees (default 0).
+- `--sweep` sweep frequency and report the 2:1 VSWR bandwidth of the matched
+  antenna.
 - `--coax-vf` velocity factor of the phasing-line coax (default 0.66).
 - `--match-vf` velocity factor of the matching-section coax (default 0.66).
 - `--segments` polygon sides per loop (default 36).
@@ -63,6 +65,12 @@ match to 50 ohm: a series element (inductor or capacitor) to cancel any residual
 feedpoint reactance, then a quarter-wave transformer (`Z0 = sqrt(50 * Rin)`)
 with the nearest standard coax. The reactance is tuned out at the feed rather
 than by resizing the loops, which would move the axial-ratio optimum.
+
+`--sweep` holds the tuned physical antenna fixed, sweeps the analysis frequency,
+runs the feedpoint impedance through the fixed match network, and reports the
+band where VSWR stays under 2:1. That is the impedance bandwidth with an
+idealized lossless match; the usable circular-polarization (axial-ratio)
+bandwidth is narrower.
 
 ## Development
 

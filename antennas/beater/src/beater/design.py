@@ -72,6 +72,11 @@ BORESIGHT_THETA_DEG = 30.0
 # Total gains at or below this level mark pattern nulls and are ignored.
 NULL_GAIN_DB = -100.0
 
+# Frequency-sweep defaults and the SWR threshold whose bandwidth is reported.
+SWEEP_SPAN_FRACTION = 0.10
+SWEEP_POINTS = 41
+VSWR_LIMIT = 2.0
+
 
 @dataclass(frozen=True)
 class DesignSpec:
@@ -190,11 +195,14 @@ def analyze(
     factor_a: float,
     factor_b: float,
     phase_b_deg: float,
+    run_freq_mhz: float | None = None,
 ) -> tuple[NecResult, str]:
     """Run nec2c once for the given perimeters and feed phase.
 
-    Returns the parsed result and the deck text.  Sources are ordered loop A
-    then loop B, matching nec2c's reporting order.
+    Geometry is always scaled to the design frequency; run_freq_mhz overrides
+    only the analysis frequency (the FR card), so the fixed physical antenna can
+    be swept across a band.  Sources are ordered loop A then loop B, matching
+    nec2c's reporting order.
     """
     wavelength = wavelength_m(spec.freq_mhz)
     perimeter_a = factor_a * wavelength
@@ -214,7 +222,7 @@ def analyze(
         wires,
         sources,
         ground=spec.reflector == REFLECTOR_GROUND,
-        freq_mhz=spec.freq_mhz,
+        freq_mhz=run_freq_mhz if run_freq_mhz is not None else spec.freq_mhz,
         grid=DEFAULT_GRID,
     )
     return run_nec(deck, spec.nec2c), deck
@@ -260,6 +268,13 @@ def _combined_feed_z(result: NecResult) -> complex:
     if i_total == 0:
         return cmath.inf
     return 1.0 / i_total
+
+
+def _antenna_feed_z(result: NecResult, phasing: str) -> complex:
+    """Antenna feedpoint impedance for the scheme (combined self, per-loop line)."""
+    if phasing == PHASING_SELF:
+        return _combined_feed_z(result)
+    return complex(result.sources[0].z_real, result.sources[0].z_imag)
 
 
 def series_match_element(z: complex, freq_mhz: float) -> tuple[str, float]:
@@ -418,12 +433,9 @@ def design(spec: DesignSpec) -> DesignResult:
             break
         flip = True
 
-    if spec.phasing == PHASING_SELF:
-        z_in = _combined_feed_z(result)
-    else:
-        # Each loop presents its own driving impedance; the tee plus phasing
-        # line combine them (see the cut sheet).
-        z_in = complex(result.sources[0].z_real, result.sources[0].z_imag)
+    # For self phasing this is the combined parallel feed; for line phasing it is
+    # one loop's driving impedance (the tee plus phasing line combine them).
+    z_in = _antenna_feed_z(result, spec.phasing)
     return DesignResult(
         spec=spec,
         base_factor=base_factor,
@@ -435,3 +447,88 @@ def design(spec: DesignSpec) -> DesignResult:
         ar_peak_db=ar_peak,
         deck=deck,
     )
+
+
+def _matched_input_z(
+    z_ant: complex,
+    freq_mhz: float,
+    design_freq_mhz: float,
+    z_center: complex,
+    match_vf: float,
+) -> complex:
+    """Input impedance after the match network sized at the design frequency.
+
+    The series element (sized from z_center) and the quarter-wave transformer
+    are fixed by the design; here they are evaluated at freq_mhz.
+    """
+    omega = 2.0 * math.pi * freq_mhz * HZ_PER_MHZ
+    kind, value = series_match_element(z_center, design_freq_mhz)
+    series_reactance = omega * value if kind == "inductor" else -1.0 / (omega * value)
+    z_after_series = z_ant + 1j * series_reactance
+
+    z0 = nearest_standard_coax(quarter_wave_match_z0(z_center))
+    # The line is a quarter wave at the design frequency, so its electrical
+    # length scales linearly with frequency.
+    theta = (math.pi / 2.0) * (freq_mhz / design_freq_mhz)
+    tan_theta = math.tan(theta)
+    return (
+        z0
+        * (z_after_series + 1j * z0 * tan_theta)
+        / (z0 + 1j * z_after_series * tan_theta)
+    )
+
+
+def vswr_sweep(
+    result: DesignResult,
+    span_fraction: float = SWEEP_SPAN_FRACTION,
+    points: int = SWEEP_POINTS,
+) -> list[tuple[float, float]]:
+    """SWR versus frequency for the matched antenna across +/- span_fraction.
+
+    The tuned physical geometry is held fixed and swept; the match network is
+    fixed at the design frequency. Returns (freq_mhz, vswr) pairs.
+    """
+    spec = result.spec
+    design_freq = spec.freq_mhz
+    factor_a, factor_b, phase_b = _operating_point(
+        result.base_factor, result.delta, spec.phasing, flip=False
+    )
+    low = design_freq * (1.0 - span_fraction)
+    high = design_freq * (1.0 + span_fraction)
+    sweep = []
+    for i in range(points):
+        freq = low + (high - low) * i / (points - 1)
+        nec, _ = analyze(spec, factor_a, factor_b, phase_b, run_freq_mhz=freq)
+        z_ant = _antenna_feed_z(nec, spec.phasing)
+        z_in = _matched_input_z(z_ant, freq, design_freq, result.z_in, spec.match_vf)
+        sweep.append((freq, vswr(z_in)))
+    return sweep
+
+
+def bandwidth_2to1(
+    sweep: list[tuple[float, float]], limit: float = VSWR_LIMIT
+) -> tuple[float, float] | None:
+    """Contiguous frequency band around the centre where SWR <= limit.
+
+    Edges are linearly interpolated between samples. Returns (low, high) MHz, or
+    None if the centre sample already exceeds the limit.
+    """
+    center = len(sweep) // 2
+    if sweep[center][1] > limit:
+        return None
+
+    def edge(indices) -> float:
+        previous = center
+        for i in indices:
+            freq, swr = sweep[i]
+            if swr > limit:
+                f0, s0 = sweep[previous]
+                # Interpolate the crossing between previous and this sample.
+                frac = (limit - s0) / (swr - s0)
+                return f0 + (freq - f0) * frac
+            previous = i
+        return sweep[indices[-1]][0]
+
+    low_edge = edge(range(center - 1, -1, -1))
+    high_edge = edge(range(center + 1, len(sweep)))
+    return low_edge, high_edge

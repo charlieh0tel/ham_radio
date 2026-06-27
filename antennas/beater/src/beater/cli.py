@@ -14,13 +14,16 @@ from .design import (
     REFLECTOR_RADIALS,
     SENSE_LHCP,
     SENSE_RHCP,
+    VSWR_LIMIT,
     DesignResult,
     DesignSpec,
+    bandwidth_2to1,
     design,
     nearest_standard_coax,
     quarter_wave_match_z0,
     series_match_element,
     vswr,
+    vswr_sweep,
 )
 from .geometry import DEFAULT_SEGMENTS, loop_radius_m, wavelength_m
 
@@ -217,10 +220,33 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.66,
         help="matching-section coax velocity factor",
     )
+    parser.add_argument(
+        "--sweep",
+        action="store_true",
+        help="sweep frequency and report the 2:1 VSWR bandwidth",
+    )
     parser.add_argument("--segments", type=int, default=DEFAULT_SEGMENTS)
     parser.add_argument("--nec2c", default="nec2c", help="nec2c executable")
     parser.add_argument("--deck", help="write the tuned NEC deck to this path")
     return parser
+
+
+def format_bandwidth(result: DesignResult) -> str:
+    """Run a frequency sweep and render the 2:1 VSWR bandwidth."""
+    sweep = vswr_sweep(result)
+    band = bandwidth_2to1(sweep)
+    lines = ["-" * 40, f"Frequency sweep ({len(sweep)} points):"]
+    if band is None:
+        lines.append(f"  VSWR > {VSWR_LIMIT:g} at the design frequency")
+        return "\n".join(lines) + "\n"
+    low, high = band
+    width = high - low
+    center = result.spec.freq_mhz
+    lines += [
+        f"  {VSWR_LIMIT:g}:1 VSWR band  : {low:.2f} - {high:.2f} MHz",
+        f"  bandwidth         : {width:.2f} MHz ({100 * width / center:.1f} %)",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -244,6 +270,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     result = design(spec)
     print(format_cut_sheet(result), end="")
+    if args.sweep:
+        print(format_bandwidth(result), end="")
     if args.deck:
         with open(args.deck, "w") as handle:
             handle.write(result.deck)
