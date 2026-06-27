@@ -4,6 +4,7 @@ Driven by DesignResult objects; overlays multiple designs per chart.
 """
 
 import html
+import json
 
 from .design import (
     AR_TARGET_DB,
@@ -17,6 +18,8 @@ from .design import (
     post_match_vswr,
 )
 from .nec import RadiationGrid
+from .report import format_cut_sheet
+from .spec import spec_to_dict
 
 # Data trace colors, cycled per design (teal, amber, violet, green, ...).
 TRACE_COLORS = ("#0E7C86", "#C8881C", "#6D4AA7", "#357960", "#B5532A")
@@ -181,6 +184,22 @@ def _band_text(band):
     return "not met" if band is None else f"{band[0]:.1f}&ndash;{band[1]:.1f} MHz"
 
 
+def _details(results: list[DesignResult]) -> str:
+    """Per-design input spec (JSON) and physical cut sheet, as <pre> blocks."""
+    blocks = []
+    for result in results:
+        spec_json = html.escape(json.dumps(spec_to_dict(result.spec), indent=2))
+        sheet = html.escape(format_cut_sheet(result))
+        blocks.append(
+            f'<section class="detail"><h2>{html.escape(_label(result))}</h2>'
+            '<div class="cols">'
+            f"<div><h3>Input spec</h3><pre>{spec_json}</pre></div>"
+            f"<div><h3>Cut list</h3><pre>{sheet}</pre></div>"
+            "</div></section>"
+        )
+    return "".join(blocks)
+
+
 def render_artifact(results: list[DesignResult]) -> str:
     """Build the body-only HTML for one or more designs."""
     data = [_collect(r) for r in results]
@@ -286,7 +305,7 @@ def render_artifact(results: list[DesignResult]) -> str:
     )
 
     return _TEMPLATE.replace("{LIMIT}", LIMIT_COLOR).format(
-        rows=rows, legend=legend, charts=charts
+        rows=rows, legend=legend, charts=charts, details=_details(results)
     )
 
 
@@ -326,20 +345,28 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
     border-radius:6px; padding:14px 14px 6px; }}
   .card figcaption {{ font-size:14px; font-weight:600; margin-bottom:4px; }}
   .card svg {{ width:100%; height:auto; display:block; }}
+  h2 {{ font-size:18px; font-weight:650; margin:30px 0 10px; }}
+  h3 {{ font-family:var(--mono); font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 6px; }}
+  .cols {{ display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }}
+  pre {{ margin:0; background:var(--panel); border:1px solid var(--line);
+    border-radius:6px; padding:12px 14px; font-family:var(--mono); font-size:12px;
+    line-height:1.5; overflow-x:auto; color:var(--ink); }}
   .tick {{ font-family:var(--mono); font-size:11px; fill:var(--muted); }}
   .axis {{ font-family:var(--mono); font-size:11px; fill:var(--muted); letter-spacing:.04em; }}
   .limit {{ font-family:var(--mono); font-size:11px; fill:{LIMIT}; font-weight:600; }}
   footer {{ margin-top:30px; padding-top:18px; border-top:1px solid var(--line);
     color:var(--muted); font-size:13px; max-width:72ch; }}
   footer code {{ font-family:var(--mono); font-size:12px; }}
-  @media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
+  @media (max-width:640px) {{ .grid, .cols {{ grid-template-columns:1fr; }} }}
 </style>
 <div class="wrap">
   <p class="eyebrow">nec2c modeled</p>
   <h1>Eggbeater Performance</h1>
   <p class="lede">Frequency plots overlay each design on offset from its own
   design frequency; the 3 dB axial-ratio band is the binding limit on usable
-  coverage.</p>
+  coverage. The input spec and physical cut list for each design follow the
+  charts.</p>
 
   <table>
     <caption>Figures of merit</caption>
@@ -353,6 +380,9 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
 
   <div class="legend">{legend}</div>
   <div class="grid">{charts}</div>
+
+  <p class="eyebrow" style="margin-top:38px">Design details</p>
+  {details}
 
   <footer>
     Axial ratio is averaged over the high-elevation cone for the table and taken
