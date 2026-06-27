@@ -36,6 +36,7 @@ def _spec(phasing: str) -> DesignSpec:
         reflector_spacing_wl=0.25,
         coax_vf=0.66,
         match_vf=0.66,
+        sense="rhcp",
         segments=16,
     )
 
@@ -61,3 +62,11 @@ def test_radial_reflector_runs():
     result = design(spec)
     assert math.isfinite(result.ar_boresight_db)
     assert result.deck.count("\nGW ") == 2 * spec.segments + spec.radial_count
+
+
+@needs_nec2c
+def test_sense_selection_flips_handedness():
+    rhcp = design(replace(_spec(PHASING_SELF), reflector="ground", sense="rhcp"))
+    lhcp = design(replace(_spec(PHASING_SELF), reflector="ground", sense="lhcp"))
+    assert rhcp.sense == "RIGHT"
+    assert lhcp.sense == "LEFT"

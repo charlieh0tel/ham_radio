@@ -6,11 +6,14 @@ from .conductor import Conductor, bar_conductor, round_conductor, strip_conducto
 from .design import (
     BORESIGHT_THETA_DEG,
     MATCH_REACTANCE_WARN_OHMS,
+    NEC_SENSE_TO_HAND,
     PHASING_LINE,
     PHASING_SELF,
     REFLECTOR_GROUND,
     REFLECTOR_NONE,
     REFLECTOR_RADIALS,
+    SENSE_LHCP,
+    SENSE_RHCP,
     DesignResult,
     DesignSpec,
     design,
@@ -56,6 +59,16 @@ def loop_diameter_m(perimeter_m: float) -> float:
     return 2.0 * loop_radius_m(perimeter_m)
 
 
+def _format_sense(result: DesignResult) -> str:
+    """Achieved polarization sense, flagging any mismatch with the request."""
+    achieved = NEC_SENSE_TO_HAND.get(result.sense)
+    if achieved is None:
+        return f"{result.sense} (requested {result.spec.sense})"
+    if achieved == result.spec.sense:
+        return achieved.upper()
+    return f"{achieved.upper()} (requested {result.spec.sense.upper()} not achieved)"
+
+
 def format_cut_sheet(result: DesignResult) -> str:
     """Render the tuned design as an ASCII cut sheet."""
     spec = result.spec
@@ -92,9 +105,9 @@ def format_cut_sheet(result: DesignResult) -> str:
         peri_b = factor_b * wavelength
         lines += [
             f"Detune (delta)      : {result.delta * 100:.2f} %",
-            f"Loop A (large)      : {peri_a * 1000:.1f} mm perimeter, "
+            f"Large loop          : {peri_a * 1000:.1f} mm perimeter, "
             f"{loop_diameter_m(peri_a) * 1000:.1f} mm dia",
-            f"Loop B (small)      : {peri_b * 1000:.1f} mm perimeter, "
+            f"Small loop          : {peri_b * 1000:.1f} mm perimeter, "
             f"{loop_diameter_m(peri_b) * 1000:.1f} mm dia",
             "Feed                : loops paralleled at a common feedpoint",
         ]
@@ -115,7 +128,7 @@ def format_cut_sheet(result: DesignResult) -> str:
         f"Predicted {z_label:9}: {z.real:.1f} {z.imag:+.1f}j ohms",
         f"VSWR (50 ohm)       : {vswr(z):.2f}",
         f"Loop current phase  : {result.phase_diff_deg:+.1f} deg (target +/-90)",
-        f"Polarization sense  : {result.sense}",
+        f"Polarization sense  : {_format_sense(result)}",
         f"Axial ratio (boresight): {result.ar_boresight_db:.2f} dB "
         f"(<= {int(BORESIGHT_THETA_DEG)} deg from zenith)",
         f"Axial ratio (gain peak): {result.ar_peak_db:.2f} dB",
@@ -156,6 +169,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--phasing",
         choices=(PHASING_SELF, PHASING_LINE),
         default=PHASING_SELF,
+    )
+    parser.add_argument(
+        "--sense",
+        choices=(SENSE_RHCP, SENSE_LHCP),
+        default=SENSE_RHCP,
+        help="circular polarization sense",
     )
     parser.add_argument(
         "--reflector",
@@ -216,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         reflector_spacing_wl=args.reflector_spacing,
         coax_vf=args.coax_vf,
         match_vf=args.match_vf,
+        sense=args.sense,
         segments=args.segments,
         radial_count=args.radial_count,
         radial_length_wl=args.radial_length,

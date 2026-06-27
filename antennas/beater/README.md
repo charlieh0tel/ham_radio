@@ -30,6 +30,8 @@ uv run beater --freq 145.9 --conductor round:5.0 --reflector radials --radial-dr
   - `bar:<width_mm>x<thick_mm>` rectangular bar stock (GMD equivalent radius).
 - `--phasing` `self` (detuned big/small loops, no harness) or `line`
   (equal loops plus a quarter-wave coax phasing line). Default `self`.
+- `--sense` polarization sense, `rhcp` or `lhcp` (default `rhcp`). The achieved
+  sense is verified against the NEC pattern.
 - `--reflector` `none` (free space), `ground` (perfect ground plane below), or
   `radials` (finite radial-wire reflector, ON6WG/M2 style).
 - `--reflector-spacing` loop-center height above the reflector, wavelengths

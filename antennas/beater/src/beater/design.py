@@ -34,6 +34,11 @@ PHASING_LINE = "line"
 REFLECTOR_NONE = "none"
 REFLECTOR_GROUND = "ground"
 REFLECTOR_RADIALS = "radials"
+SENSE_RHCP = "rhcp"
+SENSE_LHCP = "lhcp"
+
+# Map nec2c's polarization sense column to a handedness constant.
+NEC_SENSE_TO_HAND = {"RIGHT": SENSE_RHCP, "LEFT": SENSE_LHCP}
 
 # Target NEC segment length along a radial, in wavelengths.
 RADIAL_SEGMENT_WL = 0.05
@@ -80,6 +85,7 @@ class DesignSpec:
         reflector_spacing_wl: loop-centre height above the reflector, wavelengths.
         coax_vf: velocity factor of the phasing-line coax (line scheme).
         match_vf: velocity factor of the matching-section coax.
+        sense: desired polarization, SENSE_RHCP or SENSE_LHCP.
         segments: polygon sides per loop.
         radial_count: number of reflector radials (radials scheme).
         radial_length_wl: length of each radial, wavelengths.
@@ -94,6 +100,7 @@ class DesignSpec:
     reflector_spacing_wl: float
     coax_vf: float
     match_vf: float
+    sense: str
     segments: int
     radial_count: int = 8
     radial_length_wl: float = 0.27
@@ -318,13 +325,30 @@ def _self_phase_delta(spec: DesignSpec, base_factor: float) -> float:
     return (low + high) / 2.0
 
 
+def _boresight_sense(result: NecResult) -> str:
+    """Polarization sense at the most circular point in the coverage cone."""
+    cone = [
+        p
+        for p in result.pattern
+        if p.theta_deg <= BORESIGHT_THETA_DEG and p.total_gain_db > NULL_GAIN_DB
+    ]
+    if not cone:
+        return "UNKNOWN"
+    best = min(cone, key=lambda p: _axial_ratio_db(p.axial_ratio))
+    return best.sense
+
+
 def _polarization_summary(result: NecResult) -> tuple[float, float, str]:
-    """Boresight axial ratio, peak axial ratio, and peak sense (all dB)."""
+    """Boresight axial ratio (dB), peak axial ratio (dB), and boresight sense."""
     usable = [p for p in result.pattern if p.total_gain_db > NULL_GAIN_DB]
     if not usable:
         return math.inf, math.inf, "UNKNOWN"
     peak = max(usable, key=lambda p: p.total_gain_db)
-    return _boresight_ar_db(result), _axial_ratio_db(peak.axial_ratio), peak.sense
+    return (
+        _boresight_ar_db(result),
+        _axial_ratio_db(peak.axial_ratio),
+        _boresight_sense(result),
+    )
 
 
 def vswr(z: complex, reference: float = REFERENCE_IMPEDANCE_OHMS) -> float:
@@ -351,28 +375,55 @@ def nearest_standard_coax(z0: float) -> float:
     return min(STANDARD_COAX_OHMS, key=lambda c: abs(c - z0))
 
 
+def _operating_point(
+    base_factor: float, delta: float, phasing: str, flip: bool
+) -> tuple[float, float, float]:
+    """Loop perimeters and feed phase for one polarization orientation.
+
+    Flipping reverses the handedness: it swaps which loop is large (self) or the
+    sign of the feed phase (line).
+    """
+    if phasing == PHASING_SELF:
+        sign = -1.0 if flip else 1.0
+        return (
+            base_factor * (1.0 + sign * delta),
+            base_factor * (1.0 - sign * delta),
+            0.0,
+        )
+    return base_factor, base_factor, -LINE_PHASE_DEG if flip else LINE_PHASE_DEG
+
+
 def design(spec: DesignSpec) -> DesignResult:
-    """Tune an eggbeater to the spec and return the result."""
+    """Tune an eggbeater to the spec and return the result.
+
+    Resonance and detune are handedness-independent, so they are solved once;
+    the orientation is then chosen (and verified against nec2c) to deliver the
+    requested polarization sense.
+    """
     base_factor = _resonant_factor(spec)
-    if spec.phasing == PHASING_SELF:
-        delta = _self_phase_delta(spec, base_factor)
-        factor_a = base_factor * (1.0 + delta)
-        factor_b = base_factor * (1.0 - delta)
-        phase_b = 0.0
-    else:
-        delta = 0.0
-        factor_a = base_factor
-        factor_b = base_factor
-        phase_b = LINE_PHASE_DEG
-    result, deck = analyze(spec, factor_a, factor_b, phase_b)
-    src_a = result.sources[0]
+    delta = (
+        _self_phase_delta(spec, base_factor) if spec.phasing == PHASING_SELF else 0.0
+    )
+
+    # Build with the default orientation, then flip once if nec2c reports the
+    # opposite sense from the one requested.
+    flip = False
+    for _ in range(2):
+        factor_a, factor_b, phase_b = _operating_point(
+            base_factor, delta, spec.phasing, flip
+        )
+        result, deck = analyze(spec, factor_a, factor_b, phase_b)
+        ar_boresight, ar_peak, sense = _polarization_summary(result)
+        if NEC_SENSE_TO_HAND.get(sense, spec.sense) == spec.sense:
+            break
+        flip = True
+
     if spec.phasing == PHASING_SELF:
         z_in = _combined_feed_z(result)
     else:
         # Each loop presents its own driving impedance; the tee plus phasing
         # line combine them (see the cut sheet).
-        z_in = complex(src_a.z_real, src_a.z_imag)
-    ar_boresight, ar_peak, sense = _polarization_summary(result)
+        z_in = complex(result.sources[0].z_real, result.sources[0].z_imag)
     return DesignResult(
         spec=spec,
         base_factor=base_factor,
