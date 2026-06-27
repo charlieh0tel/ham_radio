@@ -43,11 +43,8 @@ def _format_sense(result: DesignResult) -> str:
     return f"{achieved.upper()} (requested {result.spec.sense.upper()} not achieved)"
 
 
-def format_cut_sheet(result: DesignResult) -> str:
-    """Render the tuned design as an ASCII cut sheet."""
+def _header_lines(result: DesignResult, wavelength: float) -> list[str]:
     spec = result.spec
-    wavelength = wavelength_m(spec.freq_mhz)
-    z = result.z_in
     title = (
         f"Eggbeater cut sheet: {spec.label}" if spec.label else "Eggbeater cut sheet"
     )
@@ -73,14 +70,15 @@ def format_cut_sheet(result: DesignResult) -> str:
             f"  radials           : {spec.radial_count} x {radial_mm:.1f} mm, "
             f"{spec.radial_droop_deg:g} deg droop"
         )
-    lines.append("-" * 40)
+    return lines
 
+
+def _geometry_lines(result: DesignResult, wavelength: float) -> list[str]:
+    spec = result.spec
     if spec.phasing == PHASING_SELF:
-        factor_a = result.base_factor * (1.0 + result.delta)
-        factor_b = result.base_factor * (1.0 - result.delta)
-        peri_a = factor_a * wavelength
-        peri_b = factor_b * wavelength
-        lines += [
+        peri_a = result.base_factor * (1.0 + result.delta) * wavelength
+        peri_b = result.base_factor * (1.0 - result.delta) * wavelength
+        return [
             f"Detune (delta)      : {result.delta * 100:.2f} %",
             f"Large loop          : {peri_a * 1000:.1f} mm perimeter, "
             f"{loop_diameter_m(peri_a) * 1000:.1f} mm dia",
@@ -88,46 +86,75 @@ def format_cut_sheet(result: DesignResult) -> str:
             f"{loop_diameter_m(peri_b) * 1000:.1f} mm dia",
             "Feed                : loops paralleled at a common feedpoint",
         ]
-    else:
-        peri = result.base_factor * wavelength
-        line_len = QUARTER_WAVE * wavelength * spec.coax_vf
-        lines += [
-            f"Both loops          : {peri * 1000:.1f} mm perimeter, "
-            f"{loop_diameter_m(peri) * 1000:.1f} mm dia",
-            f"Phasing line        : {line_len * 1000:.1f} mm "
-            f"(1/4 wave, VF {spec.coax_vf:g})",
-            "Feed                : tee at junction; line in series with loop B",
-        ]
-
-    lines.append("-" * 40)
-    z_label = "feedpoint Z" if spec.phasing == PHASING_SELF else "per-loop Z"
-    lines += [
-        f"Predicted {z_label:9}: {z.real:.1f} {z.imag:+.1f}j ohms",
-        f"VSWR (50 ohm)       : {vswr(z):.2f}",
-        f"Loop current phase  : {result.phase_diff_deg:+.1f} deg (target +/-90)",
-        f"Polarization sense  : {_format_sense(result)}",
-        f"Axial ratio (boresight): {result.ar_boresight_db:.2f} dB "
-        f"(<= {int(BORESIGHT_THETA_DEG)} deg from zenith)",
-        f"Axial ratio (gain peak): {result.ar_peak_db:.2f} dB",
+    peri = result.base_factor * wavelength
+    line_len = QUARTER_WAVE * wavelength * spec.coax_vf
+    return [
+        f"Both loops          : {peri * 1000:.1f} mm perimeter, "
+        f"{loop_diameter_m(peri) * 1000:.1f} mm dia",
+        f"Phasing line        : {line_len * 1000:.1f} mm (1/4 wave, "
+        f"VF {spec.coax_vf:g})",
+        "Feed                : tee at junction; line in series with loop B",
     ]
 
-    lines.append("-" * 40)
+
+def _match_lines(result: DesignResult, wavelength: float) -> list[str]:
+    spec = result.spec
+    z = result.z_in
     z0 = quarter_wave_match_z0(z)
     match_len = QUARTER_WAVE * wavelength * spec.match_vf
-    lines.append("Match to 50 ohm:")
+    lines = ["Match to 50 ohm:"]
     if abs(z.imag) > MATCH_REACTANCE_WARN_OHMS:
         kind, value = series_match_element(z, spec.freq_mhz)
-        if kind == "capacitor":
-            sized = f"{value * PF_PER_FARAD:.1f} pF"
-        else:
-            sized = f"{value * NH_PER_HENRY:.0f} nH"
+        sized = (
+            f"{value * PF_PER_FARAD:.1f} pF"
+            if kind == "capacitor"
+            else f"{value * NH_PER_HENRY:.0f} nH"
+        )
         lines.append(f"  series {kind:9}  : {sized} to cancel {z.imag:+.0f}j ohms")
     lines += [
         f"  1/4-wave Z0       : {z0:.1f} ohms "
         f"(nearest standard {nearest_standard_coax(z0):.0f} ohm)",
         f"  1/4-wave length   : {match_len * 1000:.1f} mm (VF {spec.match_vf:g})",
     ]
+    return lines
+
+
+def _performance_lines(result: DesignResult) -> list[str]:
+    spec = result.spec
+    z = result.z_in
+    z_label = "feedpoint Z" if spec.phasing == PHASING_SELF else "per-loop Z"
+    return [
+        "Predicted performance:",
+        f"  {z_label:16}: {z.real:.1f} {z.imag:+.1f}j ohms",
+        f"  VSWR (unmatched): {vswr(z):.2f}",
+        f"  loop current phase: {result.phase_diff_deg:+.1f} deg (target +/-90)",
+        f"  polarization sense: {_format_sense(result)}",
+        f"  axial ratio (cone): {result.ar_boresight_db:.2f} dB "
+        f"(<= {int(BORESIGHT_THETA_DEG)} deg from zenith)",
+        f"  axial ratio (peak): {result.ar_peak_db:.2f} dB",
+    ]
+
+
+def cut_sheet_build(result: DesignResult) -> str:
+    """Buildable cut list only: dimensions and the matching hardware."""
+    wavelength = wavelength_m(result.spec.freq_mhz)
+    lines = _header_lines(result, wavelength)
+    lines.append("-" * 40)
+    lines += _geometry_lines(result, wavelength)
+    lines.append("-" * 40)
+    lines += _match_lines(result, wavelength)
     return "\n".join(lines) + "\n"
+
+
+def format_cut_sheet(result: DesignResult) -> str:
+    """Full cut sheet: the build cut list plus the predicted performance."""
+    return (
+        cut_sheet_build(result)
+        + "-" * 40
+        + "\n"
+        + "\n".join(_performance_lines(result))
+        + "\n"
+    )
 
 
 def _band_line(label: str, band: tuple[float, float] | None, center: float) -> str:

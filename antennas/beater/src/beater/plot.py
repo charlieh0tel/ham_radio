@@ -8,6 +8,7 @@ import json
 
 from .design import (
     AR_TARGET_DB,
+    NEC_SENSE_TO_HAND,
     VSWR_LIMIT,
     DesignResult,
     _axial_ratio_db,
@@ -18,7 +19,7 @@ from .design import (
     post_match_vswr,
 )
 from .nec import RadiationGrid
-from .report import format_cut_sheet
+from .report import cut_sheet_build
 from .spec import spec_to_dict
 
 # Data trace colors, cycled per design (teal, amber, violet, green, ...).
@@ -74,6 +75,7 @@ def _collect(result: DesignResult) -> dict:
         "label": _label(result),
         "f0": f0,
         "z": result.z_in,
+        "sense": (NEC_SENSE_TO_HAND.get(result.sense) or result.sense).upper(),
         "vswr_post": post_match_vswr(result.z_in),
         "ar_cone": result.ar_boresight_db,
         "vswr_band": bandwidth_within(vswr_pairs, VSWR_LIMIT),
@@ -189,7 +191,7 @@ def _details(results: list[DesignResult]) -> str:
     blocks = []
     for result in results:
         spec_json = html.escape(json.dumps(spec_to_dict(result.spec), indent=2))
-        sheet = html.escape(format_cut_sheet(result))
+        sheet = html.escape(cut_sheet_build(result))
         blocks.append(
             f'<section class="detail"><h2>{html.escape(_label(result))}</h2>'
             '<div class="cols">'
@@ -297,6 +299,7 @@ def render_artifact(results: list[DesignResult]) -> str:
         f"{html.escape(d['label'])}</td>"
         f"<td>{d['f0']:.1f}</td>"
         f"<td>{d['z'].real:.0f} {d['z'].imag:+.0f}j</td>"
+        f"<td>{d['sense']}</td>"
         f"<td>{d['vswr_post']:.2f}</td>"
         f"<td>{d['ar_cone']:.2f}</td>"
         f"<td>{_band_text(d['vswr_band'])}</td>"
@@ -326,6 +329,7 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   h1 {{ font-size:30px; line-height:1.15; margin:0 0 8px; font-weight:650;
     text-wrap:balance; letter-spacing:-.01em; }}
   .lede {{ color:var(--muted); margin:0 0 28px; max-width:64ch; }}
+  .scroll {{ overflow-x:auto; }}
   table {{ width:100%; border-collapse:collapse; margin:0 0 14px;
     font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums; }}
   caption {{ text-align:left; font-family:var(--mono); font-size:12px;
@@ -368,15 +372,17 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   coverage. The input spec and physical cut list for each design follow the
   charts.</p>
 
+  <div class="scroll">
   <table>
     <caption>Figures of merit</caption>
     <thead><tr>
-      <th>Design</th><th>f0 (MHz)</th><th>feed Z (&#8486;)</th>
+      <th>Design</th><th>f0 (MHz)</th><th>feed Z (&#8486;)</th><th>sense</th>
       <th>VSWR (matched)</th><th>AR cone (dB)</th>
       <th>2:1 VSWR band</th><th>3 dB AR band</th>
     </tr></thead>
     <tbody>{rows}</tbody>
   </table>
+  </div>
 
   <div class="legend">{legend}</div>
   <div class="grid">{charts}</div>
