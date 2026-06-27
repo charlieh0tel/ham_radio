@@ -14,7 +14,12 @@ import math
 from dataclasses import dataclass
 
 from .conductor import Conductor
-from .geometry import loop_radius_m, make_eggbeater, wavelength_m
+from .geometry import (
+    loop_radius_m,
+    make_eggbeater,
+    make_radials,
+    wavelength_m,
+)
 from .nec import (
     DEFAULT_NEC2C,
     NecResult,
@@ -28,6 +33,10 @@ PHASING_SELF = "self"
 PHASING_LINE = "line"
 REFLECTOR_NONE = "none"
 REFLECTOR_GROUND = "ground"
+REFLECTOR_RADIALS = "radials"
+
+# Target NEC segment length along a radial, in wavelengths.
+RADIAL_SEGMENT_WL = 0.05
 
 # Feed phase of loop B for the quarter-wave-line scheme.
 LINE_PHASE_DEG = -90.0
@@ -67,11 +76,14 @@ class DesignSpec:
         freq_mhz: design frequency.
         conductor: conductor cross-section.
         phasing: PHASING_SELF or PHASING_LINE.
-        reflector: REFLECTOR_NONE or REFLECTOR_GROUND.
-        reflector_spacing_wl: loop-centre height above ground, wavelengths.
+        reflector: REFLECTOR_NONE, REFLECTOR_GROUND, or REFLECTOR_RADIALS.
+        reflector_spacing_wl: loop-centre height above the reflector, wavelengths.
         coax_vf: velocity factor of the phasing-line coax (line scheme).
         match_vf: velocity factor of the matching-section coax.
         segments: polygon sides per loop.
+        radial_count: number of reflector radials (radials scheme).
+        radial_length_wl: length of each radial, wavelengths.
+        radial_droop_deg: downward tilt of the radials from horizontal.
         nec2c: nec2c executable name or path.
     """
 
@@ -83,6 +95,9 @@ class DesignSpec:
     coax_vf: float
     match_vf: float
     segments: int
+    radial_count: int = 8
+    radial_length_wl: float = 0.27
+    radial_droop_deg: float = 0.0
     nec2c: str = DEFAULT_NEC2C
 
 
@@ -116,11 +131,28 @@ class DesignResult:
 
 
 def _center_z_m(spec: DesignSpec, wavelength: float, perimeter_m: float) -> float:
-    if spec.reflector == REFLECTOR_GROUND:
+    if spec.reflector in (REFLECTOR_GROUND, REFLECTOR_RADIALS):
+        # Loop centre sits the given spacing above the reflector plane (z = 0).
         return spec.reflector_spacing_wl * wavelength
     # In free space the absolute height is irrelevant; keep the loop above the
     # origin for readable coordinates.
     return loop_radius_m(perimeter_m)
+
+
+def _reflector_wires(spec: DesignSpec, wavelength: float):
+    """Radial reflector wires below the loops, or none for other schemes."""
+    if spec.reflector != REFLECTOR_RADIALS:
+        return ()
+    length_m = spec.radial_length_wl * wavelength
+    segments_per_radial = max(1, round(spec.radial_length_wl / RADIAL_SEGMENT_WL))
+    return make_radials(
+        count=spec.radial_count,
+        length_m=length_m,
+        hub_z_m=0.0,
+        droop_deg=spec.radial_droop_deg,
+        conductor_radius_m=spec.conductor.equivalent_radius_m,
+        segments_per_radial=segments_per_radial,
+    )
 
 
 def _comment_lines(spec: DesignSpec) -> list[str]:
@@ -169,9 +201,10 @@ def analyze(
         spec.segments,
     )
     sources = _sources(spec, egg, phase_b_deg)
+    wires = egg.wires + _reflector_wires(spec, wavelength)
     deck = build_deck(
         _comment_lines(spec),
-        egg.wires,
+        wires,
         sources,
         ground=spec.reflector == REFLECTOR_GROUND,
         freq_mhz=spec.freq_mhz,

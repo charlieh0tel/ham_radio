@@ -10,6 +10,7 @@ from .design import (
     PHASING_SELF,
     REFLECTOR_GROUND,
     REFLECTOR_NONE,
+    REFLECTOR_RADIALS,
     DesignResult,
     DesignSpec,
     design,
@@ -70,11 +71,17 @@ def format_cut_sheet(result: DesignResult) -> str:
         f"Phasing             : {spec.phasing}",
         f"Reflector           : {spec.reflector}",
     ]
-    if spec.reflector == REFLECTOR_GROUND:
+    if spec.reflector != REFLECTOR_NONE:
         spacing_mm = spec.reflector_spacing_wl * wavelength * 1000
         lines.append(
             f"  loop-center height: {spec.reflector_spacing_wl:.3g} wl "
             f"({spacing_mm:.1f} mm)"
+        )
+    if spec.reflector == REFLECTOR_RADIALS:
+        radial_mm = spec.radial_length_wl * wavelength * 1000
+        lines.append(
+            f"  radials           : {spec.radial_count} x {radial_mm:.1f} mm, "
+            f"{spec.radial_droop_deg:g} deg droop"
         )
     lines.append("-" * 40)
 
@@ -152,14 +159,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--reflector",
-        choices=(REFLECTOR_NONE, REFLECTOR_GROUND),
+        choices=(REFLECTOR_NONE, REFLECTOR_GROUND, REFLECTOR_RADIALS),
         default=REFLECTOR_NONE,
     )
     parser.add_argument(
         "--reflector-spacing",
         type=float,
         default=0.25,
-        help="loop-center height above ground in wavelengths",
+        help="loop-center height above the reflector in wavelengths",
+    )
+    parser.add_argument(
+        "--radial-count",
+        type=int,
+        default=8,
+        help="number of reflector radials (radials reflector)",
+    )
+    parser.add_argument(
+        "--radial-length",
+        type=float,
+        default=0.27,
+        help="radial length in wavelengths (radials reflector)",
+    )
+    parser.add_argument(
+        "--radial-droop",
+        type=float,
+        default=0.0,
+        help="radial downward tilt in degrees (radials reflector)",
     )
     parser.add_argument(
         "--coax-vf",
@@ -192,6 +217,9 @@ def main(argv: list[str] | None = None) -> int:
         coax_vf=args.coax_vf,
         match_vf=args.match_vf,
         segments=args.segments,
+        radial_count=args.radial_count,
+        radial_length_wl=args.radial_length,
+        radial_droop_deg=args.radial_droop,
         nec2c=args.nec2c,
     )
     result = design(spec)

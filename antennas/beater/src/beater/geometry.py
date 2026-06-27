@@ -15,6 +15,8 @@ LIGHT_MHZ_M = 299.792458
 # The bases are spaced wide enough that the per-side tags never overlap.
 LOOP_A_TAG_BASE = 100
 LOOP_B_TAG_BASE = 200
+# Reflector radials occupy [RADIAL_TAG_BASE, +count).
+RADIAL_TAG_BASE = 300
 # Default polygon resolution; each side becomes one NEC segment.
 DEFAULT_SEGMENTS = 36
 
@@ -135,3 +137,39 @@ def make_eggbeater(
         "yz", perimeter_b_m, center_z_m, conductor_radius_m, LOOP_B_TAG_BASE, segments
     )
     return Eggbeater(loop_a=loop_a, loop_b=loop_b)
+
+
+def make_radials(
+    count: int,
+    length_m: float,
+    hub_z_m: float,
+    droop_deg: float,
+    conductor_radius_m: float,
+    segments_per_radial: int,
+) -> tuple[Wire, ...]:
+    """Build a reflector of evenly spaced radial wires from a common hub.
+
+    Radials run from the hub on the Z axis outward in azimuth; a positive droop
+    angle tilts them downward from horizontal. They share the hub coordinate, so
+    NEC connects them there.
+    """
+    droop = math.radians(droop_deg)
+    horizontal = length_m * math.cos(droop)
+    drop = length_m * math.sin(droop)
+    wires = []
+    for i in range(count):
+        azimuth = 2.0 * math.pi * i / count
+        wires.append(
+            Wire(
+                tag=RADIAL_TAG_BASE + i,
+                segments=segments_per_radial,
+                x1=0.0,
+                y1=0.0,
+                z1=hub_z_m,
+                x2=horizontal * math.cos(azimuth),
+                y2=horizontal * math.sin(azimuth),
+                z2=hub_z_m - drop,
+                radius_m=conductor_radius_m,
+            )
+        )
+    return tuple(wires)

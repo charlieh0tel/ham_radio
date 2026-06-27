@@ -1,6 +1,7 @@
 import argparse
 import math
 import shutil
+from dataclasses import replace
 
 import pytest
 
@@ -52,3 +53,11 @@ def test_self_phasing_tunes_within_bounds():
 def test_line_phasing_resonates():
     result = design(_spec(PHASING_LINE))
     assert abs(result.z_in.imag) < 15.0
+
+
+@needs_nec2c
+def test_radial_reflector_runs():
+    spec = replace(_spec(PHASING_SELF), reflector="radials")
+    result = design(spec)
+    assert math.isfinite(result.ar_boresight_db)
+    assert result.deck.count("\nGW ") == 2 * spec.segments + spec.radial_count

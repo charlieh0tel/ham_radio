@@ -18,6 +18,7 @@ resonance and the 90 degree phasing, finishing with a physical cut sheet.
 ```
 uv run beater --freq 145.9 --conductor round:3.0
 uv run beater --freq 145.9 --conductor bar:12.7x3.2 --phasing line --reflector ground
+uv run beater --freq 145.9 --conductor round:5.0 --reflector radials --radial-droop 30
 ```
 
 ### Options
@@ -29,8 +30,13 @@ uv run beater --freq 145.9 --conductor bar:12.7x3.2 --phasing line --reflector g
   - `bar:<width_mm>x<thick_mm>` rectangular bar stock (GMD equivalent radius).
 - `--phasing` `self` (detuned big/small loops, no harness) or `line`
   (equal loops plus a quarter-wave coax phasing line). Default `self`.
-- `--reflector` `none` (free space) or `ground` (perfect ground plane below).
-- `--reflector-spacing` loop-center height above ground, wavelengths (default 0.25).
+- `--reflector` `none` (free space), `ground` (perfect ground plane below), or
+  `radials` (finite radial-wire reflector, ON6WG/M2 style).
+- `--reflector-spacing` loop-center height above the reflector, wavelengths
+  (default 0.25).
+- `--radial-count` number of reflector radials (default 8).
+- `--radial-length` radial length in wavelengths (default 0.27).
+- `--radial-droop` radial downward tilt in degrees (default 0).
 - `--coax-vf` velocity factor of the phasing-line coax (default 0.66).
 - `--match-vf` velocity factor of the matching-section coax (default 0.66).
 - `--segments` polygon sides per loop (default 36).
