@@ -175,10 +175,10 @@ def _chart(
     return "".join(parts)
 
 
-def _figure(title, svg):
+def _figure(title, note, svg):
     return (
         f'<figure class="card"><figcaption>{html.escape(title)}</figcaption>'
-        f"{svg}</figure>"
+        f'{svg}<p class="note">{html.escape(note)}</p></figure>'
     )
 
 
@@ -220,6 +220,7 @@ def render_artifact(results: list[DesignResult]) -> str:
         [
             _figure(
                 "Matched VSWR vs frequency",
+                "Reflected power across the band; stays under 2:1 over a wide span.",
                 _chart(
                     series("vswr_freq"),
                     -10,
@@ -237,6 +238,7 @@ def render_artifact(results: list[DesignResult]) -> str:
             ),
             _figure(
                 "Axial ratio vs frequency",
+                "CP quality vs frequency; the 3 dB crossings bound usable coverage.",
                 _chart(
                     series("ar_freq"),
                     -10,
@@ -253,6 +255,7 @@ def render_artifact(results: list[DesignResult]) -> str:
             ),
             _figure(
                 "Axial ratio vs elevation",
+                "CP quality from horizon to zenith; best overhead, linear near the horizon.",
                 _chart(
                     series("ar_elev"),
                     0,
@@ -269,6 +272,7 @@ def render_artifact(results: list[DesignResult]) -> str:
             ),
             _figure(
                 "Gain vs elevation",
+                "Coverage vs elevation angle; favors high-angle (overhead) passes.",
                 _chart(
                     series("gain_elev"),
                     0,
@@ -340,6 +344,10 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   thead th {{ color:var(--muted); font-weight:600; border-bottom:1.5px solid var(--ink); }}
   .chip {{ display:inline-block; width:11px; height:11px; border-radius:2px;
     margin-right:8px; }}
+  .defs {{ list-style:none; padding:0; margin:0 0 8px; font-size:12px;
+    color:var(--muted); display:grid; grid-template-columns:repeat(2,1fr);
+    gap:3px 28px; }}
+  .defs b {{ color:var(--ink); font-weight:600; font-family:var(--mono); }}
   .legend {{ display:flex; flex-wrap:wrap; gap:22px; align-items:center;
     margin:22px 0 14px; font-family:var(--mono); font-size:13px; color:var(--muted); }}
   .legend .key {{ display:inline-block; width:22px; height:3px; border-radius:2px;
@@ -349,6 +357,7 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
     border-radius:6px; padding:14px 14px 6px; }}
   .card figcaption {{ font-size:14px; font-weight:600; margin-bottom:4px; }}
   .card svg {{ width:100%; height:auto; display:block; }}
+  .card .note {{ font-size:12px; color:var(--muted); margin:6px 2px 2px; }}
   h2 {{ font-size:18px; font-weight:650; margin:30px 0 10px; }}
   h3 {{ font-family:var(--mono); font-size:12px; letter-spacing:.1em;
     text-transform:uppercase; color:var(--muted); margin:0 0 6px; }}
@@ -383,6 +392,17 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
     <tbody>{rows}</tbody>
   </table>
   </div>
+  <ul class="defs">
+    <li><b>feed Z</b> &mdash; predicted feedpoint impedance, before matching</li>
+    <li><b>sense</b> &mdash; circular-polarization handedness (RHCP / LHCP)</li>
+    <li><b>VSWR (matched)</b> &mdash; standing-wave ratio at 50 ohm after the
+      match network</li>
+    <li><b>AR cone</b> &mdash; mean axial ratio within 30 deg of zenith
+      (0 dB = perfect circular)</li>
+    <li><b>2:1 VSWR band</b> &mdash; span where matched VSWR stays under 2</li>
+    <li><b>3 dB AR band</b> &mdash; span where axial ratio stays under 3 dB
+      (usable CP coverage)</li>
+  </ul>
 
   <div class="legend">{legend}</div>
   <div class="grid">{charts}</div>
