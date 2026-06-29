@@ -1,5 +1,5 @@
 from beater.conductor import bar_conductor, round_conductor
-from beater.design import DesignSpec
+from beater.design import DesignSpec, Optimization
 from beater.spec import (
     spec_from_dict,
     spec_to_dict,
@@ -22,6 +22,27 @@ def test_spec_round_trip_round_conductor():
 def test_spec_round_trip_bar_conductor():
     spec = _spec(conductor=bar_conductor(12.7, 3.2))
     assert spec_from_dict(spec_to_dict(spec)) == spec
+
+
+def test_spec_round_trip_with_optimization():
+    base = _spec()
+    opt = Optimization(
+        input=base,
+        spacing_grid_wl=(0.20, 0.25, 0.30),
+        droop_grid_deg=(0.0, 45.0),
+        ar_target_db=3.0,
+        ar_penalty_per_db=1.0,
+        objective="minimize post-match VSWR",
+    )
+    spec = _spec(
+        reflector="radials",
+        reflector_spacing_wl=0.20,
+        radial_droop_deg=45.0,
+        optimization=opt,
+    )
+    restored = spec_from_dict(spec_to_dict(spec))
+    assert restored == spec
+    assert restored.optimization.input == base
 
 
 def test_minimal_dict_uses_defaults():

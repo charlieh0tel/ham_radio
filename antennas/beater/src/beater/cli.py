@@ -7,7 +7,7 @@ from dataclasses import replace
 from .design import REFLECTOR_NONE, DesignSpec, design, optimize_reflector
 from .plot import render_artifact
 from .report import format_bandwidth, format_cut_sheet
-from .spec import specs_from_json
+from .spec import specs_from_json, specs_to_json
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,6 +30,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--sweep",
         action="store_true",
         help="sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio bands",
+    )
+    parser.add_argument(
+        "--emit-spec",
+        help="write the (optionally optimized) spec JSON to this path ('-' for stdout)",
     )
     parser.add_argument(
         "--deck",
@@ -56,11 +60,27 @@ def main(argv: list[str] | None = None) -> int:
     if args.deck and len(specs) > 1:
         parser.error("--deck requires a single-design spec")
 
+    # Stage 1: spec -> optimized spec (optional). Everything downstream derives
+    # from these specs, so the optimized values are what gets reported and baked.
+    if args.optimize_reflector:
+        if any(spec.reflector == REFLECTOR_NONE for spec in specs):
+            parser.error("--optimize-reflector requires a reflector")
+        specs = [optimize_reflector(spec) for spec in specs]
+
+    # Stage 2: emit the resolved spec(s), for baking an optimized design.
+    if args.emit_spec:
+        payload = specs_to_json(specs)
+        if args.emit_spec == "-":
+            print(payload)
+        else:
+            with open(args.emit_spec, "w") as handle:
+                handle.write(payload + "\n")
+            print(f"Wrote spec to {args.emit_spec}")
+
+    # Stage 3: derive artifacts from the specs.
     results = []
     for index, spec in enumerate(specs):
-        if args.optimize_reflector and spec.reflector == REFLECTOR_NONE:
-            parser.error("--optimize-reflector requires a reflector")
-        result = optimize_reflector(spec) if args.optimize_reflector else design(spec)
+        result = design(spec)
         results.append(result)
         if index:
             print()

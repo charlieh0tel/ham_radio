@@ -104,6 +104,8 @@ class DesignSpec:
         radial_length_wl: length of each radial, wavelengths.
         radial_droop_deg: downward tilt of the radials from horizontal.
         label: optional human-readable name for output (e.g. "2 m").
+        optimization: provenance set when the spec came from optimize_reflector
+            (the input spec and the search parameters); None otherwise.
         nec2c: nec2c executable name or path.
 
     Only freq_mhz and conductor are required; every other field has a default
@@ -123,7 +125,29 @@ class DesignSpec:
     radial_length_wl: float = 0.27
     radial_droop_deg: float = 0.0
     label: str | None = None
+    optimization: "Optimization | None" = None
     nec2c: str = DEFAULT_NEC2C
+
+
+@dataclass(frozen=True)
+class Optimization:
+    """Provenance of a spec produced by optimize_reflector.
+
+    Fields:
+        input: the spec as received, before optimization.
+        spacing_grid_wl: reflector spacings searched, wavelengths.
+        droop_grid_deg: radial droops searched, degrees.
+        ar_target_db: axial-ratio budget the search held to.
+        ar_penalty_per_db: cost penalty per dB of axial ratio above the budget.
+        objective: short description of what was minimized.
+    """
+
+    input: DesignSpec
+    spacing_grid_wl: tuple[float, ...]
+    droop_grid_deg: tuple[float, ...]
+    ar_target_db: float
+    ar_penalty_per_db: float
+    objective: str
 
 
 @dataclass(frozen=True)
@@ -481,26 +505,37 @@ def _reflector_cost(result: DesignResult) -> float:
     return post_match_vswr(result.z_in) + AR_PENALTY_PER_DB * excess
 
 
-def optimize_reflector(spec: DesignSpec) -> DesignResult:
-    """Grid-search reflector spacing and droop for the lowest match cost.
+def optimize_reflector(spec: DesignSpec) -> DesignSpec:
+    """Grid-search reflector spacing and droop; return the best spec.
 
-    Spacing is searched for both reflector types; droop applies only to radials.
-    The returned result carries the winning spacing and droop in its spec.
+    A spec -> spec transform: the returned spec is identical to the input except
+    for the spacing and droop that minimize the match cost. Spacing is searched
+    for both reflector types; droop applies only to radials.
     """
     droops = DROOP_GRID_DEG if spec.reflector == REFLECTOR_RADIALS else (0.0,)
-    best = None
+    best_spec = spec
     best_cost = math.inf
     for spacing in SPACING_GRID_WL:
         for droop in droops:
             candidate = replace(
-                spec, reflector_spacing_wl=spacing, radial_droop_deg=droop
+                spec,
+                reflector_spacing_wl=spacing,
+                radial_droop_deg=droop,
+                optimization=None,
             )
-            result = design(candidate)
-            cost = _reflector_cost(result)
+            cost = _reflector_cost(design(candidate))
             if cost < best_cost:
                 best_cost = cost
-                best = result
-    return best
+                best_spec = candidate
+    provenance = Optimization(
+        input=replace(spec, optimization=None),
+        spacing_grid_wl=SPACING_GRID_WL,
+        droop_grid_deg=tuple(droops),
+        ar_target_db=AR_TARGET_DB,
+        ar_penalty_per_db=AR_PENALTY_PER_DB,
+        objective="minimize post-match VSWR, axial ratio penalized above target",
+    )
+    return replace(best_spec, optimization=provenance)
 
 
 def _matched_input_z(

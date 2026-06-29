@@ -124,10 +124,40 @@ def test_bandwidth_none_when_center_mismatched():
 
 
 @needs_nec2c
-def test_optimize_reflector_picks_grid_point():
-    best = optimize_reflector(replace(_spec(PHASING_SELF), reflector="radials"))
-    assert best.spec.reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
-    assert best.spec.radial_droop_deg in (0.0, 15.0, 30.0, 45.0)
+def test_optimize_reflector_returns_spec_with_provenance():
+    base = replace(_spec(PHASING_SELF), reflector="radials")
+    best = optimize_reflector(base)
+    assert isinstance(best, DesignSpec)
+    assert best.reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
+    assert best.radial_droop_deg in (0.0, 15.0, 30.0, 45.0)
+    # Output records its input and search params.
+    assert best.optimization is not None
+    assert best.optimization.input == base
+    # Apart from spacing/droop and the provenance, the spec is unchanged.
+    stripped = replace(
+        best,
+        reflector_spacing_wl=base.reflector_spacing_wl,
+        radial_droop_deg=base.radial_droop_deg,
+        optimization=None,
+    )
+    assert stripped == base
+
+
+@needs_nec2c
+def test_emit_spec_after_optimize_round_trips(tmp_path):
+    from beater.spec import specs_from_json
+
+    src = tmp_path / "in.json"
+    src.write_text(
+        '{"freq_mhz":145.9,"conductor":{"kind":"round","diameter_mm":5},'
+        '"reflector":"radials","segments":16,"label":"2 m"}'
+    )
+    out = tmp_path / "optimized.json"
+    assert main([str(src), "--optimize-reflector", "--emit-spec", str(out)]) == 0
+    baked = specs_from_json(out.read_text())
+    assert len(baked) == 1
+    assert baked[0].reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
+    assert baked[0].label == "2 m"
 
 
 @needs_nec2c

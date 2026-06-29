@@ -19,7 +19,7 @@ from .conductor import (
     round_conductor,
     strip_conductor,
 )
-from .design import DesignSpec
+from .design import DesignSpec, Optimization
 
 # Optional spec fields carried in JSON, in a stable output order.
 _OPTIONAL_FIELDS = (
@@ -60,8 +60,33 @@ def conductor_from_dict(data: dict) -> Conductor:
     raise ValueError(f"unknown conductor kind: {kind!r}")
 
 
+def optimization_to_dict(opt: Optimization) -> dict:
+    return {
+        "input": spec_to_dict(opt.input),
+        "search": {
+            "spacing_grid_wl": list(opt.spacing_grid_wl),
+            "droop_grid_deg": list(opt.droop_grid_deg),
+            "ar_target_db": opt.ar_target_db,
+            "ar_penalty_per_db": opt.ar_penalty_per_db,
+            "objective": opt.objective,
+        },
+    }
+
+
+def optimization_from_dict(data: dict) -> Optimization:
+    search = data["search"]
+    return Optimization(
+        input=spec_from_dict(data["input"]),
+        spacing_grid_wl=tuple(search["spacing_grid_wl"]),
+        droop_grid_deg=tuple(search["droop_grid_deg"]),
+        ar_target_db=float(search["ar_target_db"]),
+        ar_penalty_per_db=float(search["ar_penalty_per_db"]),
+        objective=search["objective"],
+    )
+
+
 def spec_to_dict(spec: DesignSpec) -> dict:
-    """Serialize a spec; label is included only when set."""
+    """Serialize a spec; label and optimization are included only when set."""
     data = {
         "freq_mhz": spec.freq_mhz,
         "conductor": conductor_to_dict(spec.conductor),
@@ -71,12 +96,16 @@ def spec_to_dict(spec: DesignSpec) -> dict:
         if field == "label" and value is None:
             continue
         data[field] = value
+    if spec.optimization is not None:
+        data["optimization"] = optimization_to_dict(spec.optimization)
     return data
 
 
 def spec_from_dict(data: dict) -> DesignSpec:
     """Build a spec from a dict; missing fields use the DesignSpec defaults."""
     fields = {field: data[field] for field in _OPTIONAL_FIELDS if field in data}
+    if "optimization" in data:
+        fields["optimization"] = optimization_from_dict(data["optimization"])
     return DesignSpec(
         freq_mhz=float(data["freq_mhz"]),
         conductor=conductor_from_dict(data["conductor"]),

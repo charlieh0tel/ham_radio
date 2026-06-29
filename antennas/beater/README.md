@@ -16,12 +16,15 @@ resonance and the 90 degree phasing, finishing with a physical cut sheet.
 ## Usage
 
 A design is a JSON spec, read from a file argument or stdin. Only `freq_mhz`
-and `conductor` are required; every other field defaults.
+and `conductor` are required; every other field defaults. The pipeline is
+**spec -> optimized spec (optional) -> derived artifacts** (cut sheet, NEC deck,
+plots), so every artifact reflects exactly the spec it was handed.
 
 ```
 uv run beater designs/satellite_pair.json --sweep
 echo '{"freq_mhz":145.9,"conductor":{"kind":"round","diameter_mm":5}}' | uv run beater -
-uv run beater my_design.json --optimize-reflector --deck my_design.nec
+# optimize the reflector, then bake the optimized spec to reuse it later
+uv run beater my_design.json --optimize-reflector --emit-spec my_design.optimized.json
 ```
 
 ### Spec (JSON)
@@ -57,16 +60,23 @@ uv run beater my_design.json --optimize-reflector --deck my_design.nec
 - `coax_vf` / `match_vf`: phasing-line and matching-section velocity factors.
 - `segments`: polygon sides per loop (default 36).
 - `label`: optional name for output; defaults to none.
+- `optimization`: output-only provenance, written by `--optimize-reflector` (the
+  input spec and the search parameters). You do not author it; it round-trips so
+  an optimized spec records where it came from.
 
 A JSON document may hold one spec object or a list of them; a list runs each
 (and overlays them in plots).
 
 ### Actions
 
+- `--optimize-reflector` grid-search reflector spacing and droop for the lowest
+  post-match VSWR (axial ratio held within budget). A spec -> spec transform:
+  the chosen spacing/droop replace the input's, and an `optimization` block
+  records the input spec and search parameters.
+- `--emit-spec <path>` write the resolved (optionally optimized) spec JSON to a
+  file, or `-` for stdout -- this is how you bake an optimized design.
 - `--sweep` sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio
   bandwidths of the matched antenna.
-- `--optimize-reflector` grid-search reflector spacing and droop for the lowest
-  post-match VSWR (keeping axial ratio within budget).
 - `--deck <path>` write the tuned NEC deck (single-design specs only).
 - `--plot <path>` write a performance-plot page (HTML) for the design(s);
   multiple designs are overlaid.
