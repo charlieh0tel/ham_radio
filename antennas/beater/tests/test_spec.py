@@ -33,6 +33,7 @@ def test_spec_round_trip_with_optimization():
         ar_target_db=3.0,
         ar_penalty_per_db=1.0,
         objective="minimize post-match VSWR",
+        elapsed_s=12.5,
     )
     spec = _spec(
         reflector="radials",

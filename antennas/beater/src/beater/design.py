@@ -11,6 +11,7 @@ sources; the scheme only changes how the two sources relate:
 
 import cmath
 import math
+import time
 from dataclasses import dataclass, replace
 
 from .conductor import Conductor
@@ -75,7 +76,7 @@ NULL_GAIN_DB = -100.0
 
 # Reflector optimization: search grids and the axial-ratio budget.
 SPACING_GRID_WL = (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
-DROOP_GRID_DEG = (0.0, 15.0, 30.0, 45.0)
+DROOP_GRID_DEG = (0.0, 15.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0)
 AR_TARGET_DB = 3.0
 # Cost penalty per dB of axial ratio above AR_TARGET_DB.
 AR_PENALTY_PER_DB = 1.0
@@ -140,6 +141,7 @@ class Optimization:
         ar_target_db: axial-ratio budget the search held to.
         ar_penalty_per_db: cost penalty per dB of axial ratio above the budget.
         objective: short description of what was minimized.
+        elapsed_s: wall-clock seconds the grid search took.
     """
 
     input: DesignSpec
@@ -148,6 +150,7 @@ class Optimization:
     ar_target_db: float
     ar_penalty_per_db: float
     objective: str
+    elapsed_s: float
 
 
 @dataclass(frozen=True)
@@ -515,6 +518,7 @@ def optimize_reflector(spec: DesignSpec) -> DesignSpec:
     droops = DROOP_GRID_DEG if spec.reflector == REFLECTOR_RADIALS else (0.0,)
     best_spec = spec
     best_cost = math.inf
+    start = time.perf_counter()
     for spacing in SPACING_GRID_WL:
         for droop in droops:
             candidate = replace(
@@ -534,6 +538,7 @@ def optimize_reflector(spec: DesignSpec) -> DesignSpec:
         ar_target_db=AR_TARGET_DB,
         ar_penalty_per_db=AR_PENALTY_PER_DB,
         objective="minimize post-match VSWR, axial ratio penalized above target",
+        elapsed_s=round(time.perf_counter() - start, 3),
     )
     return replace(best_spec, optimization=provenance)
 

@@ -14,7 +14,7 @@
     "segments": 36,
     "radial_count": 8,
     "radial_length_wl": 0.27,
-    "radial_droop_deg": 45.0,
+    "radial_droop_deg": 40.0,
     "label": "2 m",
     "optimization": {
       "input": {
@@ -35,6 +35,7 @@
         "radial_droop_deg": 0.0,
         "label": "2 m"
       },
+      "elapsed_s": 11.295,
       "search": {
         "spacing_grid_wl": [
           0.15,
@@ -47,8 +48,12 @@
         "droop_grid_deg": [
           0.0,
           15.0,
+          25.0,
           30.0,
-          45.0
+          35.0,
+          40.0,
+          45.0,
+          50.0
         ],
         "ar_target_db": 3.0,
         "ar_penalty_per_db": 1.0,
@@ -71,7 +76,7 @@
     "segments": 36,
     "radial_count": 8,
     "radial_length_wl": 0.27,
-    "radial_droop_deg": 45.0,
+    "radial_droop_deg": 50.0,
     "label": "70 cm",
     "optimization": {
       "input": {
@@ -92,6 +97,7 @@
         "radial_droop_deg": 0.0,
         "label": "70 cm"
       },
+      "elapsed_s": 13.015,
       "search": {
         "spacing_grid_wl": [
           0.15,
@@ -104,8 +110,12 @@
         "droop_grid_deg": [
           0.0,
           15.0,
+          25.0,
           30.0,
-          45.0
+          35.0,
+          40.0,
+          45.0,
+          50.0
         ],
         "ar_target_db": 3.0,
         "ar_penalty_per_db": 1.0,

@@ -63,6 +63,7 @@ def conductor_from_dict(data: dict) -> Conductor:
 def optimization_to_dict(opt: Optimization) -> dict:
     return {
         "input": spec_to_dict(opt.input),
+        "elapsed_s": opt.elapsed_s,
         "search": {
             "spacing_grid_wl": list(opt.spacing_grid_wl),
             "droop_grid_deg": list(opt.droop_grid_deg),
@@ -82,6 +83,7 @@ def optimization_from_dict(data: dict) -> Optimization:
         ar_target_db=float(search["ar_target_db"]),
         ar_penalty_per_db=float(search["ar_penalty_per_db"]),
         objective=search["objective"],
+        elapsed_s=float(data["elapsed_s"]),
     )
 
 
