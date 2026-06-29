@@ -90,7 +90,46 @@
   &quot;radial_count&quot;: 8,
   &quot;radial_length_wl&quot;: 0.27,
   &quot;radial_droop_deg&quot;: 45.0,
-  &quot;label&quot;: &quot;2 m&quot;
+  &quot;label&quot;: &quot;2 m&quot;,
+  &quot;optimization&quot;: {
+    &quot;input&quot;: {
+      &quot;freq_mhz&quot;: 145.9,
+      &quot;conductor&quot;: {
+        &quot;kind&quot;: &quot;round&quot;,
+        &quot;diameter_mm&quot;: 5.0
+      },
+      &quot;phasing&quot;: &quot;self&quot;,
+      &quot;sense&quot;: &quot;rhcp&quot;,
+      &quot;reflector&quot;: &quot;radials&quot;,
+      &quot;reflector_spacing_wl&quot;: 0.25,
+      &quot;coax_vf&quot;: 0.66,
+      &quot;match_vf&quot;: 0.66,
+      &quot;segments&quot;: 36,
+      &quot;radial_count&quot;: 8,
+      &quot;radial_length_wl&quot;: 0.27,
+      &quot;radial_droop_deg&quot;: 0.0,
+      &quot;label&quot;: &quot;2 m&quot;
+    },
+    &quot;search&quot;: {
+      &quot;spacing_grid_wl&quot;: [
+        0.15,
+        0.2,
+        0.25,
+        0.3,
+        0.35,
+        0.4
+      ],
+      &quot;droop_grid_deg&quot;: [
+        0.0,
+        15.0,
+        30.0,
+        45.0
+      ],
+      &quot;ar_target_db&quot;: 3.0,
+      &quot;ar_penalty_per_db&quot;: 1.0,
+      &quot;objective&quot;: &quot;minimize post-match VSWR, axial ratio penalized above target&quot;
+    }
+  }
 }</pre></div><div><h3>Cut list</h3><pre>Eggbeater cut sheet: 2 m
 ========================================
 Frequency           : 145.9 MHz
@@ -127,7 +166,46 @@ Match to 50 ohm:
   &quot;radial_count&quot;: 8,
   &quot;radial_length_wl&quot;: 0.27,
   &quot;radial_droop_deg&quot;: 45.0,
-  &quot;label&quot;: &quot;70 cm&quot;
+  &quot;label&quot;: &quot;70 cm&quot;,
+  &quot;optimization&quot;: {
+    &quot;input&quot;: {
+      &quot;freq_mhz&quot;: 436.0,
+      &quot;conductor&quot;: {
+        &quot;kind&quot;: &quot;round&quot;,
+        &quot;diameter_mm&quot;: 3.0
+      },
+      &quot;phasing&quot;: &quot;self&quot;,
+      &quot;sense&quot;: &quot;rhcp&quot;,
+      &quot;reflector&quot;: &quot;radials&quot;,
+      &quot;reflector_spacing_wl&quot;: 0.25,
+      &quot;coax_vf&quot;: 0.66,
+      &quot;match_vf&quot;: 0.66,
+      &quot;segments&quot;: 36,
+      &quot;radial_count&quot;: 8,
+      &quot;radial_length_wl&quot;: 0.27,
+      &quot;radial_droop_deg&quot;: 0.0,
+      &quot;label&quot;: &quot;70 cm&quot;
+    },
+    &quot;search&quot;: {
+      &quot;spacing_grid_wl&quot;: [
+        0.15,
+        0.2,
+        0.25,
+        0.3,
+        0.35,
+        0.4
+      ],
+      &quot;droop_grid_deg&quot;: [
+        0.0,
+        15.0,
+        30.0,
+        45.0
+      ],
+      &quot;ar_target_db&quot;: 3.0,
+      &quot;ar_penalty_per_db&quot;: 1.0,
+      &quot;objective&quot;: &quot;minimize post-match VSWR, axial ratio penalized above target&quot;
+    }
+  }
 }</pre></div><div><h3>Cut list</h3><pre>Eggbeater cut sheet: 70 cm
 ========================================
 Frequency           : 436 MHz

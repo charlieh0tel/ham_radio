@@ -70,10 +70,16 @@ axial-ratio band as the operational coverage.
 
 ## Reproduce
 
-This design is `satellite_pair.json` in this directory (both bands, with the
-optimized reflector baked in).
+Lineage: `satellite_pair.input.json` is the authored intent (bands, conductor,
+RHCP, radials; reflector spacing/droop left at defaults). Optimizing it produces
+`satellite_pair.json`, the optimized spec carrying its provenance (the input
+spec and the search parameters). Artifacts derive from the optimized spec.
 
 ```
+# authored input -> optimized spec (with provenance baked in)
+uv run beater designs/satellite_pair.input.json \
+    --optimize-reflector --emit-spec designs/satellite_pair.json
+
 # cut sheets and bandwidths for both bands
 uv run beater designs/satellite_pair.json --sweep
 
