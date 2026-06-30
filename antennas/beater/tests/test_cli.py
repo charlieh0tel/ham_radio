@@ -91,6 +91,15 @@ def test_line_phasing_resonates():
 
 
 @needs_nec2c
+def test_coverage_gain_reported():
+    from beater.report import format_cut_sheet
+
+    result = design(replace(_spec(PHASING_SELF), reflector="ground"))
+    assert math.isfinite(result.coverage_gain_db)
+    assert "coverage gain" in format_cut_sheet(result)
+
+
+@needs_nec2c
 def test_radial_reflector_runs():
     spec = replace(_spec(PHASING_SELF), reflector="radials")
     result = design(spec)

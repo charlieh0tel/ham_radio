@@ -71,6 +71,10 @@ DELTA_TOLERANCE = 1e-3
 # theta <= BORESIGHT_THETA_DEG from zenith (the region that matters for the
 # satellite use case), rather than at the raw gain peak.
 BORESIGHT_THETA_DEG = 30.0
+# Coverage gain is the worst-case gain over the operational cone,
+# theta <= COVERAGE_THETA_DEG from zenith (elevation >= 30 deg): the lowest gain
+# a pass sees anywhere in the high-elevation sky the reflector is tuned for.
+COVERAGE_THETA_DEG = 60.0
 # Total gains at or below this level mark pattern nulls and are ignored.
 NULL_GAIN_DB = -100.0
 
@@ -168,6 +172,8 @@ class DesignResult:
         ar_boresight_db: mean axial ratio over the high-elevation coverage cone
             (theta <= BORESIGHT_THETA_DEG), dB; 0 is perfect circular.
         ar_peak_db: axial ratio at the pattern peak (dB).
+        coverage_gain_db: worst-case total gain over the coverage cone
+            (theta <= COVERAGE_THETA_DEG), dBi.
         deck: the tuned NEC deck text.
     """
 
@@ -179,6 +185,7 @@ class DesignResult:
     sense: str
     ar_boresight_db: float
     ar_peak_db: float
+    coverage_gain_db: float
     deck: str
 
 
@@ -357,6 +364,22 @@ def _boresight_ar_db(result: NecResult) -> float:
     return sum(_axial_ratio_db(p.axial_ratio) for p in cone) / len(cone)
 
 
+def _coverage_gain_db(result: NecResult) -> float:
+    """Worst-case total gain (dBi) over the coverage cone.
+
+    The minimum over theta <= COVERAGE_THETA_DEG is the lowest gain a pass sees
+    in the high-elevation sky, so it bounds worst-case link margin there.
+    """
+    cone = [
+        p.total_gain_db
+        for p in result.pattern
+        if p.theta_deg <= COVERAGE_THETA_DEG and p.total_gain_db > NULL_GAIN_DB
+    ]
+    if not cone:
+        return -math.inf
+    return min(cone)
+
+
 def _self_phase_delta(spec: DesignSpec, base_factor: float) -> float:
     """Detune fraction minimizing boresight axial ratio (golden-section search)."""
 
@@ -498,6 +521,7 @@ def design(spec: DesignSpec) -> DesignResult:
         sense=sense,
         ar_boresight_db=ar_boresight,
         ar_peak_db=ar_peak,
+        coverage_gain_db=_coverage_gain_db(result),
         deck=deck,
     )
 

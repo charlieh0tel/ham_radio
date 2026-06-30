@@ -68,10 +68,10 @@
     <caption>Figures of merit</caption>
     <thead><tr>
       <th>Design</th><th>f0 (MHz)</th><th>feed Z (&#8486;)</th><th>sense</th>
-      <th>VSWR (matched)</th><th>AR cone (dB)</th>
+      <th>VSWR (matched)</th><th>AR cone (dB)</th><th>cov gain (dBi)</th>
       <th>2:1 VSWR band</th><th>3 dB AR band</th>
     </tr></thead>
-    <tbody><tr><td><span class="chip" style="background:#0E7C86"></span>2 m</td><td>145.9</td><td>113 -16j</td><td>RHCP</td><td>1.00</td><td>1.30</td><td>132.9&ndash;160.5 MHz</td><td>141.8&ndash;148.6 MHz</td></tr><tr><td><span class="chip" style="background:#C8881C"></span>70 cm</td><td>436.0</td><td>112 -23j</td><td>RHCP</td><td>1.01</td><td>1.62</td><td>392.4&ndash;479.6 MHz</td><td>419.4&ndash;443.7 MHz</td></tr></tbody>
+    <tbody><tr><td><span class="chip" style="background:#0E7C86"></span>2 m</td><td>145.9</td><td>113 -16j</td><td>RHCP</td><td>1.00</td><td>1.30</td><td>0.3</td><td>132.9&ndash;160.5 MHz</td><td>141.8&ndash;148.6 MHz</td></tr><tr><td><span class="chip" style="background:#C8881C"></span>70 cm</td><td>436.0</td><td>112 -23j</td><td>RHCP</td><td>1.01</td><td>1.62</td><td>0.1</td><td>392.4&ndash;479.6 MHz</td><td>419.4&ndash;443.7 MHz</td></tr></tbody>
   </table>
   </div>
   <ul class="defs">
@@ -81,6 +81,8 @@
       match network</li>
     <li><b>AR cone</b> &mdash; mean axial ratio within 30 deg of zenith
       (0 dB = perfect circular)</li>
+    <li><b>cov gain</b> &mdash; worst-case gain within 60 deg of zenith
+      (elevation &ge; 30 deg)</li>
     <li><b>2:1 VSWR band</b> &mdash; span where matched VSWR stays under 2</li>
     <li><b>3 dB AR band</b> &mdash; span where axial ratio stays under 3 dB
       (usable CP coverage)</li>

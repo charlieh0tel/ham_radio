@@ -6,6 +6,7 @@ Shared by the CLI and the plot page so both render identical numbers.
 from .design import (
     AR_TARGET_DB,
     BORESIGHT_THETA_DEG,
+    COVERAGE_THETA_DEG,
     MATCH_REACTANCE_WARN_OHMS,
     NEC_SENSE_TO_HAND,
     PHASING_SELF,
@@ -132,6 +133,8 @@ def _performance_lines(result: DesignResult) -> list[str]:
         f"  axial ratio (cone): {result.ar_boresight_db:.2f} dB "
         f"(<= {int(BORESIGHT_THETA_DEG)} deg from zenith)",
         f"  axial ratio (peak): {result.ar_peak_db:.2f} dB",
+        f"  coverage gain     : {result.coverage_gain_db:.2f} dBi "
+        f"(worst case <= {int(COVERAGE_THETA_DEG)} deg from zenith)",
     ]
 
 

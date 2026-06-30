@@ -31,9 +31,8 @@ decks, design doc, tests passing).
 
 ## Figures of merit
 
-- [ ] Gain-coverage FoM. We report AR and VSWR but not realized gain over
-      the coverage cone (e.g. minimum gain at theta=60 deg), which is what
-      predicts pass performance.
+- [x] Gain-coverage FoM. Worst-case total gain over the coverage cone
+      (theta <= 60 deg), reported in the cut sheet and the FoM table.
 
 ## Geometry
 

@@ -20,7 +20,9 @@ Both bands meet the objective. The reflector optimizer chose 0.20 wl spacing
 and a droop of 40 deg (2 m) / 50 deg (70 cm), which pulls the feedpoint
 resistance to ~112 ohm: the sweet spot for a 75 ohm quarter-wave transformer,
 giving a near-perfect post-match VSWR (~1.01). Axial ratio stays near
-1.3-1.6 dB at band center.
+1.3-1.6 dB at band center. Coverage gain (the worst-case gain anywhere within
+60 deg of zenith) stays near 0 dBi, so the high-elevation sky is covered with no
+deep holes.
 
 | Quantity              | 2 m (145.9 MHz) | 70 cm (436 MHz) |
 | --------------------- | --------------- | --------------- |
@@ -37,6 +39,7 @@ giving a near-perfect post-match VSWR (~1.01). Axial ratio stays near
 | Series match element  | 18 nH inductor  | 9 nH inductor   |
 | 1/4-wave transformer  | 75 ohm, 339 mm  | 75 ohm, 113.5 mm|
 | Axial ratio (cone)    | 1.30 dB         | 1.62 dB         |
+| Coverage gain (cone)  | 0.34 dBi        | 0.07 dBi        |
 | Sense                 | RHCP            | RHCP            |
 
 ### Bandwidth

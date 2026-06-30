@@ -78,6 +78,7 @@ def _collect(result: DesignResult) -> dict:
         "sense": (NEC_SENSE_TO_HAND.get(result.sense) or result.sense).upper(),
         "vswr_post": post_match_vswr(result.z_in),
         "ar_cone": result.ar_boresight_db,
+        "cov_gain": result.coverage_gain_db,
         "vswr_band": bandwidth_within(vswr_pairs, VSWR_LIMIT),
         "ar_band": bandwidth_within(ar_pairs, AR_TARGET_DB),
         "vswr_freq": [
@@ -306,6 +307,7 @@ def render_artifact(results: list[DesignResult]) -> str:
         f"<td>{d['sense']}</td>"
         f"<td>{d['vswr_post']:.2f}</td>"
         f"<td>{d['ar_cone']:.2f}</td>"
+        f"<td>{d['cov_gain']:.1f}</td>"
         f"<td>{_band_text(d['vswr_band'])}</td>"
         f"<td>{_band_text(d['ar_band'])}</td></tr>"
         for d in data
@@ -386,7 +388,7 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
     <caption>Figures of merit</caption>
     <thead><tr>
       <th>Design</th><th>f0 (MHz)</th><th>feed Z (&#8486;)</th><th>sense</th>
-      <th>VSWR (matched)</th><th>AR cone (dB)</th>
+      <th>VSWR (matched)</th><th>AR cone (dB)</th><th>cov gain (dBi)</th>
       <th>2:1 VSWR band</th><th>3 dB AR band</th>
     </tr></thead>
     <tbody>{rows}</tbody>
@@ -399,6 +401,8 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
       match network</li>
     <li><b>AR cone</b> &mdash; mean axial ratio within 30 deg of zenith
       (0 dB = perfect circular)</li>
+    <li><b>cov gain</b> &mdash; worst-case gain within 60 deg of zenith
+      (elevation &ge; 30 deg)</li>
     <li><b>2:1 VSWR band</b> &mdash; span where matched VSWR stays under 2</li>
     <li><b>3 dB AR band</b> &mdash; span where axial ratio stays under 3 dB
       (usable CP coverage)</li>
