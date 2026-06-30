@@ -10,11 +10,13 @@ only when a frequency sweep is requested):
 
     spec        the input spec (see spec.spec_to_dict).
     build       buildable cut list:
-                  freq_mhz, wavelength_mm, phasing, reflector;
+                  freq_mhz, wavelength_mm, phasing, loop_shape, reflector;
+                  corner_radius_mm present for the squircle shape;
                   loop_center_height_wl/_mm and radials present with a reflector;
                   self phasing: detune_percent, large_loop, small_loop;
                   line phasing: loop, phasing_line_mm;
-                  each loop dict is {perimeter_mm, diameter_mm};
+                  each loop dict is {perimeter_mm, width_mm} (width is the
+                  across dimension: diameter, side, or squircle width);
                   match: series_element (null or {kind, value_nh|value_pf}),
                          transformer_z0_ohm, transformer_standard_coax_ohm,
                          transformer_length_mm.
@@ -45,7 +47,7 @@ from .design import (
     series_match_element,
     vswr,
 )
-from .geometry import loop_radius_m, wavelength_m
+from .geometry import SHAPE_SQUIRCLE, loop_extent_m, wavelength_m
 from .spec import spec_to_dict
 
 MM_PER_M = 1000.0
@@ -55,14 +57,10 @@ NH_PER_HENRY = 1.0e9
 QUARTER_WAVE = 0.25
 
 
-def loop_diameter_m(perimeter_m: float) -> float:
-    return 2.0 * loop_radius_m(perimeter_m)
-
-
-def _loop_dims(perimeter_m: float) -> dict:
+def _loop_dims(perimeter_m: float, shape: str, corner_radius_m: float) -> dict:
     return {
         "perimeter_mm": perimeter_m * MM_PER_M,
-        "diameter_mm": loop_diameter_m(perimeter_m) * MM_PER_M,
+        "width_mm": loop_extent_m(perimeter_m, shape, corner_radius_m) * MM_PER_M,
     }
 
 
@@ -93,6 +91,7 @@ def _build_dict(result: DesignResult) -> dict:
         "freq_mhz": spec.freq_mhz,
         "wavelength_mm": wavelength * MM_PER_M,
         "phasing": spec.phasing,
+        "loop_shape": spec.loop_shape,
         "reflector": spec.reflector,
     }
     if spec.reflector != REFLECTOR_NONE:
@@ -105,13 +104,25 @@ def _build_dict(result: DesignResult) -> dict:
             "length_mm": spec.radial_length_wl * wavelength * MM_PER_M,
             "droop_deg": spec.radial_droop_deg,
         }
+    shape = spec.loop_shape
+    corner_radius_m = (
+        spec.corner_radius_wl * wavelength if shape == SHAPE_SQUIRCLE else 0.0
+    )
+    if shape == SHAPE_SQUIRCLE:
+        build["corner_radius_mm"] = corner_radius_m * MM_PER_M
     if spec.phasing == PHASING_SELF:
         base = result.base_factor * wavelength
         build["detune_percent"] = result.delta * 100.0
-        build["large_loop"] = _loop_dims(base * (1.0 + result.delta))
-        build["small_loop"] = _loop_dims(base * (1.0 - result.delta))
+        build["large_loop"] = _loop_dims(
+            base * (1.0 + result.delta), shape, corner_radius_m
+        )
+        build["small_loop"] = _loop_dims(
+            base * (1.0 - result.delta), shape, corner_radius_m
+        )
     else:
-        build["loop"] = _loop_dims(result.base_factor * wavelength)
+        build["loop"] = _loop_dims(
+            result.base_factor * wavelength, shape, corner_radius_m
+        )
         build["phasing_line_mm"] = QUARTER_WAVE * wavelength * spec.coax_vf * MM_PER_M
     build["match"] = _match_dict(result, wavelength)
     return build

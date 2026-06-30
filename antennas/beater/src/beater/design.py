@@ -17,6 +17,7 @@ from dataclasses import dataclass, replace
 from .conductor import Conductor
 from .geometry import (
     DEFAULT_SEGMENTS,
+    SHAPE_CIRCLE,
     loop_radius_m,
     make_eggbeater,
     make_radials,
@@ -115,6 +116,9 @@ class DesignSpec:
         coax_vf: velocity factor of the phasing-line coax (line scheme).
         match_vf: velocity factor of the matching-section coax.
         sense: desired polarization, SENSE_RHCP or SENSE_LHCP.
+        loop_shape: loop outline, SHAPE_CIRCLE, SHAPE_SQUARE, or SHAPE_SQUIRCLE.
+        corner_radius_wl: rounded-corner radius for the squircle shape, in
+            wavelengths (ignored for circle and square).
         segments: polygon sides per loop.
         radial_count: number of reflector radials (radials scheme).
         radial_length_wl: length of each radial, wavelengths.
@@ -137,6 +141,8 @@ class DesignSpec:
     coax_vf: float = 0.66
     match_vf: float = 0.66
     sense: str = SENSE_RHCP
+    loop_shape: str = SHAPE_CIRCLE
+    corner_radius_wl: float = 0.05
     segments: int = DEFAULT_SEGMENTS
     radial_count: int = 8
     radial_length_wl: float = 0.27
@@ -288,6 +294,8 @@ def analyze(
         center_z,
         spec.conductor.equivalent_radius_m,
         spec.segments,
+        spec.loop_shape,
+        spec.corner_radius_wl * wavelength,
     )
     sources = _sources(spec, egg, phase_b_deg)
     wires = egg.wires + _reflector_wires(spec, wavelength)

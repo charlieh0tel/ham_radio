@@ -19,6 +19,20 @@ def test_spec_round_trip_round_conductor():
     assert spec_from_dict(spec_to_dict(spec)) == spec
 
 
+def test_spec_round_trip_square_loop():
+    spec = _spec(loop_shape="square")
+    assert spec_to_dict(spec)["loop_shape"] == "square"
+    assert spec_from_dict(spec_to_dict(spec)) == spec
+
+
+def test_spec_round_trip_squircle_loop():
+    spec = _spec(loop_shape="squircle", corner_radius_wl=0.04)
+    data = spec_to_dict(spec)
+    assert data["loop_shape"] == "squircle"
+    assert data["corner_radius_wl"] == 0.04
+    assert spec_from_dict(data) == spec
+
+
 def test_spec_round_trip_bar_conductor():
     spec = _spec(conductor=bar_conductor(12.7, 3.2))
     assert spec_from_dict(spec_to_dict(spec)) == spec

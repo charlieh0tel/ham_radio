@@ -100,6 +100,14 @@ def test_coverage_gain_reported():
 
 
 @needs_nec2c
+def test_square_loop_design_runs():
+    # 16 segments divides by 4, so the square's corners land on vertices.
+    result = design(replace(_spec(PHASING_SELF), loop_shape="square"))
+    assert math.isfinite(result.ar_boresight_db)
+    assert result.deck.count("\nGW ") == 2 * result.spec.segments
+
+
+@needs_nec2c
 def test_radial_reflector_runs():
     spec = replace(_spec(PHASING_SELF), reflector="radials")
     result = design(spec)

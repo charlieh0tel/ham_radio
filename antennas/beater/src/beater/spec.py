@@ -25,6 +25,8 @@ from .design import DesignSpec, Optimization
 _OPTIONAL_FIELDS = (
     "phasing",
     "sense",
+    "loop_shape",
+    "corner_radius_wl",
     "reflector",
     "reflector_spacing_wl",
     "coax_vf",

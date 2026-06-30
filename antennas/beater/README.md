@@ -53,12 +53,20 @@ uv run beater my_design.json --optimize-reflector --emit-spec my_design.optimize
 - `phasing`: `self` (detuned big/small loops, no harness) or `line` (equal
   loops plus a quarter-wave coax phasing line). Default `self`.
 - `sense`: `rhcp` or `lhcp` (default `rhcp`); verified against the NEC pattern.
+- `loop_shape`: `circle` (default), `square`, or `squircle` (a square with
+  radiused corners: four straight sides joined by quarter-circle arcs). The
+  loop perimeter is held fixed across shapes; the cut sheet reports the across
+  dimension as diameter (circle) or side/width (square, squircle) to match.
+- `corner_radius_wl`: squircle corner radius in wavelengths (default 0.05;
+  ignored for circle and square). Must be below the equivalent circle radius
+  (perimeter / 2*pi), past which no straight side remains.
 - `reflector`: `none` (free space), `ground` (perfect ground plane), or
   `radials` (finite radial-wire reflector, ON6WG/M2 style).
 - `reflector_spacing_wl`: loop-center height above the reflector (default 0.25).
 - `radial_*`: count (8), length in wavelengths (0.27), droop in degrees (0).
 - `coax_vf` / `match_vf`: phasing-line and matching-section velocity factors.
-- `segments`: polygon sides per loop (default 36).
+- `segments`: polygon sides per loop (default 36). Non-circular shapes resample
+  to equal-length sides; a multiple of 4 lands a square's corners on vertices.
 - `label`: optional name for output; defaults to none.
 - `notes`: optional free-text design intent; carried through optimization.
 - `optimization`: output-only provenance, written by `--optimize-reflector` (the

@@ -15,6 +15,9 @@ from .design import (
 )
 from .result import result_to_dict
 
+# Shape-appropriate label for the loop's across dimension (width_mm).
+_WIDTH_TERM = {"circle": "dia", "square": "side", "squircle": "width"}
+
 
 def _format_sense(result: DesignResult) -> str:
     """Achieved polarization sense, flagging any mismatch with the request."""
@@ -39,8 +42,11 @@ def _header_lines(result: DesignResult, build: dict) -> list[str]:
         f"Conductor           : {spec.conductor.description}",
         f"  equivalent radius : {spec.conductor.equivalent_radius_mm:.4g} mm",
         f"Phasing             : {build['phasing']}",
+        f"Loop shape          : {build['loop_shape']}",
         f"Reflector           : {build['reflector']}",
     ]
+    if "corner_radius_mm" in build:
+        lines.append(f"  corner radius     : {build['corner_radius_mm']:.1f} mm")
     if "loop_center_height_mm" in build:
         lines.append(
             f"  loop-center height: {build['loop_center_height_wl']:.3g} wl "
@@ -56,20 +62,21 @@ def _header_lines(result: DesignResult, build: dict) -> list[str]:
 
 
 def _geometry_lines(result: DesignResult, build: dict) -> list[str]:
+    term = _WIDTH_TERM.get(build["loop_shape"], "width")
     if "large_loop" in build:
         large, small = build["large_loop"], build["small_loop"]
         return [
             f"Detune (delta)      : {build['detune_percent']:.2f} %",
             f"Large loop          : {large['perimeter_mm']:.1f} mm perimeter, "
-            f"{large['diameter_mm']:.1f} mm dia",
+            f"{large['width_mm']:.1f} mm {term}",
             f"Small loop          : {small['perimeter_mm']:.1f} mm perimeter, "
-            f"{small['diameter_mm']:.1f} mm dia",
+            f"{small['width_mm']:.1f} mm {term}",
             "Feed                : loops paralleled at a common feedpoint",
         ]
     loop = build["loop"]
     return [
         f"Both loops          : {loop['perimeter_mm']:.1f} mm perimeter, "
-        f"{loop['diameter_mm']:.1f} mm dia",
+        f"{loop['width_mm']:.1f} mm {term}",
         f"Phasing line        : {build['phasing_line_mm']:.1f} mm (1/4 wave, "
         f"VF {result.spec.coax_vf:g})",
         "Feed                : tee at junction; line in series with loop B",
