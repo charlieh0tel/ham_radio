@@ -18,6 +18,7 @@ from .conductor import Conductor
 from .geometry import (
     DEFAULT_SEGMENTS,
     SHAPE_CIRCLE,
+    Wire,
     loop_radius_m,
     make_eggbeater,
     make_radials,
@@ -308,6 +309,39 @@ def analyze(
         grid=grid if grid is not None else DEFAULT_GRID,
     )
     return run_nec(deck, spec.nec2c), deck
+
+
+def tuned_geometry(
+    result: DesignResult,
+) -> tuple[tuple[Wire, ...], tuple[tuple[float, float, float], ...]]:
+    """Reconstruct the tuned wire model and the two loop feed points.
+
+    Built from the same geometry calls as analyze(), so a 3-D view matches the
+    deck without parsing it. Returns the loop and reflector wires and the feed
+    points (midpoint of each loop's bottom feed wire), in metres.
+    """
+    spec = result.spec
+    wavelength = wavelength_m(spec.freq_mhz)
+    factor_a, factor_b, _ = _operating_point(
+        result.base_factor, result.delta, spec.phasing, flip=False
+    )
+    perimeter_a = factor_a * wavelength
+    center_z = _center_z_m(spec, wavelength, perimeter_a)
+    egg = make_eggbeater(
+        perimeter_a,
+        factor_b * wavelength,
+        center_z,
+        spec.conductor.equivalent_radius_m,
+        spec.segments,
+        spec.loop_shape,
+        spec.corner_radius_wl * wavelength,
+    )
+    wires = egg.wires + _reflector_wires(spec, wavelength)
+    feeds = tuple(
+        ((w.x1 + w.x2) / 2.0, (w.y1 + w.y2) / 2.0, (w.z1 + w.z2) / 2.0)
+        for w in (egg.loop_a.wires[0], egg.loop_b.wires[0])
+    )
+    return wires, feeds
 
 
 def _secant(func, x0: float, x1: float, bounds, tolerance: float) -> float:

@@ -94,8 +94,10 @@ A JSON document may hold one spec object or a list of them; a list runs each
 - `--sweep` sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio
   bandwidths of the matched antenna.
 - `--deck <path>` write the tuned NEC deck (single-design specs only).
-- `--plot <path>` write a performance-plot page (HTML) for the design(s);
-  multiple designs are overlaid.
+- `--plot <path>` write a self-contained performance-plot page (HTML) for the
+  design(s): VSWR/axial-ratio/gain charts (overlaid across designs), per-design
+  azimuth-elevation gain and axial-ratio sky maps, and an interactive 3-D wire
+  model (drag to orbit, scroll to zoom; no external dependencies).
 - `--nec2c <path>` nec2c executable (default `nec2c`).
 
 ## How it works

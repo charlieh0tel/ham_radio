@@ -44,8 +44,14 @@ def test_plot_artifact_structure():
 
     result = design(replace(_spec(PHASING_SELF), reflector="ground", label="2 m"))
     page = render_artifact([result])
-    assert page.count("<svg") == 4
-    assert page.count("<polyline") == 4  # one trace per chart for one design
+    # Four line charts plus the gain and axial-ratio az-el maps for one design.
+    assert page.count("<svg") == 6
+    assert page.count("<polyline") == 4  # one trace per line chart for one design
+    # One interactive geometry canvas (id geom0) with its inline data script and
+    # the orbit viewer inlined once.
+    assert page.count('id="geom0"') == 1
+    assert page.count('id="geom0-data"') == 1
+    assert "querySelectorAll" in page
     assert "2 m" in page
     assert "<title>" in page
 

@@ -5,6 +5,9 @@ Driven by DesignResult objects; overlays multiple designs per chart.
 
 import html
 import json
+import math
+from functools import cache
+from importlib.resources import files
 
 from .design import (
     AR_TARGET_DB,
@@ -17,7 +20,9 @@ from .design import (
     bandwidth_within,
     frequency_sweep,
     post_match_vswr,
+    tuned_geometry,
 )
+from .geometry import LOOP_B_TAG_BASE, RADIAL_TAG_BASE
 from .nec import RadiationGrid
 from .report import cut_sheet_build
 from .spec import spec_to_dict
@@ -30,12 +35,28 @@ AXIS_COLOR = "#9FB0AC"
 
 # Fine principal-plane (phi = 0) grid for elevation cuts, theta 0..90 deg.
 FINE_GRID = RadiationGrid(ntheta=46, nphi=1, theta0=0.0, phi0=0.0, dtheta=2.0, dphi=0.0)
+# Full upper hemisphere for the az-el maps: theta 0..90 by 10, phi 0..360 by 15.
+HEMI_GRID = RadiationGrid(
+    ntheta=10, nphi=25, theta0=0.0, phi0=0.0, dtheta=10.0, dphi=15.0
+)
+HEMI_THETAS = tuple(range(0, 100, 10))
+HEMI_PHIS = tuple(range(0, 360, 15))
 SWEEP_SPAN_FRACTION = 0.10
 SWEEP_POINTS = 61
 # Display clamps so near-linear horizon spikes stay on-axis.
 AR_CLAMP_DB = 10.0
 VSWR_CLAMP = 3.0
 GAIN_FLOOR_DB = -50.0
+# Az-el map ranges: gain spans this many dB below the peak; AR clamps at this dB.
+GAIN_MAP_RANGE_DB = 18.0
+AR_MAP_MAX_DB = 6.0
+
+# The 3-D wireframe viewer (orbit/zoom) lives in viewer.js; its palette (loop A,
+# loop B, radial) matches the indices set by _wire_color_index, feed = LIMIT_COLOR.
+
+# Colormap stops (position 0..1 -> RGB) for the gain and axial-ratio maps.
+GAIN_CMAP = ((0.0, (16, 43, 64)), (0.55, (33, 120, 110)), (1.0, (242, 201, 76)))
+AR_CMAP = ((0.0, (14, 124, 134)), (0.5, (200, 136, 28)), (1.0, (178, 58, 72)))
 
 # SVG chart geometry.
 _W, _H = 460, 300
@@ -176,6 +197,215 @@ def _chart(
     return "".join(parts)
 
 
+def _hex(rgb) -> str:
+    return "#{:02X}{:02X}{:02X}".format(*rgb)
+
+
+def _lerp_color(cmap, t):
+    """Interpolate an RGB tuple from colormap stops at position t in [0, 1]."""
+    t = max(0.0, min(1.0, t))
+    for (p0, c0), (p1, c1) in zip(cmap, cmap[1:], strict=False):
+        if t <= p1:
+            f = (t - p0) / (p1 - p0) if p1 > p0 else 0.0
+            return tuple(round(c0[i] + (c1[i] - c0[i]) * f) for i in range(3))
+    return cmap[-1][1]
+
+
+def _hemisphere(result: DesignResult):
+    """Gain (dBi) and axial ratio (dB) over the upper hemisphere, by (theta, phi).
+
+    One nec2c run on a theta x phi grid; phi is taken modulo 360 so the 360 deg
+    sample folds onto 0.
+    """
+    spec = result.spec
+    factor_a, factor_b, phase_b = _operating_point(
+        result.base_factor, result.delta, spec.phasing, flip=False
+    )
+    nec, _ = analyze(spec, factor_a, factor_b, phase_b, grid=HEMI_GRID)
+    gain, ar = {}, {}
+    for point in nec.pattern:
+        key = (round(point.theta_deg), round(point.phi_deg) % 360)
+        gain[key] = point.total_gain_db
+        ar[key] = min(_axial_ratio_db(point.axial_ratio), AR_MAP_MAX_DB)
+    return gain, ar
+
+
+def _polar_xy(cx, cy, radius, theta, phi):
+    """Project (theta from zenith, phi azimuth) to screen: zenith at the centre,
+    phi = 0 at the top increasing clockwise."""
+    r = radius * theta / 90.0
+    a = math.radians(phi)
+    return cx + r * math.sin(a), cy - r * math.cos(a)
+
+
+def _sector_path(cx, cy, radius, t0, t1, p0, p1):
+    xo0, yo0 = _polar_xy(cx, cy, radius, t1, p0)
+    xo1, yo1 = _polar_xy(cx, cy, radius, t1, p1)
+    r1 = radius * t1 / 90.0
+    if t0 <= 0.0:  # innermost ring is a pie slice from the centre
+        return (
+            f"M{cx:.1f},{cy:.1f} L{xo0:.1f},{yo0:.1f} "
+            f"A{r1:.1f},{r1:.1f} 0 0 1 {xo1:.1f},{yo1:.1f} Z"
+        )
+    xi0, yi0 = _polar_xy(cx, cy, radius, t0, p0)
+    xi1, yi1 = _polar_xy(cx, cy, radius, t0, p1)
+    r0 = radius * t0 / 90.0
+    return (
+        f"M{xi0:.1f},{yi0:.1f} L{xo0:.1f},{yo0:.1f} "
+        f"A{r1:.1f},{r1:.1f} 0 0 1 {xo1:.1f},{yo1:.1f} "
+        f"L{xi1:.1f},{yi1:.1f} A{r0:.1f},{r0:.1f} 0 0 0 {xi0:.1f},{yi0:.1f} Z"
+    )
+
+
+def _polar_heatmap(values, vmin, vmax, cmap, bar_label):
+    """Polar az-el heatmap: zenith at the centre, horizon at the rim."""
+    cx, cy, radius = 150.0, 150.0, 120.0
+    parts = [
+        '<svg viewBox="0 0 360 300" role="img" preserveAspectRatio="xMidYMid meet">'
+    ]
+    span = vmax - vmin or 1.0
+    for i in range(len(HEMI_THETAS) - 1):
+        t0, t1 = HEMI_THETAS[i], HEMI_THETAS[i + 1]
+        for p0 in HEMI_PHIS:
+            p1 = p0 + 15
+            corners = [values.get((t, p % 360)) for t in (t0, t1) for p in (p0, p1)]
+            corners = [c for c in corners if c is not None]
+            if not corners:
+                continue
+            color = _hex(_lerp_color(cmap, (sum(corners) / len(corners) - vmin) / span))
+            parts.append(
+                f'<path d="{_sector_path(cx, cy, radius, t0, t1, p0, p1)}" fill="{color}" />'
+            )
+    for theta in (30, 60, 90):
+        r = radius * theta / 90.0
+        parts.append(
+            f'<circle cx="{cx}" cy="{cy}" r="{r:.1f}" fill="none" '
+            f'stroke="{AXIS_COLOR}" stroke-width="0.8" opacity="0.55" />'
+        )
+        parts.append(
+            f'<text x="{cx + 3}" y="{cy - r + 11:.1f}" class="tick">{theta}&#176;</text>'
+        )
+    for az in (0, 90, 180, 270):
+        lx, ly = _polar_xy(cx, cy, radius + 14, 90, az)
+        parts.append(
+            f'<text x="{lx:.1f}" y="{ly + 3:.1f}" text-anchor="middle" class="tick">{az}&#176;</text>'
+        )
+    parts.append(_colorbar(vmin, vmax, cmap, bar_label))
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _colorbar(vmin, vmax, cmap, label):
+    bx, by, bw, bh, n = 318.0, 50.0, 12.0, 190.0, 32
+    parts = []
+    for k in range(n):
+        t = k / (n - 1)
+        y = by + bh * (1.0 - t) - bh / n
+        parts.append(
+            f'<rect x="{bx}" y="{y:.1f}" width="{bw}" height="{bh / n + 1.0:.1f}" '
+            f'fill="{_hex(_lerp_color(cmap, t))}" />'
+        )
+    parts.append(
+        f'<text x="{bx + bw + 4}" y="{by + 4:.1f}" class="tick">{vmax:.0f}</text>'
+    )
+    parts.append(
+        f'<text x="{bx + bw + 4}" y="{by + bh:.1f}" class="tick">{vmin:.0f}</text>'
+    )
+    parts.append(
+        f'<text x="{bx + bw / 2:.1f}" y="{by - 8:.1f}" text-anchor="middle" '
+        f'class="tick">{html.escape(label)}</text>'
+    )
+    return "".join(parts)
+
+
+@cache
+def _viewer_script() -> str:
+    """The orbit-viewer JS (viewer.js) wrapped in a script tag, inlined once so
+    the page stays self-contained."""
+    js = files("beater").joinpath("viewer.js").read_text(encoding="utf-8")
+    return f"<script>\n{js}</script>"
+
+
+def _wire_color_index(tag):
+    """0 = loop A, 1 = loop B, 2 = reflector radial (indexes the viewer palette)."""
+    if tag < LOOP_B_TAG_BASE:
+        return 0
+    if tag < RADIAL_TAG_BASE:
+        return 1
+    return 2
+
+
+def _wireframe(result: DesignResult, index: int):
+    """Interactive 3-D wire model: a canvas plus its geometry as inline JSON.
+
+    The tuned wires (each [x1,y1,z1,x2,y2,z2,color_index], metres) and feed points
+    are emitted as data; the shared viewer script (see _VIEWER_SCRIPT) orbits and
+    zooms them on the client. No deck parsing and no 3-D library.
+    """
+    wires, feeds = tuned_geometry(result)
+    payload = json.dumps(
+        {
+            "wires": [
+                [
+                    round(w.x1, 5),
+                    round(w.y1, 5),
+                    round(w.z1, 5),
+                    round(w.x2, 5),
+                    round(w.y2, 5),
+                    round(w.z2, 5),
+                    _wire_color_index(w.tag),
+                ]
+                for w in wires
+            ],
+            "feeds": [[round(f[0], 5), round(f[1], 5), round(f[2], 5)] for f in feeds],
+        }
+    )
+    cid = f"geom{index}"
+    return (
+        f'<canvas class="viewer" id="{cid}" width="300" height="300" '
+        'aria-label="Interactive 3-D wire model; drag to orbit, scroll to zoom">'
+        f'</canvas><script type="application/json" id="{cid}-data">{payload}</script>'
+    )
+
+
+def _spatial(results: list[DesignResult]) -> str:
+    """Per-design interactive geometry and gain/axial-ratio az-el maps."""
+    blocks = []
+    for index, result in enumerate(results):
+        gain, ar = _hemisphere(result)
+        gmax = math.ceil(max(gain.values()))
+        gain_svg = _polar_heatmap(
+            gain, gmax - GAIN_MAP_RANGE_DB, gmax, GAIN_CMAP, "dBi"
+        )
+        ar_svg = _polar_heatmap(ar, 0.0, AR_MAP_MAX_DB, AR_CMAP, "dB")
+        wire_svg = _wireframe(result, index)
+        blocks.append(
+            f'<section class="detail"><h2>{html.escape(_label(result))} '
+            "&mdash; geometry and az-el maps</h2>"
+            '<div class="trio">'
+            + _figure(
+                "Geometry (drag to orbit)",
+                "Crossed loops (teal / violet) and reflector radials (grey); "
+                "red marks each loop feed. Drag to orbit, scroll to zoom.",
+                wire_svg,
+            )
+            + _figure(
+                "Gain over the sky",
+                "Total gain by azimuth and elevation; centre is overhead, rim "
+                "the horizon. Rings mark zenith angle.",
+                gain_svg,
+            )
+            + _figure(
+                "Axial ratio over the sky",
+                "CP quality by azimuth and elevation; teal is circular, red "
+                "linear. Amber is the 3 dB edge of usable coverage.",
+                ar_svg,
+            )
+            + "</div></section>"
+        )
+    return "".join(blocks)
+
+
 def _figure(title, note, svg):
     return (
         f'<figure class="card"><figcaption>{html.escape(title)}</figcaption>'
@@ -314,7 +544,12 @@ def render_artifact(results: list[DesignResult]) -> str:
     )
 
     return _TEMPLATE.replace("{LIMIT}", LIMIT_COLOR).format(
-        rows=rows, legend=legend, charts=charts, details=_details(results)
+        rows=rows,
+        legend=legend,
+        charts=charts,
+        spatial=_spatial(results),
+        details=_details(results),
+        viewer=_viewer_script(),
     )
 
 
@@ -355,10 +590,14 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   .legend .key {{ display:inline-block; width:22px; height:3px; border-radius:2px;
     margin-right:8px; vertical-align:middle; }}
   .grid {{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }}
+  .trio {{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }}
   .card {{ margin:0; background:var(--panel); border:1px solid var(--line);
     border-radius:6px; padding:14px 14px 6px; }}
   .card figcaption {{ font-size:14px; font-weight:600; margin-bottom:4px; }}
   .card svg {{ width:100%; height:auto; display:block; }}
+  .viewer {{ width:100%; aspect-ratio:1/1; display:block; background:var(--ground);
+    border:1px solid var(--line); border-radius:4px; cursor:grab; touch-action:none; }}
+  .viewer:active {{ cursor:grabbing; }}
   .card .note {{ font-size:12px; color:var(--muted); margin:6px 2px 2px; }}
   h2 {{ font-size:18px; font-weight:650; margin:30px 0 10px; }}
   h3 {{ font-family:var(--mono); font-size:12px; letter-spacing:.1em;
@@ -375,6 +614,7 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   footer {{ margin-top:30px; padding-top:18px; border-top:1px solid var(--line);
     color:var(--muted); font-size:13px; max-width:72ch; }}
   footer code {{ font-family:var(--mono); font-size:12px; }}
+  @media (max-width:860px) {{ .trio {{ grid-template-columns:1fr; }} }}
   @media (max-width:640px) {{ .grid, .cols {{ grid-template-columns:1fr; }} }}
 </style>
 <div class="wrap">
@@ -413,6 +653,13 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   <div class="legend">{legend}</div>
   <div class="grid">{charts}</div>
 
+  <p class="eyebrow" style="margin-top:38px">Geometry and sky coverage</p>
+  <p class="lede">The wire model and the gain and axial-ratio maps over the whole
+  upper hemisphere for each design. The maps are polar: overhead at the centre,
+  the horizon at the rim, azimuth around. Near-omnidirectional designs read as
+  smooth rings; reflector asymmetry shows up as azimuth ripple.</p>
+  {spatial}
+
   <p class="eyebrow" style="margin-top:38px">Design details</p>
   {details}
 
@@ -424,4 +671,5 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
     horizon values are clamped at 10 dB so traces stay on-axis.
   </footer>
 </div>
+{viewer}
 """
