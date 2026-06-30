@@ -87,6 +87,10 @@ uv run beater designs/satellite_pair.input.json \
 # cut sheets and bandwidths for both bands
 uv run beater designs/satellite_pair.json --sweep
 
+# machine-readable cut list + performance (build, performance, bandwidth)
+uv run beater designs/satellite_pair.json --sweep \
+    --emit-result designs/satellite_pair.result.json
+
 # performance-plot page (HTML)
 uv run beater designs/satellite_pair.json --plot designs/eggbeater-performance.html
 

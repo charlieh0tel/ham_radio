@@ -7,6 +7,7 @@ from dataclasses import replace
 from .design import REFLECTOR_NONE, DesignSpec, design, optimize_reflector
 from .plot import render_artifact
 from .report import format_bandwidth, format_cut_sheet
+from .result import results_to_json
 from .spec import specs_from_json, specs_to_json
 
 
@@ -34,6 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--emit-spec",
         help="write the (optionally optimized) spec JSON to this path ('-' for stdout)",
+    )
+    parser.add_argument(
+        "--emit-result",
+        help="write the cut list and performance as JSON to this path "
+        "('-' for stdout); includes bandwidths when --sweep is set",
     )
     parser.add_argument(
         "--deck",
@@ -91,6 +97,15 @@ def main(argv: list[str] | None = None) -> int:
             with open(args.deck, "w") as handle:
                 handle.write(result.deck)
             print(f"Wrote NEC deck to {args.deck}")
+
+    if args.emit_result:
+        payload = results_to_json(results, bandwidth=args.sweep)
+        if args.emit_result == "-":
+            print(payload)
+        else:
+            with open(args.emit_result, "w") as handle:
+                handle.write(payload + "\n")
+            print(f"Wrote result to {args.emit_result}")
 
     if args.plot:
         with open(args.plot, "w") as handle:

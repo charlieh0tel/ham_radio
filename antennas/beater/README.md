@@ -75,6 +75,10 @@ A JSON document may hold one spec object or a list of them; a list runs each
   records the input spec and search parameters.
 - `--emit-spec <path>` write the resolved (optionally optimized) spec JSON to a
   file, or `-` for stdout -- this is how you bake an optimized design.
+- `--emit-result <path>` write the derived cut list and performance as JSON to a
+  file, or `-` for stdout; bandwidths are included when `--sweep` is also set.
+  This is the machine-readable form of the cut sheet (`spec` plus a `build` and
+  `performance` section), rendered from the same numbers as the text output.
 - `--sweep` sweep frequency and report the 2:1 VSWR and 3 dB axial-ratio
   bandwidths of the matched antenna.
 - `--deck <path>` write the tuned NEC deck (single-design specs only).
