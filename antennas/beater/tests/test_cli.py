@@ -137,12 +137,14 @@ def test_optimize_reflector_returns_spec_with_provenance():
     base = replace(_spec(PHASING_SELF), reflector="radials")
     best = optimize_reflector(base)
     assert isinstance(best, DesignSpec)
-    assert best.reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
-    assert best.radial_droop_deg in (0.0, 15.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0)
+    # Coordinate descent returns continuous values within the search bounds.
+    assert 0.15 <= best.reflector_spacing_wl <= 0.40
+    assert 0.0 <= best.radial_droop_deg <= 50.0
     assert best.radial_count in (3, 4, 6, 8)
     # Output records its input, search params, and runtime.
     assert best.optimization is not None
     assert best.optimization.input == base
+    assert best.optimization.method.startswith("coordinate descent")
     assert best.optimization.radial_count_grid == (3, 4, 6, 8)
     assert best.optimization.elapsed_s >= 0.0
     # Apart from the reflector geometry and the provenance, the spec is unchanged.
@@ -169,7 +171,7 @@ def test_emit_spec_after_optimize_round_trips(tmp_path):
     assert main([str(src), "--optimize-reflector", "--emit-spec", str(out)]) == 0
     baked = specs_from_json(out.read_text())
     assert len(baked) == 1
-    assert baked[0].reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
+    assert 0.15 <= baked[0].reflector_spacing_wl <= 0.40
     assert baked[0].label == "2 m"
 
 

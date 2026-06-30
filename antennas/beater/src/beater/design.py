@@ -78,9 +78,14 @@ COVERAGE_THETA_DEG = 60.0
 # Total gains at or below this level mark pattern nulls and are ignored.
 NULL_GAIN_DB = -100.0
 
-# Reflector optimization: search grids and the axial-ratio budget.
-SPACING_GRID_WL = (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
-DROOP_GRID_DEG = (0.0, 15.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0)
+# Reflector optimization: continuous search bounds and the axial-ratio budget.
+SPACING_BOUNDS_WL = (0.15, 0.40)
+DROOP_BOUNDS_DEG = (0.0, 50.0)
+# Coordinate-descent tolerances (the placement is refined to this resolution).
+SPACING_TOLERANCE_WL = 0.005
+DROOP_TOLERANCE_DEG = 1.0
+# Alternating spacing/droop passes per radial count.
+PLACEMENT_SWEEPS = 2
 # Radial counts searched, ascending; the optimizer keeps the fewest that meets
 # the objectives (fewer radials is cheaper, lighter, and less wind load).
 RADIAL_COUNT_GRID = (3, 4, 6, 8)
@@ -115,6 +120,7 @@ class DesignSpec:
         radial_length_wl: length of each radial, wavelengths.
         radial_droop_deg: downward tilt of the radials from horizontal.
         label: optional human-readable name for output (e.g. "2 m").
+        notes: optional free-text design intent; carried through optimization.
         optimization: provenance set when the spec came from optimize_reflector
             (the input spec and the search parameters); None otherwise.
         nec2c: nec2c executable name or path.
@@ -136,6 +142,7 @@ class DesignSpec:
     radial_length_wl: float = 0.27
     radial_droop_deg: float = 0.0
     label: str | None = None
+    notes: str | None = None
     optimization: "Optimization | None" = None
     nec2c: str = DEFAULT_NEC2C
 
@@ -146,19 +153,27 @@ class Optimization:
 
     Fields:
         input: the spec as received, before optimization.
-        spacing_grid_wl: reflector spacings searched, wavelengths.
-        droop_grid_deg: radial droops searched, degrees.
+        method: description of the spacing/droop search method.
+        spacing_bounds_wl: (low, high) reflector spacing searched, wavelengths.
+        droop_bounds_deg: (low, high) radial droop searched, degrees.
+        spacing_tolerance_wl: spacing resolution the descent converged to.
+        droop_tolerance_deg: droop resolution the descent converged to.
+        sweeps: alternating spacing/droop passes per radial count.
         radial_count_grid: radial counts searched.
         ar_target_db: axial-ratio budget the search held to.
         ar_penalty_per_db: cost penalty per dB of axial ratio above the budget.
         feasible_vswr: post-match VSWR a radial count had to meet to be kept.
         objective: short description of what was minimized.
-        elapsed_s: wall-clock seconds the grid search took.
+        elapsed_s: wall-clock seconds the search took.
     """
 
     input: DesignSpec
-    spacing_grid_wl: tuple[float, ...]
-    droop_grid_deg: tuple[float, ...]
+    method: str
+    spacing_bounds_wl: tuple[float, float]
+    droop_bounds_deg: tuple[float, float]
+    spacing_tolerance_wl: float
+    droop_tolerance_deg: float
+    sweeps: int
     radial_count_grid: tuple[int, ...]
     ar_target_db: float
     ar_penalty_per_db: float
@@ -305,6 +320,23 @@ def _secant(func, x0: float, x1: float, bounds, tolerance: float) -> float:
     return x1
 
 
+def _golden_section_min(func, low: float, high: float, tolerance: float) -> float:
+    """Golden-section minimizer of a unimodal scalar function on [low, high]."""
+    x1 = high - GOLDEN_RATIO * (high - low)
+    x2 = low + GOLDEN_RATIO * (high - low)
+    f1, f2 = func(x1), func(x2)
+    while high - low > tolerance:
+        if f1 < f2:
+            high, x2, f2 = x2, x1, f1
+            x1 = high - GOLDEN_RATIO * (high - low)
+            f1 = func(x1)
+        else:
+            low, x1, f1 = x1, x2, f2
+            x2 = low + GOLDEN_RATIO * (high - low)
+            f2 = func(x2)
+    return (low + high) / 2.0
+
+
 def _resonant_factor(spec: DesignSpec) -> float:
     """Find the perimeter factor giving zero loop reactance (delta = 0)."""
 
@@ -399,20 +431,7 @@ def _self_phase_delta(spec: DesignSpec, base_factor: float) -> float:
         )
         return _boresight_ar_db(result)
 
-    low, high = DELTA_BOUNDS
-    x1 = high - GOLDEN_RATIO * (high - low)
-    x2 = low + GOLDEN_RATIO * (high - low)
-    f1, f2 = cost(x1), cost(x2)
-    while high - low > DELTA_TOLERANCE:
-        if f1 < f2:
-            high, x2, f2 = x2, x1, f1
-            x1 = high - GOLDEN_RATIO * (high - low)
-            f1 = cost(x1)
-        else:
-            low, x1, f1 = x1, x2, f2
-            x2 = low + GOLDEN_RATIO * (high - low)
-            f2 = cost(x2)
-    return (low + high) / 2.0
+    return _golden_section_min(cost, *DELTA_BOUNDS, DELTA_TOLERANCE)
 
 
 def _boresight_sense(result: NecResult) -> str:
@@ -551,24 +570,48 @@ def _reflector_feasible(result: DesignResult) -> bool:
 
 
 def _best_placement(
-    spec: DesignSpec, count: int, droops: tuple[float, ...]
+    spec: DesignSpec, count: int, optimize_droop: bool
 ) -> tuple[float, DesignSpec, DesignResult]:
-    """Lowest match-cost (spacing, droop) candidate for a fixed radial count."""
-    best: tuple[float, DesignSpec, DesignResult] | None = None
-    for spacing in SPACING_GRID_WL:
-        for droop in droops:
-            candidate = replace(
-                spec,
-                radial_count=count,
-                reflector_spacing_wl=spacing,
-                radial_droop_deg=droop,
-                optimization=None,
+    """Coordinate-descent (spacing, droop) placement for a fixed radial count.
+
+    Golden-section minimizes the match cost along each axis in turn, alternating
+    for PLACEMENT_SWEEPS passes. The cost surface is smooth and unimodal, so a
+    few sweeps reach a finer optimum than a fixed grid and never snap to a grid
+    edge. Droop is held at zero for a ground reflector (no radials to tilt).
+    """
+
+    def cost_of(spacing: float, droop: float) -> float:
+        candidate = replace(
+            spec,
+            radial_count=count,
+            reflector_spacing_wl=spacing,
+            radial_droop_deg=droop,
+            optimization=None,
+        )
+        return _reflector_cost(design(candidate))
+
+    spacing = sum(SPACING_BOUNDS_WL) / 2.0
+    droop = sum(DROOP_BOUNDS_DEG) / 2.0 if optimize_droop else 0.0
+    for _ in range(PLACEMENT_SWEEPS):
+        spacing = _golden_section_min(
+            lambda s, d=droop: cost_of(s, d), *SPACING_BOUNDS_WL, SPACING_TOLERANCE_WL
+        )
+        if optimize_droop:
+            droop = _golden_section_min(
+                lambda d, s=spacing: cost_of(s, d),
+                *DROOP_BOUNDS_DEG,
+                DROOP_TOLERANCE_DEG,
             )
-            result = design(candidate)
-            cost = _reflector_cost(result)
-            if best is None or cost < best[0]:
-                best = (cost, candidate, result)
-    return best
+
+    candidate = replace(
+        spec,
+        radial_count=count,
+        reflector_spacing_wl=spacing,
+        radial_droop_deg=droop,
+        optimization=None,
+    )
+    result = design(candidate)
+    return _reflector_cost(result), candidate, result
 
 
 def optimize_reflector(spec: DesignSpec) -> DesignSpec:
@@ -577,20 +620,19 @@ def optimize_reflector(spec: DesignSpec) -> DesignSpec:
     A spec -> spec transform: the returned spec differs from the input only in
     the reflector geometry that best serves the design. Radial count is searched
     ascending and the fewest that meets the objectives (axial ratio within
-    AR_TARGET_DB, post-match VSWR within FEASIBLE_VSWR) is kept; for each count
-    the full spacing x droop grid finds the lowest-cost placement. If no count is
-    feasible the lowest-cost candidate overall is returned. Droop and count apply
-    only to radials; a ground reflector searches spacing alone.
+    AR_TARGET_DB, post-match VSWR within FEASIBLE_VSWR) is kept; for each count a
+    coordinate descent finds the lowest-cost spacing/droop placement. If no count
+    is feasible the lowest-cost candidate overall is returned. Droop and count
+    apply only to radials; a ground reflector searches spacing alone.
     """
     radials = spec.reflector == REFLECTOR_RADIALS
     counts = tuple(sorted(RADIAL_COUNT_GRID if radials else (spec.radial_count,)))
-    droops = DROOP_GRID_DEG if radials else (0.0,)
     start = time.perf_counter()
 
     chosen: DesignSpec | None = None
     fallback: tuple[float, DesignSpec] | None = None
     for count in counts:
-        cost, candidate, result = _best_placement(spec, count, droops)
+        cost, candidate, result = _best_placement(spec, count, optimize_droop=radials)
         if fallback is None or cost < fallback[0]:
             fallback = (cost, candidate)
         if _reflector_feasible(result):
@@ -600,8 +642,12 @@ def optimize_reflector(spec: DesignSpec) -> DesignSpec:
 
     provenance = Optimization(
         input=replace(spec, optimization=None),
-        spacing_grid_wl=SPACING_GRID_WL,
-        droop_grid_deg=tuple(droops),
+        method="coordinate descent (golden-section per axis)",
+        spacing_bounds_wl=SPACING_BOUNDS_WL,
+        droop_bounds_deg=DROOP_BOUNDS_DEG if radials else (0.0, 0.0),
+        spacing_tolerance_wl=SPACING_TOLERANCE_WL,
+        droop_tolerance_deg=DROOP_TOLERANCE_DEG if radials else 0.0,
+        sweeps=PLACEMENT_SWEEPS,
         radial_count_grid=counts,
         ar_target_db=AR_TARGET_DB,
         ar_penalty_per_db=AR_PENALTY_PER_DB,

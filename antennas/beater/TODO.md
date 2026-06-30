@@ -7,15 +7,6 @@ decks, design doc, tests passing).
 
 ## Optimizer
 
-- [ ] Replace fixed grid search in `optimize_reflector` with coordinate
-      descent over the two continuous params (spacing, droop). The cost
-      surface is smooth and unimodal; post-match VSWR is flattened by the
-      quarter-wave transformer, so axial ratio dominates. Golden-section
-      per axis (reuse the self-phase-delta routine), 2-3 alternating
-      sweeps. Gives finer resolution than the 6x8 grid (48 NEC runs/band)
-      in fewer runs, and stops selecting grid-edge values.
-      `Optimization` provenance would record the search method and
-      tolerances instead of the grids.
 - [ ] (low priority) Full-azimuth figures of merit. The FoM grid samples only
       phi 0-90 deg, assuming 90 deg symmetry. Odd radial counts (e.g. 3) break
       it, but a one-time 360 deg check showed the effect is benign near zenith

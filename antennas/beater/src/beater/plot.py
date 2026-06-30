@@ -364,9 +364,11 @@ _TEMPLATE = """<title>Eggbeater Performance</title>
   h3 {{ font-family:var(--mono); font-size:12px; letter-spacing:.1em;
     text-transform:uppercase; color:var(--muted); margin:0 0 6px; }}
   .cols {{ display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }}
+  .cols > div {{ min-width:0; }}
   pre {{ margin:0; background:var(--panel); border:1px solid var(--line);
     border-radius:6px; padding:12px 14px; font-family:var(--mono); font-size:12px;
-    line-height:1.5; overflow-x:auto; color:var(--ink); }}
+    line-height:1.5; overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere;
+    color:var(--ink); }}
   .tick {{ font-family:var(--mono); font-size:11px; fill:var(--muted); }}
   .axis {{ font-family:var(--mono); font-size:11px; fill:var(--muted); letter-spacing:.04em; }}
   .limit {{ font-family:var(--mono); font-size:11px; fill:{LIMIT}; font-weight:600; }}

@@ -1,6 +1,7 @@
 [
   {
     "label": "2 m",
+    "notes": "2 m half of a VHF/UHF LEO satellite pair. RHCP, self-phased crossed loops with a drooping radial reflector to favor high-elevation passes. Round tubing. Targets: axial ratio < 3 dB over the coverage cone, VSWR < 1.5 after matching. Reflector count, spacing, and droop left for the optimizer.",
     "freq_mhz": 145.9,
     "conductor": {"kind": "round", "diameter_mm": 5.0},
     "phasing": "self",
@@ -9,6 +10,7 @@
   },
   {
     "label": "70 cm",
+    "notes": "70 cm half of a VHF/UHF LEO satellite pair. RHCP, self-phased crossed loops with a drooping radial reflector to favor high-elevation passes. Round tubing. Targets: axial ratio < 3 dB over the coverage cone, VSWR < 1.5 after matching. Reflector count, spacing, and droop left for the optimizer.",
     "freq_mhz": 436.0,
     "conductor": {"kind": "round", "diameter_mm": 3.0},
     "phasing": "self",

@@ -28,8 +28,12 @@ def test_spec_round_trip_with_optimization():
     base = _spec()
     opt = Optimization(
         input=base,
-        spacing_grid_wl=(0.20, 0.25, 0.30),
-        droop_grid_deg=(0.0, 45.0),
+        method="coordinate descent (golden-section per axis)",
+        spacing_bounds_wl=(0.15, 0.40),
+        droop_bounds_deg=(0.0, 50.0),
+        spacing_tolerance_wl=0.005,
+        droop_tolerance_deg=1.0,
+        sweeps=2,
         radial_count_grid=(3, 4, 6, 8),
         ar_target_db=3.0,
         ar_penalty_per_db=1.0,
@@ -61,6 +65,13 @@ def test_minimal_dict_uses_defaults():
 def test_label_omitted_when_unset_present_when_set():
     assert "label" not in spec_to_dict(_spec())
     assert spec_to_dict(_spec(label="2 m"))["label"] == "2 m"
+
+
+def test_notes_round_trip_and_omitted_when_unset():
+    assert "notes" not in spec_to_dict(_spec())
+    spec = _spec(notes="LEO sat pair, RHCP")
+    assert spec_to_dict(spec)["notes"] == "LEO sat pair, RHCP"
+    assert spec_from_dict(spec_to_dict(spec)) == spec
 
 
 def test_json_single_object_round_trip():

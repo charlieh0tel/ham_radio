@@ -34,6 +34,7 @@ _OPTIONAL_FIELDS = (
     "radial_length_wl",
     "radial_droop_deg",
     "label",
+    "notes",
 )
 
 
@@ -65,8 +66,12 @@ def optimization_to_dict(opt: Optimization) -> dict:
         "input": spec_to_dict(opt.input),
         "elapsed_s": opt.elapsed_s,
         "search": {
-            "spacing_grid_wl": list(opt.spacing_grid_wl),
-            "droop_grid_deg": list(opt.droop_grid_deg),
+            "method": opt.method,
+            "spacing_bounds_wl": list(opt.spacing_bounds_wl),
+            "droop_bounds_deg": list(opt.droop_bounds_deg),
+            "spacing_tolerance_wl": opt.spacing_tolerance_wl,
+            "droop_tolerance_deg": opt.droop_tolerance_deg,
+            "sweeps": opt.sweeps,
             "radial_count_grid": list(opt.radial_count_grid),
             "ar_target_db": opt.ar_target_db,
             "ar_penalty_per_db": opt.ar_penalty_per_db,
@@ -80,8 +85,12 @@ def optimization_from_dict(data: dict) -> Optimization:
     search = data["search"]
     return Optimization(
         input=spec_from_dict(data["input"]),
-        spacing_grid_wl=tuple(search["spacing_grid_wl"]),
-        droop_grid_deg=tuple(search["droop_grid_deg"]),
+        method=search["method"],
+        spacing_bounds_wl=tuple(search["spacing_bounds_wl"]),
+        droop_bounds_deg=tuple(search["droop_bounds_deg"]),
+        spacing_tolerance_wl=float(search["spacing_tolerance_wl"]),
+        droop_tolerance_deg=float(search["droop_tolerance_deg"]),
+        sweeps=int(search["sweeps"]),
         radial_count_grid=tuple(search["radial_count_grid"]),
         ar_target_db=float(search["ar_target_db"]),
         ar_penalty_per_db=float(search["ar_penalty_per_db"]),
@@ -92,14 +101,15 @@ def optimization_from_dict(data: dict) -> Optimization:
 
 
 def spec_to_dict(spec: DesignSpec) -> dict:
-    """Serialize a spec; label and optimization are included only when set."""
+    """Serialize a spec; nullable fields (label, notes) and optimization are
+    included only when set."""
     data = {
         "freq_mhz": spec.freq_mhz,
         "conductor": conductor_to_dict(spec.conductor),
     }
     for field in _OPTIONAL_FIELDS:
         value = getattr(spec, field)
-        if field == "label" and value is None:
+        if value is None:
             continue
         data[field] = value
     if spec.optimization is not None:
