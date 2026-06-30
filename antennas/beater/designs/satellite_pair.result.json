@@ -13,9 +13,9 @@
       "coax_vf": 0.66,
       "match_vf": 0.66,
       "segments": 36,
-      "radial_count": 8,
+      "radial_count": 3,
       "radial_length_wl": 0.27,
-      "radial_droop_deg": 40.0,
+      "radial_droop_deg": 25.0,
       "label": "2 m",
       "optimization": {
         "input": {
@@ -36,7 +36,7 @@
           "radial_droop_deg": 0.0,
           "label": "2 m"
         },
-        "elapsed_s": 11.295,
+        "elapsed_s": 8.338,
         "search": {
           "spacing_grid_wl": [
             0.15,
@@ -56,9 +56,16 @@
             45.0,
             50.0
           ],
+          "radial_count_grid": [
+            3,
+            4,
+            6,
+            8
+          ],
           "ar_target_db": 3.0,
           "ar_penalty_per_db": 1.0,
-          "objective": "minimize post-match VSWR, axial ratio penalized above target"
+          "feasible_vswr": 1.5,
+          "objective": "fewest radials meeting AR and VSWR, then minimize match cost"
         }
       }
     },
@@ -70,53 +77,53 @@
       "loop_center_height_wl": 0.2,
       "loop_center_height_mm": 410.95607676490755,
       "radials": {
-        "count": 8,
+        "count": 3,
         "length_mm": 554.7907036326252,
-        "droop_deg": 40.0
+        "droop_deg": 25.0
       },
-      "detune_percent": 7.195101796658124,
+      "detune_percent": 7.363645378222003,
       "large_loop": {
-        "perimeter_mm": 2318.356674305514,
-        "diameter_mm": 737.9558491316196
+        "perimeter_mm": 2318.6628832902243,
+        "diameter_mm": 738.0533184786913
       },
       "small_loop": {
-        "perimeter_mm": 2007.1332696347981,
-        "diameter_mm": 638.8903626131522
+        "perimeter_mm": 2000.6071547603833,
+        "diameter_mm": 636.8130357302549
       },
       "match": {
         "series_element": {
           "kind": "inductor",
-          "value_nh": 17.939348579036512
+          "value_nh": 14.639780069713963
         },
-        "transformer_z0_ohm": 75.05725646232652,
+        "transformer_z0_ohm": 75.12251915904548,
         "transformer_standard_coax_ohm": 75.0,
         "transformer_length_mm": 339.0387633310487
       }
     },
     "performance": {
       "feed_z_ohm": {
-        "real": 112.67183495302912,
-        "imag": -16.445301081036362
+        "real": 112.86785769602311,
+        "imag": -13.420531405914192
       },
       "feed_z_kind": "feedpoint",
-      "vswr_unmatched": 2.3128409444159854,
-      "vswr_matched": 1.0015274218047034,
-      "loop_current_phase_deg": 85.52564978145779,
+      "vswr_unmatched": 2.2968987342911715,
+      "vswr_matched": 1.003269846186872,
+      "loop_current_phase_deg": 90.29040749255617,
       "sense": "RHCP",
       "sense_requested": "RHCP",
       "sense_achieved": true,
-      "axial_ratio_cone_db": 1.3034936410458744,
-      "axial_ratio_peak_db": 0.6771653452193473,
-      "coverage_gain_dbi": 0.34
+      "axial_ratio_cone_db": 1.2658977045539876,
+      "axial_ratio_peak_db": 0.43638966125172174,
+      "coverage_gain_dbi": 0.09
     },
     "bandwidth": {
       "vswr_2to1_mhz": [
-        132.91756837442196,
+        137.1271901220409,
         160.49
       ],
       "axial_ratio_3db_mhz": [
-        141.801402002126,
-        148.6014330542483
+        142.58127632391177,
+        148.78828286833723
       ]
     }
   },
@@ -134,7 +141,7 @@
       "coax_vf": 0.66,
       "match_vf": 0.66,
       "segments": 36,
-      "radial_count": 8,
+      "radial_count": 3,
       "radial_length_wl": 0.27,
       "radial_droop_deg": 50.0,
       "label": "70 cm",
@@ -157,7 +164,7 @@
           "radial_droop_deg": 0.0,
           "label": "70 cm"
         },
-        "elapsed_s": 13.015,
+        "elapsed_s": 8.27,
         "search": {
           "spacing_grid_wl": [
             0.15,
@@ -177,9 +184,16 @@
             45.0,
             50.0
           ],
+          "radial_count_grid": [
+            3,
+            4,
+            6,
+            8
+          ],
           "ar_target_db": 3.0,
           "ar_penalty_per_db": 1.0,
-          "objective": "minimize post-match VSWR, axial ratio penalized above target"
+          "feasible_vswr": 1.5,
+          "objective": "fewest radials meeting AR and VSWR, then minimize match cost"
         }
       }
     },
@@ -191,44 +205,44 @@
       "loop_center_height_wl": 0.2,
       "loop_center_height_mm": 137.519476146789,
       "radials": {
-        "count": 8,
+        "count": 3,
         "length_mm": 185.65129279816514,
         "droop_deg": 50.0
       },
       "detune_percent": 8.350316690453866,
       "large_loop": {
-        "perimeter_mm": 793.4514394336516,
-        "diameter_mm": 252.5634373784905
+        "perimeter_mm": 792.6728223682304,
+        "diameter_mm": 252.3155958690156
       },
       "small_loop": {
-        "perimeter_mm": 671.1523820770208,
-        "diameter_mm": 213.63443835091647
+        "perimeter_mm": 670.4937775648704,
+        "diameter_mm": 213.42479802361376
       },
       "match": {
         "series_element": {
           "kind": "inductor",
-          "value_nh": 8.510326308616758
+          "value_nh": 8.186264002266716
         },
-        "transformer_z0_ohm": 74.7858033925038,
+        "transformer_z0_ohm": 74.43486136013523,
         "transformer_standard_coax_ohm": 75.0,
         "transformer_length_mm": 113.45356782110092
       }
     },
     "performance": {
       "feed_z_ohm": {
-        "real": 111.85832778124464,
-        "imag": -23.313773348619648
+        "real": 110.81097171405106,
+        "imag": -22.426014773084624
       },
       "feed_z_kind": "feedpoint",
-      "vswr_unmatched": 2.3570910061430883,
-      "vswr_matched": 1.005736472478028,
-      "loop_current_phase_deg": 81.47823380875826,
+      "vswr_unmatched": 2.3288055072086538,
+      "vswr_matched": 1.0152424282525696,
+      "loop_current_phase_deg": 82.85763073296854,
       "sense": "RHCP",
       "sense_requested": "RHCP",
       "sense_achieved": true,
-      "axial_ratio_cone_db": 1.6175214312027448,
-      "axial_ratio_peak_db": 1.1261534578796666,
-      "coverage_gain_dbi": 0.07
+      "axial_ratio_cone_db": 1.5648588025631243,
+      "axial_ratio_peak_db": 1.0729200554745089,
+      "coverage_gain_dbi": 0.06
     },
     "bandwidth": {
       "vswr_2to1_mhz": [
@@ -236,8 +250,8 @@
         479.6
       ],
       "axial_ratio_3db_mhz": [
-        419.47163157827924,
-        443.73646271256564
+        421.7108587917417,
+        444.384821613385
       ]
     }
   }

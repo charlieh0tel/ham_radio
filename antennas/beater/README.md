@@ -69,10 +69,12 @@ A JSON document may hold one spec object or a list of them; a list runs each
 
 ### Actions
 
-- `--optimize-reflector` grid-search reflector spacing and droop for the lowest
-  post-match VSWR (axial ratio held within budget). A spec -> spec transform:
-  the chosen spacing/droop replace the input's, and an `optimization` block
-  records the input spec and search parameters.
+- `--optimize-reflector` search reflector radial count, spacing, and droop. A
+  spec -> spec transform: it keeps the fewest radials that still meet the axial
+  ratio and post-match VSWR objectives (for each count, the spacing/droop grid
+  finds the lowest-cost placement). The chosen reflector geometry replaces the
+  input's, and an `optimization` block records the input spec and search
+  parameters.
 - `--emit-spec <path>` write the resolved (optionally optimized) spec JSON to a
   file, or `-` for stdout -- this is how you bake an optimized design.
 - `--emit-result <path>` write the derived cut list and performance as JSON to a
@@ -106,9 +108,12 @@ feedpoint reactance, then a quarter-wave transformer (`Z0 = sqrt(50 * Rin)`)
 with the nearest standard coax. The reactance is tuned out at the feed rather
 than by resizing the loops, which would move the axial-ratio optimum.
 
-`--optimize-reflector` grid-searches reflector spacing and droop to drive the
-feedpoint resistance toward the transformer's sweet spot (about 112 ohm for
-75 ohm coax), minimizing post-match VSWR while keeping axial ratio under budget.
+`--optimize-reflector` searches the reflector geometry to drive the feedpoint
+resistance toward the transformer's sweet spot (about 112 ohm for 75 ohm coax),
+minimizing post-match VSWR while keeping axial ratio under budget. It keeps the
+fewest radials that still meet the objectives, since the radial count and the
+best spacing/droop are coupled (a sparser screen shifts the optimum), so the
+spacing and droop are re-searched for each candidate count.
 
 `--sweep` holds the tuned physical antenna fixed, sweeps the analysis frequency,
 and reports two bandwidths: the band where the matched VSWR stays under 2:1

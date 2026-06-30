@@ -139,15 +139,18 @@ def test_optimize_reflector_returns_spec_with_provenance():
     assert isinstance(best, DesignSpec)
     assert best.reflector_spacing_wl in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
     assert best.radial_droop_deg in (0.0, 15.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0)
+    assert best.radial_count in (3, 4, 6, 8)
     # Output records its input, search params, and runtime.
     assert best.optimization is not None
     assert best.optimization.input == base
+    assert best.optimization.radial_count_grid == (3, 4, 6, 8)
     assert best.optimization.elapsed_s >= 0.0
-    # Apart from spacing/droop and the provenance, the spec is unchanged.
+    # Apart from the reflector geometry and the provenance, the spec is unchanged.
     stripped = replace(
         best,
         reflector_spacing_wl=base.reflector_spacing_wl,
         radial_droop_deg=base.radial_droop_deg,
+        radial_count=base.radial_count,
         optimization=None,
     )
     assert stripped == base

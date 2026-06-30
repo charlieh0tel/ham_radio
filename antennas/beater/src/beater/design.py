@@ -81,9 +81,15 @@ NULL_GAIN_DB = -100.0
 # Reflector optimization: search grids and the axial-ratio budget.
 SPACING_GRID_WL = (0.15, 0.20, 0.25, 0.30, 0.35, 0.40)
 DROOP_GRID_DEG = (0.0, 15.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0)
+# Radial counts searched, ascending; the optimizer keeps the fewest that meets
+# the objectives (fewer radials is cheaper, lighter, and less wind load).
+RADIAL_COUNT_GRID = (3, 4, 6, 8)
 AR_TARGET_DB = 3.0
 # Cost penalty per dB of axial ratio above AR_TARGET_DB.
 AR_PENALTY_PER_DB = 1.0
+# A radial count is acceptable when the tuned design holds axial ratio within
+# AR_TARGET_DB and post-match VSWR within this limit.
+FEASIBLE_VSWR = 1.5
 
 # Frequency-sweep defaults and the SWR threshold whose bandwidth is reported.
 SWEEP_SPAN_FRACTION = 0.10
@@ -142,8 +148,10 @@ class Optimization:
         input: the spec as received, before optimization.
         spacing_grid_wl: reflector spacings searched, wavelengths.
         droop_grid_deg: radial droops searched, degrees.
+        radial_count_grid: radial counts searched.
         ar_target_db: axial-ratio budget the search held to.
         ar_penalty_per_db: cost penalty per dB of axial ratio above the budget.
+        feasible_vswr: post-match VSWR a radial count had to meet to be kept.
         objective: short description of what was minimized.
         elapsed_s: wall-clock seconds the grid search took.
     """
@@ -151,8 +159,10 @@ class Optimization:
     input: DesignSpec
     spacing_grid_wl: tuple[float, ...]
     droop_grid_deg: tuple[float, ...]
+    radial_count_grid: tuple[int, ...]
     ar_target_db: float
     ar_penalty_per_db: float
+    feasible_vswr: float
     objective: str
     elapsed_s: float
 
@@ -532,36 +542,71 @@ def _reflector_cost(result: DesignResult) -> float:
     return post_match_vswr(result.z_in) + AR_PENALTY_PER_DB * excess
 
 
-def optimize_reflector(spec: DesignSpec) -> DesignSpec:
-    """Grid-search reflector spacing and droop; return the best spec.
+def _reflector_feasible(result: DesignResult) -> bool:
+    """Whether a tuned design meets the axial-ratio and match objectives."""
+    return (
+        result.ar_boresight_db <= AR_TARGET_DB
+        and post_match_vswr(result.z_in) <= FEASIBLE_VSWR
+    )
 
-    A spec -> spec transform: the returned spec is identical to the input except
-    for the spacing and droop that minimize the match cost. Spacing is searched
-    for both reflector types; droop applies only to radials.
-    """
-    droops = DROOP_GRID_DEG if spec.reflector == REFLECTOR_RADIALS else (0.0,)
-    best_spec = spec
-    best_cost = math.inf
-    start = time.perf_counter()
+
+def _best_placement(
+    spec: DesignSpec, count: int, droops: tuple[float, ...]
+) -> tuple[float, DesignSpec, DesignResult]:
+    """Lowest match-cost (spacing, droop) candidate for a fixed radial count."""
+    best: tuple[float, DesignSpec, DesignResult] | None = None
     for spacing in SPACING_GRID_WL:
         for droop in droops:
             candidate = replace(
                 spec,
+                radial_count=count,
                 reflector_spacing_wl=spacing,
                 radial_droop_deg=droop,
                 optimization=None,
             )
-            cost = _reflector_cost(design(candidate))
-            if cost < best_cost:
-                best_cost = cost
-                best_spec = candidate
+            result = design(candidate)
+            cost = _reflector_cost(result)
+            if best is None or cost < best[0]:
+                best = (cost, candidate, result)
+    return best
+
+
+def optimize_reflector(spec: DesignSpec) -> DesignSpec:
+    """Search radial count, spacing, and droop; return the best spec.
+
+    A spec -> spec transform: the returned spec differs from the input only in
+    the reflector geometry that best serves the design. Radial count is searched
+    ascending and the fewest that meets the objectives (axial ratio within
+    AR_TARGET_DB, post-match VSWR within FEASIBLE_VSWR) is kept; for each count
+    the full spacing x droop grid finds the lowest-cost placement. If no count is
+    feasible the lowest-cost candidate overall is returned. Droop and count apply
+    only to radials; a ground reflector searches spacing alone.
+    """
+    radials = spec.reflector == REFLECTOR_RADIALS
+    counts = tuple(sorted(RADIAL_COUNT_GRID if radials else (spec.radial_count,)))
+    droops = DROOP_GRID_DEG if radials else (0.0,)
+    start = time.perf_counter()
+
+    chosen: DesignSpec | None = None
+    fallback: tuple[float, DesignSpec] | None = None
+    for count in counts:
+        cost, candidate, result = _best_placement(spec, count, droops)
+        if fallback is None or cost < fallback[0]:
+            fallback = (cost, candidate)
+        if _reflector_feasible(result):
+            chosen = candidate
+            break
+    best_spec = chosen if chosen is not None else fallback[1]
+
     provenance = Optimization(
         input=replace(spec, optimization=None),
         spacing_grid_wl=SPACING_GRID_WL,
         droop_grid_deg=tuple(droops),
+        radial_count_grid=counts,
         ar_target_db=AR_TARGET_DB,
         ar_penalty_per_db=AR_PENALTY_PER_DB,
-        objective="minimize post-match VSWR, axial ratio penalized above target",
+        feasible_vswr=FEASIBLE_VSWR,
+        objective="fewest radials meeting AR and VSWR, then minimize match cost",
         elapsed_s=round(time.perf_counter() - start, 3),
     )
     return replace(best_spec, optimization=provenance)

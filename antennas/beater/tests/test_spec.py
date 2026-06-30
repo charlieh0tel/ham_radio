@@ -30,8 +30,10 @@ def test_spec_round_trip_with_optimization():
         input=base,
         spacing_grid_wl=(0.20, 0.25, 0.30),
         droop_grid_deg=(0.0, 45.0),
+        radial_count_grid=(3, 4, 6, 8),
         ar_target_db=3.0,
         ar_penalty_per_db=1.0,
+        feasible_vswr=1.5,
         objective="minimize post-match VSWR",
         elapsed_s=12.5,
     )

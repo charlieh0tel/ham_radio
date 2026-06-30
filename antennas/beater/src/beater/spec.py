@@ -67,8 +67,10 @@ def optimization_to_dict(opt: Optimization) -> dict:
         "search": {
             "spacing_grid_wl": list(opt.spacing_grid_wl),
             "droop_grid_deg": list(opt.droop_grid_deg),
+            "radial_count_grid": list(opt.radial_count_grid),
             "ar_target_db": opt.ar_target_db,
             "ar_penalty_per_db": opt.ar_penalty_per_db,
+            "feasible_vswr": opt.feasible_vswr,
             "objective": opt.objective,
         },
     }
@@ -80,8 +82,10 @@ def optimization_from_dict(data: dict) -> Optimization:
         input=spec_from_dict(data["input"]),
         spacing_grid_wl=tuple(search["spacing_grid_wl"]),
         droop_grid_deg=tuple(search["droop_grid_deg"]),
+        radial_count_grid=tuple(search["radial_count_grid"]),
         ar_target_db=float(search["ar_target_db"]),
         ar_penalty_per_db=float(search["ar_penalty_per_db"]),
+        feasible_vswr=float(search["feasible_vswr"]),
         objective=search["objective"],
         elapsed_s=float(data["elapsed_s"]),
     )
