@@ -1,0 +1,24 @@
+[
+  {
+    "label": "2 m",
+    "notes": "2 m half of a VHF/UHF LEO satellite pair, squircle (rounded-corner square) loops. RHCP, self-phased crossed loops with a drooping radial reflector to favor high-elevation passes. Round tubing; square loops with radiused corners ease bending around a square frame while keeping the corners gentle. Targets: axial ratio < 3 dB over the coverage cone, VSWR < 1.5 after matching. Reflector count, spacing, and droop left for the optimizer.",
+    "freq_mhz": 145.9,
+    "conductor": {"kind": "round", "diameter_mm": 5.0},
+    "phasing": "self",
+    "sense": "rhcp",
+    "loop_shape": "squircle",
+    "corner_radius_wl": 0.05,
+    "reflector": "radials"
+  },
+  {
+    "label": "70 cm",
+    "notes": "70 cm half of a VHF/UHF LEO satellite pair, squircle (rounded-corner square) loops. RHCP, self-phased crossed loops with a drooping radial reflector to favor high-elevation passes. Round tubing; square loops with radiused corners ease bending around a square frame while keeping the corners gentle. Targets: axial ratio < 3 dB over the coverage cone, VSWR < 1.5 after matching. Reflector count, spacing, and droop left for the optimizer.",
+    "freq_mhz": 436.0,
+    "conductor": {"kind": "round", "diameter_mm": 3.0},
+    "phasing": "self",
+    "sense": "rhcp",
+    "loop_shape": "squircle",
+    "corner_radius_wl": 0.05,
+    "reflector": "radials"
+  }
+]

@@ -159,6 +159,12 @@ jq '.[0]' designs/satellite_pair.json | uv run beater - --deck designs/eggbeater
 jq '.[1]' designs/satellite_pair.json | uv run beater - --deck designs/eggbeater_70cm.nec
 ```
 
+`satellite_pair_squircle.input.json` is the same pair with squircle
+(rounded-corner square) loops, for building on a square frame; optimize it the
+same way to `satellite_pair_squircle.json`. It performs on par with the round
+pair (both bands optimize to 3 radials, post-match VSWR ~1.0, axial ratio
+~1.1 dB at band center).
+
 ## Building
 
 These notes apply to any eggbeater the tool produces; the per-design dimensions
