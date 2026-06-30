@@ -39,6 +39,14 @@ decks, design doc, tests passing).
 - [x] Gain-coverage FoM. Worst-case total gain over the coverage cone
       (theta <= 60 deg), reported in the cut sheet and the FoM table.
 
+## Plots
+
+- [ ] Azimuth-elevation plots. The current charts are 1-D cuts (vs frequency,
+      vs elevation on one plane). Add a 2-D az-el map (gain and/or axial ratio
+      over the full hemisphere, e.g. a polar or contour heatmap) so azimuth
+      asymmetry is visible -- especially useful for odd radial counts that break
+      the phi 0-90 deg symmetry. Pairs with the full-azimuth FoM item.
+
 ## Geometry
 
 - [ ] Square and other loop shapes; only circular loops today.
