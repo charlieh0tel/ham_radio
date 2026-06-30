@@ -16,9 +16,6 @@ decks, design doc, tests passing).
       in fewer runs, and stops selecting grid-edge values.
       `Optimization` provenance would record the search method and
       tolerances instead of the grids.
-- [x] Optimize radial count. optimize_reflector now searches counts ascending
-      and keeps the fewest meeting the AR and VSWR objectives (RADIAL_COUNT_GRID,
-      FEASIBLE_VSWR), re-searching spacing/droop per count.
 - [ ] (low priority) Full-azimuth figures of merit. The FoM grid samples only
       phi 0-90 deg, assuming 90 deg symmetry. Odd radial counts (e.g. 3) break
       it, but a one-time 360 deg check showed the effect is benign near zenith
@@ -33,11 +30,6 @@ decks, design doc, tests passing).
       harness would capture line loss and dispersion.
 - [ ] Conductor loss and real ground. NEC runs are perfect-conductor with
       perfect or simple ground.
-
-## Figures of merit
-
-- [x] Gain-coverage FoM. Worst-case total gain over the coverage cone
-      (theta <= 60 deg), reported in the cut sheet and the FoM table.
 
 ## Plots
 
