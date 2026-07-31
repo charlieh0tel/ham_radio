@@ -61,3 +61,13 @@ The `docs/` directory is served by GitHub Pages from the `master` branch. Pushin
 - **Browser compatibility**: The app uses modern JS features transpiled by Babel. Ensure nothing relies on bleeding-edge APIs without checking browser support.
 - **URL parameters**: The app may encode state in URL params. Ensure changes preserve backward-compatible URL parsing.
 - **Accessibility**: Maintain readable contrast ratios in the dark theme. Ensure interactive controls are keyboard-accessible.
+
+# Project Guidelines
+
+- Stay in this directory
+- Always use good taste
+- KISS (Keep It Simple, Stupid)
+- DRY (Don't Repeat Yourself)
+- Use modern ES6+ patterns and style
+- Always read entire files, even if you have to chunk
+- Never add a Claude attribution line to a commit message
