@@ -1,56 +1,67 @@
-# Agent Instrucitons
+# Agent Instructions
 
-## Critical Rules
+## General
 
 - Be extremely concise; sacrifice grammar for concision.
-- Use built-in tools for file operations.
-- Use globs for file search, grep for content search, read for viewing files.
+- Always list unresolved questions at end.
+- Use built-in tools for file operations: globs for file search, grep
+  for content search, read for viewing files.
 - Do not request grep/sed/fd/find/ls/cat or similar CLI tools when you
   already have these capabilities built-in.
-- Always list unresolved questions at end.
-- Keep documention (.md files) up to date with code changes.
-- When work completes a tracked item, update `TODO.md`, if it is being
-  used, in the same commit by marking that item done.
+- Prefer ASCII in all code and user-facing strings (logs, CLI output,
+  error messages).  Ask before using Unicode.
+
+
+## Documentation
+
+- Keep documentation (.md files) up to date with code changes.
+- When work completes a tracked item, mark it done in `TODO.md`, if it
+  is being used, in the same commit.
 
 
 ## Revision Control
 
-- Do not add Claude or other agent attribution to anythign (commit
+- Do not add Claude or other agent attribution to anything (commit
   messages, pull requests, issues).
 - Do not commit without permission.
-- PRs should generally be comprised of one functional change; suggest
-  making a commit before moving onto something unrelated.
-- All tests must pass before committing.
 - Never use -a to commit; always enumerate the files.
+- All tests must pass before committing.
+- Suggest making a commit before moving onto something unrelated; a PR
+  should generally be one functional change.
 
 
-## Programming Rules
+## Programming
 
 - Read code before modifying it.  Understand existing patterns and
   context before proposing changes.
-- Prefer ASCII in all code and user-facing strings (logs, CLI output,
-  error messages).  Ask before using Unicode.
 - Prefer consistency above most other concerns.
-- Do not add trivial, obvious or redundant comments.
 - Be DRY.
+- Keep functions short and focused; extract helpers when logic is
+  reused.
 - Avoid magic constants.
-- Only comment unintiutive or hard to understand code.
-- Always comment data structures.
+- Use meaningful names, especially for RF and math quantities
+  (`zLoad`, `gammaL`, `susceptance`; not `x`, `tmp`).
 - Don't abbreviate by dropping letters from the middle of a word.
   Truncation (cutting from the end) is OK.
+- Comment only unintuitive or hard to understand code; always comment
+  data structures.
+- Comment non-obvious RF and math formulas, and cite their sources.
+- Verify math against known references.  Watch sign conventions and
+  unit conversions (degrees/radians, MHz/Hz).
+- No trailing whitespace.
+- Do not add dependencies without discussion.
 
 
-## Python Rules
+## Python
 
 - Use `uv` for all dependency and environment management.
-- Run `ruff check` after changes and before commits.
-- Run `ruff format` after changes and before commits.
+- Run `ruff format` and `ruff check` after changes and before commits.
 - Run tests with `pytest`.
 
-## Rust Rules
 
-- Always run `cargo fmt` after changes and before commits.
-- Always run `cargo clippy` after major changes and always before commits.
-- All tests must pass before committing (`cargo test`).
+## Rust
+
+- Run `cargo fmt` after changes and before commits.
+- Run `cargo clippy` after major changes and before commits.
 - Use relative imports.
 - CLI code can use anyhow!  library code must *not* use anyhow!
