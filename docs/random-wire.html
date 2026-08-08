@@ -462,6 +462,9 @@
     /** Number of best-length suggestions listed. */
     const MAX_SUGGESTIONS = 8;
 
+    /** Roundings tried for a recommended length, in feet, coarsest first. */
+    const PICK_STEPS_FT = Object.freeze([1, 0.5, 0.1, 0.01]);
+
     /** Step of the clearance margin slider, percent. */
     const MARGIN_STEP_PCT = 0.5;
 
@@ -617,6 +620,21 @@
     };
 
     /**
+     * A length to recommend inside a usable span: the roundest number that
+     * still lies strictly inside it.  Rounding to a fixed precision would push
+     * the pick onto, or past, the edge of a span narrower than that precision,
+     * recommending a length the page then reports as one to avoid.
+     */
+    const pickInSpan = (span) => {
+      const center = (span.lo + span.hi) / 2;
+      for (const step of PICK_STEPS_FT) {
+        const rounded = Math.round(center / step) * step;
+        if (rounded > span.lo && rounded < span.hi) return Number(rounded.toFixed(2));
+      }
+      return center;
+    };
+
+    /**
      * Everything the length map and tables need, derived from the current
      * selection.  All lengths are in feet.
      */
@@ -631,21 +649,21 @@
       const merged = mergeIntervals(avoid);
       const usable = usableIntervals(merged, maxLenFt);
       const suggestions = [...usable]
-        .map(u => ({ ...u, center: (u.lo + u.hi) / 2, clearance: (u.hi - u.lo) / 2 }))
+        .map(u => ({ ...u, pick: pickInSpan(u), clearance: (u.hi - u.lo) / 2 }))
         .sort((a, b) => b.clearance - a.clearance)
         .slice(0, MAX_SUGGESTIONS);
       return { bands, avoid, merged, usable, suggestions, shortLimit };
     };
 
     /**
-     * Center of the usable span nearest to lenFt, or null if none is left.
-     * The center is used rather than the closest edge so the suggestion has
-     * the most clearance that span can offer.
+     * Recommended length from the usable span nearest to lenFt, or null if
+     * none is left.  Taken from the middle of the span rather than its closest
+     * edge, so the suggestion has the most clearance that span can offer.
      */
     const nearestClearLength = (lenFt, usable) => {
       let best = null;
       for (const span of usable) {
-        const center = (span.lo + span.hi) / 2;
+        const center = pickInSpan(span);
         if (!best || Math.abs(center - lenFt) < Math.abs(best - lenFt)) best = center;
       }
       return best;
@@ -675,7 +693,7 @@
       // Round down to the slider's step so the offer is one the user can set.
       const marginPct = Math.floor(feasible / MARGIN_STEP_PCT) * MARGIN_STEP_PCT;
       const best = spansAt(marginPct)[0];
-      return best ? { marginPct, lengthFt: Math.round(best.center * 10) / 10 } : null;
+      return best ? { marginPct, lengthFt: best.pick } : null;
     };
 
     /**
@@ -943,8 +961,7 @@
         if (wasFirstRun && wireLenFt > 0) return;
         const best = solution.suggestions[0];
         if (!best) return;
-        // Rounded to match the figure shown in the suggestions table.
-        autoLenFt.current = Math.round(best.center * 10) / 10;
+        autoLenFt.current = best.pick;
         set({ wireLenFt: autoLenFt.current });
       }, [solution]);
 
@@ -1139,8 +1156,8 @@
                       </thead>
                       <tbody>
                         {solution.suggestions.map((s, i) => (
-                          <tr key={i} className="pick" onClick={() => setWireLen(s.center)}>
-                            <td className="best-length">{fmtLen(s.center, units)}</td>
+                          <tr key={i} className="pick" onClick={() => setWireLen(s.pick)}>
+                            <td className="best-length">{fmtLen(s.pick, units)}</td>
                             <td>{fmtLen(s.lo, units)}</td>
                             <td>{fmtLen(s.hi, units)}</td>
                             <td>+/- {fmtLen(s.clearance, units)}</td>
