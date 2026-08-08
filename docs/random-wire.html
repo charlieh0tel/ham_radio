@@ -462,6 +462,12 @@
     /** Number of best-length suggestions listed. */
     const MAX_SUGGESTIONS = 8;
 
+    /** Step of the clearance margin slider, percent. */
+    const MARGIN_STEP_PCT = 0.5;
+
+    /** Bisection steps used to find the largest workable clearance margin. */
+    const MARGIN_SEARCH_STEPS = 20;
+
     /** Length map geometry, SVG user units. */
     const MAP = Object.freeze({
       width: 1000, height: 150,
@@ -643,6 +649,33 @@
         if (!best || Math.abs(center - lenFt) < Math.abs(best - lenFt)) best = center;
       }
       return best;
+    };
+
+    /**
+     * The largest clearance margin, below the one asked for, that still leaves
+     * somewhere to put the wire.  Used to turn "no clear span" into a concrete
+     * offer.  Binary search: feasibility is monotonic in the margin, since
+     * widening every zone can only remove spans.
+     *
+     * @returns {?{marginPct:number, lengthFt:number}} null if even a margin of
+     *          zero leaves nothing, i.e. the bands cover every length outright.
+     */
+    const bestFeasibleMargin = (region, bandsM, segment, velocityFactor,
+                                askedPct, maxLenFt) => {
+      const spansAt = (pct) =>
+        solve(region, bandsM, segment, velocityFactor, pct, maxLenFt).suggestions;
+      if (spansAt(0).length === 0) return null;
+
+      let feasible = 0;
+      let tooWide = askedPct;
+      for (let i = 0; i < MARGIN_SEARCH_STEPS; i++) {
+        const mid = (feasible + tooWide) / 2;
+        if (spansAt(mid).length > 0) feasible = mid; else tooWide = mid;
+      }
+      // Round down to the slider's step so the offer is one the user can set.
+      const marginPct = Math.floor(feasible / MARGIN_STEP_PCT) * MARGIN_STEP_PCT;
+      const best = spansAt(marginPct)[0];
+      return best ? { marginPct, lengthFt: Math.round(best.center * 10) / 10 } : null;
     };
 
     /**
@@ -882,6 +915,13 @@
         () => solve(region, bands, segment, velocityFactor, marginPct, maxLenFt),
         [region, bands, segment, velocityFactor, marginPct, maxLenFt]);
 
+      // Only searched when the asked-for margin leaves nothing.
+      const fallback = useMemo(
+        () => (solution.suggestions.length > 0 || bands.length === 0
+          ? null
+          : bestFeasibleMargin(region, bands, segment, velocityFactor, marginPct, maxLenFt)),
+        [solution, region, bands, segment, velocityFactor, marginPct, maxLenFt]);
+
       const clearLength = useMemo(
         () => nearestClearLength(wireLenFt, solution.usable),
         [wireLenFt, solution]);
@@ -999,7 +1039,8 @@
                 <div className="panel-header">Assumptions</div>
                 <label className="control-label">
                   Clearance from resonance: <span className="control-value">{marginPct}%</span>
-                  <input className="control-slider" type="range" min="0" max="15" step="0.5"
+                  <input className="control-slider" type="range" min="0" max="15"
+                         step={MARGIN_STEP_PCT}
                          value={marginPct}
                          onChange={(e) => set({ marginPct: Number(e.target.value) })} />
                   <div className="control-hint">
@@ -1077,7 +1118,17 @@
                   <div className="panel-header">Best lengths (widest clear spans)</div>
                   {solution.suggestions.length === 0 ? (
                     <div className="empty-note">
-                      No clear span left. Reduce the clearance margin or drop a band.
+                      No length clears every selected band at {marginPct}%.
+                      {fallback
+                        ? <>
+                            {' '}The most any length can manage is {fallback.marginPct}%.{' '}
+                            <button className="btn link-btn"
+                                    onClick={() => set({ marginPct: fallback.marginPct,
+                                                         wireLenFt: fallback.lengthFt })}>
+                              Use {fallback.marginPct}% at {fmtLen(fallback.lengthFt, units)}
+                            </button>
+                          </>
+                        : ' These bands cover every length between them; drop one.'}
                     </div>
                   ) : (
                     <table>
