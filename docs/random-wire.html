@@ -456,8 +456,11 @@
     /** Default clearance to keep from a half-wave resonance, percent of length. */
     const DEFAULT_MARGIN_PCT = 5;
 
-    /** Highest half-wave multiple considered for any one band. */
-    const MAX_MULTIPLE = 200;
+    /** Range the velocity factor is held to; outside it the math degenerates. */
+    const VELOCITY_FACTOR_RANGE = Object.freeze({ min: 0.5, max: 1 });
+
+    /** Range the clearance margin is held to, percent of a half wavelength. */
+    const MARGIN_PCT_RANGE = Object.freeze({ min: 0, max: 15 });
 
     /** Number of best-length suggestions listed. */
     const MAX_SUGGESTIONS = 8;
@@ -567,12 +570,20 @@
       };
     };
 
-    /** Every resonance interval of every selected band up to maxLenFt. */
+    /**
+     * Every resonance interval of every selected band up to maxLenFt.  The
+     * multiple runs as high as the map needs: a fixed cap would silently stop
+     * covering the high bands, whose half wave can be hundreds of times
+     * shorter than the map is long.
+     */
     const avoidIntervals = (bands, segment, velocityFactor, marginPct, maxLenFt) => {
       const margin = marginPct / 100;
       const intervals = [];
       for (const band of bands) {
-        for (let n = 1; n <= MAX_MULTIPLE; n++) {
+        const shortest = halfWaveFt(bandEdgesMHz(band, segment)[1], velocityFactor);
+        if (!(shortest > 0)) continue;  // degenerate velocity factor
+        const highestMultiple = Math.ceil(maxLenFt / shortest) + 1;
+        for (let n = 1; n <= highestMultiple; n++) {
           const interval = resonanceInterval(band, segment, velocityFactor, margin, n);
           if (interval.lo > maxLenFt) break;
           intervals.push(interval);
@@ -720,8 +731,9 @@
         const [loMHz, hiMHz] = bandEdgesMHz(band, segment);
         const shortest = halfWaveFt(hiMHz, velocityFactor);
         const longest = halfWaveFt(loMHz, velocityFactor);
+        if (!(shortest > 0)) continue;  // degenerate velocity factor
         const nLo = Math.max(1, Math.floor(lenFt / longest - margin));
-        const nHi = Math.min(MAX_MULTIPLE, Math.ceil(lenFt / shortest + margin));
+        const nHi = Math.ceil(lenFt / shortest + margin);
         for (let n = nLo; n <= nHi; n++) {
           zones.push(resonanceInterval(band, segment, velocityFactor, margin, n));
         }
@@ -770,15 +782,24 @@
     // URL state
     // ============================================================
 
+    const clamp = (value, { min, max }) => Math.min(max, Math.max(min, value));
+
     const parseNum = (raw, fallback) => {
       const value = parseFloat(raw);
       return Number.isFinite(value) ? value : fallback;
     };
 
+    /**
+     * Own properties only.  A bare `key in obj` also matches everything on
+     * Object.prototype, so ?region=toString would pass the check and then
+     * fail to resolve to a band plan.
+     */
+    const isKeyOf = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
     const getUrlParams = () => {
       const params = new URLSearchParams(window.location.search);
       const rawRegion = params.get(URL_KEYS.region);
-      const region = rawRegion in REGIONS ? rawRegion : DEFAULTS.region;
+      const region = isKeyOf(REGIONS, rawRegion) ? rawRegion : DEFAULTS.region;
       const rawBands = params.get(URL_KEYS.bands);
       const bands = rawBands === null
         ? DEFAULTS.bands
@@ -788,11 +809,14 @@
       return {
         region,
         bands,
-        segment: segment in SEGMENTS ? segment : DEFAULTS.segment,
-        velocityFactor: parseNum(params.get(URL_KEYS.velocityFactor), DEFAULTS.velocityFactor),
-        marginPct: parseNum(params.get(URL_KEYS.marginPct), DEFAULTS.marginPct),
-        units: units in UNITS ? units : DEFAULTS.units,
-        wireLenFt: parseNum(params.get(URL_KEYS.wireLenFt), DEFAULTS.wireLenFt),
+        segment: isKeyOf(SEGMENTS, segment) ? segment : DEFAULTS.segment,
+        velocityFactor: clamp(
+          parseNum(params.get(URL_KEYS.velocityFactor), DEFAULTS.velocityFactor),
+          VELOCITY_FACTOR_RANGE),
+        marginPct: clamp(parseNum(params.get(URL_KEYS.marginPct), DEFAULTS.marginPct),
+                         MARGIN_PCT_RANGE),
+        units: isKeyOf(UNITS, units) ? units : DEFAULTS.units,
+        wireLenFt: Math.max(0, parseNum(params.get(URL_KEYS.wireLenFt), DEFAULTS.wireLenFt)),
       };
     };
 
@@ -1056,10 +1080,12 @@
                 <div className="panel-header">Assumptions</div>
                 <label className="control-label">
                   Clearance from resonance: <span className="control-value">{marginPct}%</span>
-                  <input className="control-slider" type="range" min="0" max="15"
+                  <input className="control-slider" type="range"
+                         min={MARGIN_PCT_RANGE.min} max={MARGIN_PCT_RANGE.max}
                          step={MARGIN_STEP_PCT}
                          value={marginPct}
-                         onChange={(e) => set({ marginPct: Number(e.target.value) })} />
+                         onChange={(e) => set({
+                           marginPct: clamp(Number(e.target.value), MARGIN_PCT_RANGE) })} />
                   <div className="control-hint">
                     Widens each avoid zone by this fraction of a half wavelength,
                     on both sides.
@@ -1067,9 +1093,12 @@
                 </label>
                 <label className="control-label">
                   Wire velocity factor:{' '}
-                  <input className="num-input" type="number" min="0.5" max="1" step="0.01"
+                  <input className="num-input" type="number" step="0.01"
+                         min={VELOCITY_FACTOR_RANGE.min} max={VELOCITY_FACTOR_RANGE.max}
                          value={velocityFactor}
-                         onChange={(e) => set({ velocityFactor: Number(e.target.value) })} />
+                         onChange={(e) => set({
+                           velocityFactor: clamp(Number(e.target.value),
+                                                 VELOCITY_FACTOR_RANGE) })} />
                   <div className="control-hint">
                     0.95 gives the classic λ/2 = 468 / f(MHz) feet.
                   </div>
