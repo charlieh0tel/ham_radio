@@ -330,7 +330,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useEffect } = React;
+    const { useState, useMemo, useEffect, useRef } = React;
 
     // ============================================================
     // Constants
@@ -745,13 +745,17 @@
       };
     };
 
-    const isAtDefaults = (state) =>
+    /**
+     * A length the page chose on load counts as a default, so opening the page
+     * fresh leaves a clean URL.
+     */
+    const isAtDefaults = (state, autoLenFt) =>
       state.region === DEFAULTS.region &&
       state.segment === DEFAULTS.segment &&
       state.velocityFactor === DEFAULTS.velocityFactor &&
       state.marginPct === DEFAULTS.marginPct &&
       state.units === DEFAULTS.units &&
-      state.wireLenFt === DEFAULTS.wireLenFt &&
+      (state.wireLenFt === DEFAULTS.wireLenFt || state.wireLenFt === autoLenFt) &&
       state.bands.length === DEFAULTS.bands.length &&
       DEFAULTS.bands.every(m => state.bands.includes(m));
 
@@ -887,8 +891,25 @@
                           marginPct, solution.shortLimit),
         [wireLenFt, solution, segment, velocityFactor, marginPct]);
 
+      // Jump to the widest clear span whenever the inputs change, so the
+      // answer always suits the current selection.  Typing a length or
+      // picking one off the map leaves the solution alone, so those stick
+      // until an input changes.  A length in the URL wins on first load.
+      const autoLenFt = useRef(null);
+      const firstRun = useRef(true);
       useEffect(() => {
-        if (isAtDefaults(p)) {
+        const wasFirstRun = firstRun.current;
+        firstRun.current = false;
+        if (wasFirstRun && wireLenFt > 0) return;
+        const best = solution.suggestions[0];
+        if (!best) return;
+        // Rounded to match the figure shown in the suggestions table.
+        autoLenFt.current = Math.round(best.center * 10) / 10;
+        set({ wireLenFt: autoLenFt.current });
+      }, [solution]);
+
+      useEffect(() => {
+        if (isAtDefaults(p, autoLenFt.current)) {
           window.history.replaceState(null, '', window.location.pathname);
           return;
         }
