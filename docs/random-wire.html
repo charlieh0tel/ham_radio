@@ -468,6 +468,10 @@
     /** Below this, a length displays fine at one decimal, in display units. */
     const LEN_ROUNDING_SLOP = 0.005;
 
+    /** Inches per foot, and the decimals kept on the inches part. */
+    const INCHES_PER_FT = 12;
+    const INCH_DIGITS = 1;
+
     /** Narrowest a map band may be drawn, SVG units, so hairlines stay visible. */
     const MIN_BAND_WIDTH = 0.5;
 
@@ -512,9 +516,50 @@
       label: '#888',
     });
 
+    /**
+     * Renders a length in feet as a decimal in some unit.  One decimal place
+     * normally, two when one would round the value somewhere it is not: a pick
+     * of 75.96 ft shown as "76.0" names a length the page reports as one to
+     * avoid, and a clearance of 0.04 ft shown as "0.0" reads as none at all.
+     */
+    const decimalLength = (abbrev, perFoot) => (lenFt) => {
+      const value = lenFt * perFoot;
+      const digits = Math.abs(Number(value.toFixed(1)) - value) < LEN_ROUNDING_SLOP ? 1 : 2;
+      return `${value.toFixed(digits)} ${abbrev}`;
+    };
+
+    /**
+     * Renders a length in feet as feet and inches, for marking out wire with a
+     * tape measure.  Inches keep a decimal place: rounding to a whole inch
+     * would blur a length by up to 0.04 ft, which is more than the clearance
+     * some spans have.
+     */
+    const feetAndInches = (lenFt) => {
+      // Round before splitting, so 11.97 in becomes 1 ft 0.0 in, not 0 ft 12.0 in.
+      const totalInches = Number((lenFt * INCHES_PER_FT).toFixed(INCH_DIGITS));
+      const feet = Math.floor(totalInches / INCHES_PER_FT);
+      const inches = totalInches - feet * INCHES_PER_FT;
+      if (inches === 0) return `${feet} ft`;
+      return `${feet} ft ${inches.toFixed(INCH_DIGITS)} in`;
+    };
+
+    /**
+     * Display units.
+     *   label:     button text
+     *   abbrev:    suffix on the length input, which is always decimal
+     *   axisLabel: unit of the map's tick numbers, which are always decimal
+     *   perFoot:   scale from feet, for the input, slider and map ticks
+     *   format:    renders a length in feet as text
+     * Feet and inches shares its scale with feet, differing only in format,
+     * so the input and the map stay decimal while readouts carry inches.
+     */
     const UNITS = Object.freeze({
-      ft: { label: 'feet', abbrev: 'ft', perFoot: 1 },
-      m:  { label: 'meters', abbrev: 'm', perFoot: 1 / FT_PER_M },
+      ft: { label: 'feet', abbrev: 'ft', axisLabel: 'feet', perFoot: 1,
+            format: decimalLength('ft', 1) },
+      ftin: { label: 'ft + in', abbrev: 'ft', axisLabel: 'feet', perFoot: 1,
+              format: feetAndInches },
+      m: { label: 'meters', abbrev: 'm', axisLabel: 'meters', perFoot: 1 / FT_PER_M,
+           format: decimalLength('m', 1 / FT_PER_M) },
     });
 
     const SEGMENTS = Object.freeze({
@@ -781,17 +826,7 @@
     const toDisplay = (lenFt, units) => lenFt * UNITS[units].perFoot;
     const fromDisplay = (len, units) => len / UNITS[units].perFoot;
 
-    /**
-     * A length for display.  One decimal normally, but two when one would
-     * round the value somewhere it is not: a pick of 75.96 ft shown as "76.0"
-     * names a length the page reports as one to avoid, and a clearance of
-     * 0.04 ft shown as "0.0" reads as no clearance at all.
-     */
-    const fmtLen = (lenFt, units) => {
-      const value = toDisplay(lenFt, units);
-      const digits = Math.abs(Number(value.toFixed(1)) - value) < LEN_ROUNDING_SLOP ? 1 : 2;
-      return `${value.toFixed(digits)} ${UNITS[units].abbrev}`;
-    };
+    const fmtLen = (lenFt, units) => UNITS[units].format(lenFt);
 
     /** Band edges in kHz below 1 MHz, MHz above, so LF bands stay readable. */
     const fmtBandEdges = (loMHz, hiMHz) => hiMHz < 1
@@ -938,7 +973,7 @@
             })}
             <text x={MAP.width / 2} y={MAP.height - 4} fill={COLORS.label} fontSize={MAP.axisFontSize}
                   textAnchor="middle" fontFamily="monospace">
-              wire length ({UNITS[units].label})
+              wire length ({UNITS[units].axisLabel})
             </text>
             {/* Selected length marker */}
             {wireLenFt > 0 && wireLenFt <= maxLenFt && (
