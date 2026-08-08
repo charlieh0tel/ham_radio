@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Wire Antenna Length Calculator</title>
+  <meta name="description" content="Pick end-fed random wire lengths that avoid half-wave resonances on the US ham bands you care about.">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { margin: 0; }
+
+    /* Layout */
+    .app {
+      min-height: 100vh;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: #fff;
+      margin: 0;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .main-content {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1 1 320px;
+      min-width: 300px;
+    }
+
+    .column-wide {
+      flex: 2 1 560px;
+    }
+
+    /* Panels */
+    .panel {
+      background: #1a1a1a;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .panel-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid #4dabf7;
+      outline-offset: 2px;
+    }
+
+    .presets {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .preset-btn {
+      padding: 6px 12px;
+      background: #111;
+      color: #888;
+      border: 1px solid #333;
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    .preset-btn:hover { color: #fff; border-color: #555; }
+
+    .preset-btn.active { background: #333; color: #fff; border-color: #555; }
+
+    /* Band selector */
+    .band-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 6px;
+    }
+
+    .band-btn {
+      padding: 8px 6px;
+      background: #111;
+      border: 1px solid #333;
+      color: #777;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .band-btn.active {
+      background: #12403a;
+      border-color: #009e73;
+      color: #4fd1ab;
+    }
+
+    .band-btn .band-freq {
+      display: block;
+      font-size: 9px;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .band-btn.active .band-freq { color: #2aa383; }
+
+    /* Segment toggle */
+    .segment-toggle {
+      display: flex;
+      gap: 6px;
+      background: #111;
+      padding: 4px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .segment-btn {
+      flex: 1;
+      padding: 6px 10px;
+      background: transparent;
+      color: #777;
+      font-size: 11px;
+    }
+
+    .segment-btn.active { background: #333; color: #fff; }
+
+    /* Controls */
+    .control-label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .control-label:last-child { margin-bottom: 0; }
+
+    .control-value { color: #fff; }
+
+    .control-slider { width: 100%; margin-top: 4px; }
+
+    .control-hint {
+      font-size: 10px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .num-input {
+      width: 80px;
+      padding: 4px 6px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    .num-input:focus { outline: none; border-color: #555; }
+
+    .len-input {
+      width: 100px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      padding: 2px 6px;
+    }
+
+    /* Length map */
+    .map-container {
+      background: #111;
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #333;
+    }
+
+    .map-svg { display: block; width: 100%; }
+
+    .map-readout {
+      font-size: 11px;
+      color: #888;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    .map-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 10px;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+
+    .swatch-hatch {
+      background: repeating-linear-gradient(45deg, #8c8c88 0 2px, #2a2a28 2px 5px);
+    }
+
+    /* Verdict */
+    .verdict {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #1a1a1a;
+    }
+
+    .verdict.good { background: #0d2621; border-color: #009e73; }
+    .verdict.bad { background: #2b1409; border-color: #d55e00; }
+
+    .verdict-headline {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .verdict-detail { font-size: 11px; color: #aaa; line-height: 1.6; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      text-align: right;
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 6px;
+      border-bottom: 1px solid #333;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+
+    td {
+      text-align: right;
+      padding: 4px 6px;
+      color: #aaa;
+      border-bottom: 1px solid #222;
+    }
+
+    tr.pick td { cursor: pointer; }
+    tr.pick:hover td { background: #222; color: #fff; }
+
+    .best-length { color: #4fd1ab; font-weight: 600; }
+
+    .empty-note { font-size: 11px; color: #666; }
+
+    .link-btn {
+      background: transparent;
+      color: #4fd1ab;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    /* Info and footer */
+    .info {
+      max-width: 780px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .info strong { color: #aaa; }
+    .info a { color: #888; }
+
+    .footer {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+    }
+
+    .footer a { color: #888; }
+
+    @media (max-width: 800px) {
+      .app { padding: 16px; gap: 16px; }
+      .column, .column-wide { min-width: unset; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    // ============================================================
+    // Constants
+    // ============================================================
+
+    /** Speed of light, m/s. */
+    const C_SPEED = 299792458;
+
+    /** Feet per meter (exact, by definition of the international foot). */
+    const FT_PER_M = 1 / 0.3048;
+
+    /**
+     * Amateur band edges in kHz, per region.
+     *   m:     band wavelength in meters, the key used everywhere else
+     *   full:  whole band
+     *   cw:    CW / narrowband segment
+     * National rules vary inside each IARU region; the region entries follow
+     * the IARU band plans, and the US entry follows FCC allocations.
+     * @type {Object<string, {label:string, note:string,
+     *                        bands:Array<{m:number, label:string,
+     *                                     full:number[], cw:number[]}>}>}
+     */
+    const REGIONS = Object.freeze({
+      us: {
+        label: 'United States',
+        note: '47 CFR 97.301, per the ARRL frequency chart. Includes the 60m '
+          + 'rules effective 13 Feb 2026.',
+        bands: [
+          // 2200m and 630m were allocated in 2017; both are secondary and
+          // power limited, but the half-wave lengths still apply.
+          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
+          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
+          { m: 160,  label: '160m',  full: [1800, 2000],   cw: [1800, 1840] },
+          { m: 80,   label: '80m',   full: [3500, 4000],   cw: [3500, 3600] },
+          // Since 13 Feb 2026: the 5351.5-5366.5 kHz band at 9.15 W ERP, plus
+          // four retained 2.8 kHz channels centered on 5332, 5348, 5373 and
+          // 5405 kHz at 100 W ERP.  The span below covers all of it.
+          { m: 60,   label: '60m',   full: [5330.6, 5406.4], cw: [5330.6, 5406.4] },
+          { m: 40,   label: '40m',   full: [7000, 7300],   cw: [7000, 7125] },
+          { m: 30,   label: '30m',   full: [10100, 10150], cw: [10100, 10150] },
+          { m: 20,   label: '20m',   full: [14000, 14350], cw: [14000, 14150] },
+          { m: 17,   label: '17m',   full: [18068, 18168], cw: [18068, 18110] },
+          { m: 15,   label: '15m',   full: [21000, 21450], cw: [21000, 21200] },
+          { m: 12,   label: '12m',   full: [24890, 24990], cw: [24890, 24930] },
+          { m: 10,   label: '10m',   full: [28000, 29700], cw: [28000, 28300] },
+          { m: 6,    label: '6m',    full: [50000, 54000], cw: [50000, 50100] },
+        ],
+      },
+      r1: {
+        label: 'IARU Region 1',
+        note: 'Europe, Africa, Middle East, northern Asia. 6m upper edge varies by country.',
+        bands: [
+          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
+          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
+          { m: 160, label: '160m', full: [1810, 2000],     cw: [1810, 1838] },
+          { m: 80,  label: '80m',  full: [3500, 3800],     cw: [3500, 3570] },
+          { m: 60,  label: '60m',  full: [5351.5, 5366.5], cw: [5351.5, 5354] },
+          { m: 40,  label: '40m',  full: [7000, 7200],     cw: [7000, 7040] },
+          { m: 30,  label: '30m',  full: [10100, 10150],   cw: [10100, 10130] },
+          { m: 20,  label: '20m',  full: [14000, 14350],   cw: [14000, 14070] },
+          { m: 17,  label: '17m',  full: [18068, 18168],   cw: [18068, 18095] },
+          { m: 15,  label: '15m',  full: [21000, 21450],   cw: [21000, 21070] },
+          { m: 12,  label: '12m',  full: [24890, 24990],   cw: [24890, 24915] },
+          { m: 10,  label: '10m',  full: [28000, 29700],   cw: [28000, 28070] },
+          { m: 6,   label: '6m',   full: [50000, 52000],   cw: [50000, 50100] },
+        ],
+      },
+      r2: {
+        label: 'IARU Region 2',
+        note: 'The Americas. National allocations differ; the US entry is more specific.',
+        bands: [
+          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
+          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
+          { m: 160, label: '160m', full: [1800, 2000],     cw: [1800, 1840] },
+          { m: 80,  label: '80m',  full: [3500, 4000],     cw: [3500, 3580] },
+          { m: 60,  label: '60m',  full: [5351.5, 5366.5], cw: [5351.5, 5354] },
+          { m: 40,  label: '40m',  full: [7000, 7300],     cw: [7000, 7050] },
+          { m: 30,  label: '30m',  full: [10100, 10150],   cw: [10100, 10130] },
+          { m: 20,  label: '20m',  full: [14000, 14350],   cw: [14000, 14070] },
+          { m: 17,  label: '17m',  full: [18068, 18168],   cw: [18068, 18095] },
+          { m: 15,  label: '15m',  full: [21000, 21450],   cw: [21000, 21070] },
+          { m: 12,  label: '12m',  full: [24890, 24990],   cw: [24890, 24915] },
+          { m: 10,  label: '10m',  full: [28000, 29700],   cw: [28000, 28070] },
+          { m: 6,   label: '6m',   full: [50000, 54000],   cw: [50000, 50100] },
+        ],
+      },
+      r3: {
+        label: 'IARU Region 3',
+        note: 'Asia-Pacific. 80m and 40m upper edges vary widely by country.',
+        bands: [
+          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
+          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
+          { m: 160, label: '160m', full: [1800, 2000],     cw: [1800, 1840] },
+          { m: 80,  label: '80m',  full: [3500, 3900],     cw: [3500, 3540] },
+          { m: 60,  label: '60m',  full: [5351.5, 5366.5], cw: [5351.5, 5354] },
+          { m: 40,  label: '40m',  full: [7000, 7300],     cw: [7000, 7040] },
+          { m: 30,  label: '30m',  full: [10100, 10150],   cw: [10100, 10130] },
+          { m: 20,  label: '20m',  full: [14000, 14350],   cw: [14000, 14070] },
+          { m: 17,  label: '17m',  full: [18068, 18168],   cw: [18068, 18095] },
+          { m: 15,  label: '15m',  full: [21000, 21450],   cw: [21000, 21070] },
+          { m: 12,  label: '12m',  full: [24890, 24990],   cw: [24890, 24915] },
+          { m: 10,  label: '10m',  full: [28000, 29700],   cw: [28000, 28070] },
+          { m: 6,   label: '6m',   full: [50000, 54000],   cw: [50000, 50100] },
+        ],
+      },
+    });
+
+    /** Bands available in a region. */
+    const bandsIn = (region) => REGIONS[region].bands;
+
+    /** Band-selection presets, by band wavelength in meters. */
+    const PRESETS = Object.freeze([
+      { label: 'HF all',   bands: [160, 80, 60, 40, 30, 20, 17, 15, 12, 10] },
+      { label: 'Classic',  bands: [80, 40, 20, 15, 10] },
+      { label: 'WARC',     bands: [30, 17, 12] },
+      { label: '40-10',    bands: [40, 30, 20, 17, 15, 12, 10] },
+      { label: 'Clear',    bands: [] },
+    ]);
+
+    /** Wire-end-effect / velocity factor of a thin wire in free space. */
+    const DEFAULT_VELOCITY_FACTOR = 0.95;
+
+    /** Default clearance to keep from a half-wave resonance, percent of length. */
+    const DEFAULT_MARGIN_PCT = 5;
+
+    /** Highest half-wave multiple considered for any one band. */
+    const MAX_MULTIPLE = 200;
+
+    /** Number of best-length suggestions listed. */
+    const MAX_SUGGESTIONS = 8;
+
+    /** Length map geometry, SVG user units. */
+    const MAP = Object.freeze({
+      width: 1000, height: 150,
+      left: 8, right: 8, top: 10,
+      barHeight: 62,
+      tickFontSize: 18,
+      axisFontSize: 16,
+    });
+
+    /** Tick spacings tried, in display units, smallest first. */
+    const TICK_STEPS = Object.freeze([1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]);
+
+    /** Target number of x-axis ticks. */
+    const TARGET_TICKS = 12;
+
+    /**
+     * Okabe-Ito colorblind-safe palette.  The two kinds of excluded length are
+     * also distinguished by fill pattern, so hue is never the only cue.
+     */
+    const COLORS = Object.freeze({
+      avoid: '#d55e00',      // vermillion: near a half-wave resonance
+      short: '#8c8c88',      // neutral gray, hatched: shorter than lambda/4 (see note)
+      usable: '#12403a',
+      usableEdge: '#009e73', // bluish green
+      marker: '#f0e442',     // yellow
+      axis: '#555',
+      label: '#888',
+    });
+
+    const UNITS = Object.freeze({
+      ft: { label: 'feet', abbrev: 'ft', perFoot: 1 },
+      m:  { label: 'meters', abbrev: 'm', perFoot: 1 / FT_PER_M },
+    });
+
+    const SEGMENTS = Object.freeze({
+      full: { label: 'Whole band', key: 'full' },
+      cw:   { label: 'CW only', key: 'cw' },
+    });
+
+    const URL_KEYS = Object.freeze({
+      region: 'region', bands: 'bands', segment: 'seg', velocityFactor: 'vf',
+      marginPct: 'margin', units: 'u', wireLenFt: 'len',
+    });
+
+    const DEFAULTS = Object.freeze({
+      region: 'us',
+      bands: [80, 40, 20, 15, 10],
+      segment: 'full',
+      velocityFactor: DEFAULT_VELOCITY_FACTOR,
+      marginPct: DEFAULT_MARGIN_PCT,
+      units: 'ft',
+      wireLenFt: 0,
+    });
+
+    // ============================================================
+    // Length math
+    // ============================================================
+
+    /**
+     * Half wavelength of a wire, in feet.
+     * lambda/2 = c / (2 f) scaled by the wire's velocity factor.  With
+     * vf = 0.95 this reduces to the familiar 468 / f(MHz) dipole formula.
+     */
+    const halfWaveFt = (freqMHz, velocityFactor) =>
+      (C_SPEED / (freqMHz * 1e6)) * FT_PER_M * velocityFactor / 2;
+
+    /** Band edges in MHz for the selected segment, low frequency first. */
+    const bandEdgesMHz = (band, segment) => {
+      const [loKHz, hiKHz] = band[SEGMENTS[segment].key];
+      return [loKHz * 1e-3, hiKHz * 1e-3];
+    };
+
+    /**
+     * The nth half-wave resonance of one band, as a length interval in feet
+     * widened by the clearance margin.  An end-fed wire that is a multiple of
+     * lambda/2 presents a very high feedpoint impedance (thousands of ohms)
+     * that most tuners and 9:1 ununs cannot match.  The band's high frequency
+     * gives the short end of the interval.
+     *
+     * The margin is a fraction of one half wavelength, not of the wire length:
+     * what detunes the feedpoint is the offset from resonance measured in
+     * wavelengths, which does not grow with n.  Scaling it by n instead would
+     * make the nth zone n times wider and swallow every gap between them.
+     *
+     * @returns {{lo:number, hi:number, label:string, kind:string}}
+     */
+    const resonanceInterval = (band, segment, velocityFactor, margin, n) => {
+      const [loMHz, hiMHz] = bandEdgesMHz(band, segment);
+      return {
+        lo: (n - margin) * halfWaveFt(hiMHz, velocityFactor),
+        hi: (n + margin) * halfWaveFt(loMHz, velocityFactor),
+        label: `${band.label} ${n} x λ/2`,
+        kind: 'resonance',
+      };
+    };
+
+    /** Every resonance interval of every selected band up to maxLenFt. */
+    const avoidIntervals = (bands, segment, velocityFactor, marginPct, maxLenFt) => {
+      const margin = marginPct / 100;
+      const intervals = [];
+      for (const band of bands) {
+        for (let n = 1; n <= MAX_MULTIPLE; n++) {
+          const interval = resonanceInterval(band, segment, velocityFactor, margin, n);
+          if (interval.lo > maxLenFt) break;
+          intervals.push(interval);
+        }
+      }
+      return intervals;
+    };
+
+    /**
+     * A wire shorter than a quarter wave on the lowest selected band is a poor
+     * radiator and a hard load for a tuner, so treat it as unusable.
+     */
+    const tooShortFt = (bands, segment, velocityFactor) => {
+      if (bands.length === 0) return 0;
+      const lowestMHz = Math.min(...bands.map(b => bandEdgesMHz(b, segment)[0]));
+      return halfWaveFt(lowestMHz, velocityFactor) / 2;
+    };
+
+    /** Merge overlapping or touching intervals; input need not be sorted. */
+    const mergeIntervals = (intervals) => {
+      const sorted = [...intervals].sort((a, b) => a.lo - b.lo);
+      const merged = [];
+      for (const interval of sorted) {
+        const last = merged[merged.length - 1];
+        if (last && interval.lo <= last.hi) {
+          last.hi = Math.max(last.hi, interval.hi);
+        } else {
+          merged.push({ lo: interval.lo, hi: interval.hi });
+        }
+      }
+      return merged;
+    };
+
+    /** Complement of the merged avoid intervals within [0, maxLenFt]. */
+    const usableIntervals = (merged, maxLenFt) => {
+      const usable = [];
+      let cursor = 0;
+      for (const gap of merged) {
+        if (gap.lo > cursor) usable.push({ lo: cursor, hi: Math.min(gap.lo, maxLenFt) });
+        cursor = Math.max(cursor, gap.hi);
+        if (cursor >= maxLenFt) break;
+      }
+      if (cursor < maxLenFt) usable.push({ lo: cursor, hi: maxLenFt });
+      return usable.filter(u => u.hi > u.lo);
+    };
+
+    /**
+     * Everything the length map and tables need, derived from the current
+     * selection.  All lengths are in feet.
+     */
+    const solve = (region, bandsM, segment, velocityFactor, marginPct, maxLenFt) => {
+      const bands = bandsIn(region).filter(b => bandsM.includes(b.m));
+      const resonances = avoidIntervals(bands, segment, velocityFactor, marginPct, maxLenFt);
+      const shortLimit = tooShortFt(bands, segment, velocityFactor);
+      const shortZone = shortLimit > 0
+        ? [{ lo: 0, hi: shortLimit, label: 'shorter than λ/4', kind: 'short' }]
+        : [];
+      const avoid = [...shortZone, ...resonances];
+      const merged = mergeIntervals(avoid);
+      const usable = usableIntervals(merged, maxLenFt);
+      const suggestions = [...usable]
+        .map(u => ({ ...u, center: (u.lo + u.hi) / 2, clearance: (u.hi - u.lo) / 2 }))
+        .sort((a, b) => b.clearance - a.clearance)
+        .slice(0, MAX_SUGGESTIONS);
+      return { bands, avoid, merged, usable, suggestions, shortLimit };
+    };
+
+    /**
+     * Center of the usable span nearest to lenFt, or null if none is left.
+     * The center is used rather than the closest edge so the suggestion has
+     * the most clearance that span can offer.
+     */
+    const nearestClearLength = (lenFt, usable) => {
+      let best = null;
+      for (const span of usable) {
+        const center = (span.lo + span.hi) / 2;
+        if (!best || Math.abs(center - lenFt) < Math.abs(best - lenFt)) best = center;
+      }
+      return best;
+    };
+
+    /**
+     * Judge one wire length against the selected bands directly, rather than
+     * against the precomputed map intervals, so that lengths past the end of
+     * the map are still answered correctly.
+     *
+     * Only the multiples that can bracket lenFt are examined: for band n,
+     * lenFt lies between the nth and (n+1)th resonance for n around
+     * lenFt / (half wave).
+     *
+     * @returns {?{ok:boolean, hit:?Object, clearance:number, nearest:?Object}}
+     *          clearance is the distance in feet to the nearest zone edge.
+     */
+    const judgeLength = (lenFt, bands, segment, velocityFactor, marginPct, shortLimit) => {
+      if (!(lenFt > 0)) return null;
+      const margin = marginPct / 100;
+      const zones = [];
+
+      if (shortLimit > 0) {
+        zones.push({ lo: 0, hi: shortLimit, label: 'shorter than λ/4', kind: 'short' });
+      }
+      for (const band of bands) {
+        const [loMHz, hiMHz] = bandEdgesMHz(band, segment);
+        const shortest = halfWaveFt(hiMHz, velocityFactor);
+        const longest = halfWaveFt(loMHz, velocityFactor);
+        const nLo = Math.max(1, Math.floor(lenFt / longest - margin));
+        const nHi = Math.min(MAX_MULTIPLE, Math.ceil(lenFt / shortest + margin));
+        for (let n = nLo; n <= nHi; n++) {
+          zones.push(resonanceInterval(band, segment, velocityFactor, margin, n));
+        }
+      }
+
+      // Nothing selected to judge against, so there is no verdict to give.
+      if (zones.length === 0) return null;
+
+      const hit = zones.find(z => lenFt >= z.lo && lenFt <= z.hi) ?? null;
+      let nearest = null;
+      let clearance = Infinity;
+      for (const zone of zones) {
+        const distance = hit === zone
+          ? Math.min(lenFt - zone.lo, zone.hi - lenFt)  // room left inside the zone
+          : Math.min(Math.abs(lenFt - zone.lo), Math.abs(lenFt - zone.hi));
+        if (distance < clearance) {
+          clearance = distance;
+          nearest = zone;
+        }
+      }
+      return { ok: !hit, hit, nearest, clearance: Number.isFinite(clearance) ? clearance : 0 };
+    };
+
+    // ============================================================
+    // Formatting
+    // ============================================================
+
+    const toDisplay = (lenFt, units) => lenFt * UNITS[units].perFoot;
+    const fromDisplay = (len, units) => len / UNITS[units].perFoot;
+
+    const fmtLen = (lenFt, units, digits = 1) =>
+      `${toDisplay(lenFt, units).toFixed(digits)} ${UNITS[units].abbrev}`;
+
+    /** Band edges in kHz below 1 MHz, MHz above, so LF bands stay readable. */
+    const fmtBandEdges = (loMHz, hiMHz) => hiMHz < 1
+      ? `${(loMHz * 1e3).toFixed(1)}-${(hiMHz * 1e3).toFixed(1)} kHz`
+      : `${loMHz.toFixed(3)}-${hiMHz.toFixed(3)}`;
+
+    /** Tick step in display units that yields roughly TARGET_TICKS ticks. */
+    const tickStep = (spanDisplay) => {
+      const ideal = spanDisplay / TARGET_TICKS;
+      return TICK_STEPS.find(step => step >= ideal) ?? TICK_STEPS[TICK_STEPS.length - 1];
+    };
+
+    // ============================================================
+    // URL state
+    // ============================================================
+
+    const parseNum = (raw, fallback) => {
+      const value = parseFloat(raw);
+      return Number.isFinite(value) ? value : fallback;
+    };
+
+    const getUrlParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const rawRegion = params.get(URL_KEYS.region);
+      const region = rawRegion in REGIONS ? rawRegion : DEFAULTS.region;
+      const rawBands = params.get(URL_KEYS.bands);
+      const bands = rawBands === null
+        ? DEFAULTS.bands
+        : rawBands.split(',').map(Number).filter(m => bandsIn(region).some(b => b.m === m));
+      const segment = params.get(URL_KEYS.segment);
+      const units = params.get(URL_KEYS.units);
+      return {
+        region,
+        bands,
+        segment: segment in SEGMENTS ? segment : DEFAULTS.segment,
+        velocityFactor: parseNum(params.get(URL_KEYS.velocityFactor), DEFAULTS.velocityFactor),
+        marginPct: parseNum(params.get(URL_KEYS.marginPct), DEFAULTS.marginPct),
+        units: units in UNITS ? units : DEFAULTS.units,
+        wireLenFt: parseNum(params.get(URL_KEYS.wireLenFt), DEFAULTS.wireLenFt),
+      };
+    };
+
+    const isAtDefaults = (state) =>
+      state.region === DEFAULTS.region &&
+      state.segment === DEFAULTS.segment &&
+      state.velocityFactor === DEFAULTS.velocityFactor &&
+      state.marginPct === DEFAULTS.marginPct &&
+      state.units === DEFAULTS.units &&
+      state.wireLenFt === DEFAULTS.wireLenFt &&
+      state.bands.length === DEFAULTS.bands.length &&
+      DEFAULTS.bands.every(m => state.bands.includes(m));
+
+    // ============================================================
+    // Components
+    // ============================================================
+
+    /** Horizontal map of wire length: red where resonant, green where usable. */
+    function LengthMap({ solution, maxLenFt, units, wireLenFt, onPick }) {
+      const [hoverFt, setHoverFt] = useState(null);
+
+      const plotWidth = MAP.width - MAP.left - MAP.right;
+      const xOf = (lenFt) => MAP.left + (lenFt / maxLenFt) * plotWidth;
+      const lenAt = (x) => ((x - MAP.left) / plotWidth) * maxLenFt;
+
+      const step = tickStep(toDisplay(maxLenFt, units));
+      const ticks = [];
+      for (let value = 0; value <= toDisplay(maxLenFt, units); value += step) {
+        ticks.push(value);
+      }
+
+      const handleMove = (event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * MAP.width;
+        setHoverFt(Math.max(0, Math.min(maxLenFt, lenAt(x))));
+      };
+
+      const hoverHit = hoverFt === null
+        ? null
+        : solution.avoid.find(a => hoverFt >= a.lo && hoverFt <= a.hi);
+
+      const barBottom = MAP.top + MAP.barHeight;
+
+      return (
+        <div className="map-container">
+          <svg className="map-svg" viewBox={`0 0 ${MAP.width} ${MAP.height}`}
+               onMouseMove={handleMove} onMouseLeave={() => setHoverFt(null)}
+               onClick={() => hoverFt !== null && onPick(hoverFt)}>
+            <defs>
+              {/* Diagonal hatch marks the too-short zone without relying on hue. */}
+              <pattern id="hatch-short" width="8" height="8" patternUnits="userSpaceOnUse"
+                       patternTransform="rotate(45)">
+                <rect width="8" height="8" fill="#2a2a28" />
+                <rect width="3" height="8" fill={COLORS.short} />
+              </pattern>
+            </defs>
+            {/* Usable background */}
+            {solution.usable.map((u, i) => (
+              <rect key={`u${i}`} x={xOf(u.lo)} y={MAP.top}
+                    width={Math.max(0, xOf(u.hi) - xOf(u.lo))} height={MAP.barHeight}
+                    fill={COLORS.usable} stroke={COLORS.usableEdge} strokeWidth="0.5" />
+            ))}
+            {/* Lengths to avoid */}
+            {solution.avoid.map((a, i) => (
+              <rect key={`a${i}`} x={xOf(Math.max(0, a.lo))} y={MAP.top}
+                    width={Math.max(0.5, xOf(Math.min(a.hi, maxLenFt)) - xOf(Math.max(0, a.lo)))}
+                    height={MAP.barHeight}
+                    fill={a.kind === 'short' ? 'url(#hatch-short)' : COLORS.avoid}
+                    opacity={a.kind === 'short' ? 1 : 0.9} />
+            ))}
+            {/* Axis and ticks */}
+            <line x1={MAP.left} y1={barBottom} x2={MAP.width - MAP.right} y2={barBottom}
+                  stroke={COLORS.axis} strokeWidth="1" />
+            {ticks.map((value) => {
+              const x = xOf(fromDisplay(value, units));
+              return (
+                <g key={value}>
+                  <line x1={x} y1={barBottom} x2={x} y2={barBottom + 5}
+                        stroke={COLORS.axis} strokeWidth="1" />
+                  <text x={x} y={barBottom + 24} fill={COLORS.label} fontSize={MAP.tickFontSize}
+                        textAnchor="middle" fontFamily="monospace">{value}</text>
+                </g>
+              );
+            })}
+            <text x={MAP.width / 2} y={MAP.height - 4} fill={COLORS.label} fontSize={MAP.axisFontSize}
+                  textAnchor="middle" fontFamily="monospace">
+              wire length ({UNITS[units].label})
+            </text>
+            {/* Selected length marker */}
+            {wireLenFt > 0 && wireLenFt <= maxLenFt && (
+              <line x1={xOf(wireLenFt)} y1={MAP.top - 6} x2={xOf(wireLenFt)} y2={barBottom + 3}
+                    stroke={COLORS.marker} strokeWidth="2" />
+            )}
+            {hoverFt !== null && (
+              <line x1={xOf(hoverFt)} y1={MAP.top} x2={xOf(hoverFt)} y2={barBottom}
+                    stroke="#fff" strokeWidth="1" opacity="0.5" />
+            )}
+          </svg>
+          <div className="map-readout">
+            {hoverFt === null
+              ? 'Click the map to set the wire length.'
+              : `${fmtLen(hoverFt, units)} - ${hoverHit ? `avoid: ${hoverHit.label}` : 'usable'}`}
+          </div>
+          <div className="map-legend">
+            <span><span className="swatch" style={{ background: COLORS.avoid }}></span>
+              near a half-wave resonance</span>
+            <span><span className="swatch swatch-hatch"></span>
+              shorter than λ/4</span>
+            <span><span className="swatch" style={{ background: COLORS.usable,
+              boxShadow: `inset 0 0 0 1px ${COLORS.usableEdge}` }}></span>usable</span>
+            <span><span className="swatch" style={{ background: COLORS.marker }}></span>
+              your wire</span>
+          </div>
+        </div>
+      );
+    }
+
+    function RandomWire() {
+      const [p, setP] = useState(getUrlParams);
+      const set = (updates) => setP(prev => ({ ...prev, ...updates }));
+
+      const { region, bands, segment, velocityFactor, marginPct, units, wireLenFt } = p;
+
+      // Map spans one full wavelength at the lowest selected band, which is the
+      // longest wire worth considering for that band.
+      const maxLenFt = useMemo(() => {
+        const selected = bandsIn(region).filter(b => bands.includes(b.m));
+        if (selected.length === 0) return 100;
+        const lowestMHz = Math.min(...selected.map(b => bandEdgesMHz(b, segment)[0]));
+        return 2 * halfWaveFt(lowestMHz, velocityFactor);
+      }, [region, bands, segment, velocityFactor]);
+
+      const solution = useMemo(
+        () => solve(region, bands, segment, velocityFactor, marginPct, maxLenFt),
+        [region, bands, segment, velocityFactor, marginPct, maxLenFt]);
+
+      const clearLength = useMemo(
+        () => nearestClearLength(wireLenFt, solution.usable),
+        [wireLenFt, solution]);
+
+      const verdict = useMemo(
+        () => judgeLength(wireLenFt, solution.bands, segment, velocityFactor,
+                          marginPct, solution.shortLimit),
+        [wireLenFt, solution, segment, velocityFactor, marginPct]);
+
+      useEffect(() => {
+        if (isAtDefaults(p)) {
+          window.history.replaceState(null, '', window.location.pathname);
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set(URL_KEYS.region, region);
+        params.set(URL_KEYS.bands, bands.join(','));
+        params.set(URL_KEYS.segment, segment);
+        params.set(URL_KEYS.velocityFactor, velocityFactor);
+        params.set(URL_KEYS.marginPct, marginPct);
+        params.set(URL_KEYS.units, units);
+        if (wireLenFt > 0) params.set(URL_KEYS.wireLenFt, wireLenFt.toFixed(2));
+        window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
+      }, [p]);
+
+      const toggleBand = (m) => set({
+        bands: bands.includes(m) ? bands.filter(x => x !== m) : [...bands, m].sort((a, b) => b - a),
+      });
+
+      /** Switching region drops any selected band that region does not have. */
+      const setRegion = (key) => set({
+        region: key,
+        bands: bands.filter(m => bandsIn(key).some(b => b.m === m)),
+      });
+
+      const setWireLen = (lenFt) => set({ wireLenFt: Math.round(lenFt * 100) / 100 });
+
+      const noBands = bands.length === 0;
+
+      return (
+        <div className="app">
+          <h1 className="title">Random Wire Antenna Length Calculator</h1>
+          <div className="footer">
+            End-fed wire lengths that dodge half-wave resonances on the bands you pick
+          </div>
+
+          <div className="main-content">
+            <div className="column">
+              <div className="panel">
+                <div className="panel-header">Band plan</div>
+                <div className="presets">
+                  {Object.entries(REGIONS).map(([key, def]) => (
+                    <button key={key}
+                            className={`btn preset-btn ${region === key ? 'active' : ''}`}
+                            onClick={() => setRegion(key)}>
+                      {def.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="control-hint">{REGIONS[region].note}</div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-header">Bands of interest</div>
+                <div className="presets">
+                  {PRESETS.map(preset => (
+                    <button key={preset.label} className="btn preset-btn"
+                            onClick={() => set({ bands: [...preset.bands] })}>
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="segment-toggle">
+                  {Object.entries(SEGMENTS).map(([key, def]) => (
+                    <button key={key}
+                            className={`btn segment-btn ${segment === key ? 'active' : ''}`}
+                            onClick={() => set({ segment: key })}>
+                      {def.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="band-grid">
+                  {bandsIn(region).map(band => {
+                    const [lo, hi] = bandEdgesMHz(band, segment);
+                    return (
+                      <button key={band.m}
+                              className={`btn band-btn ${bands.includes(band.m) ? 'active' : ''}`}
+                              onClick={() => toggleBand(band.m)}>
+                        {band.label}
+                        <span className="band-freq">{fmtBandEdges(lo, hi)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-header">Assumptions</div>
+                <label className="control-label">
+                  Clearance from resonance: <span className="control-value">{marginPct}%</span>
+                  <input className="control-slider" type="range" min="0" max="15" step="0.5"
+                         value={marginPct}
+                         onChange={(e) => set({ marginPct: Number(e.target.value) })} />
+                  <div className="control-hint">
+                    Widens each avoid zone by this fraction of a half wavelength,
+                    on both sides.
+                  </div>
+                </label>
+                <label className="control-label">
+                  Wire velocity factor:{' '}
+                  <input className="num-input" type="number" min="0.5" max="1" step="0.01"
+                         value={velocityFactor}
+                         onChange={(e) => set({ velocityFactor: Number(e.target.value) })} />
+                  <div className="control-hint">
+                    0.95 gives the classic λ/2 = 468 / f(MHz) feet.
+                  </div>
+                </label>
+                <label className="control-label">
+                  Units:{' '}
+                  {Object.entries(UNITS).map(([key, def]) => (
+                    <button key={key}
+                            className={`btn preset-btn ${units === key ? 'active' : ''}`}
+                            onClick={() => set({ units: key })}>
+                      {def.label}
+                    </button>
+                  ))}
+                </label>
+              </div>
+
+            </div>
+
+            <div className="column column-wide">
+              <div className={`verdict ${verdict ? (verdict.ok ? 'good' : 'bad') : ''}`}>
+                <div className="verdict-headline">
+                  Wire length{' '}
+                  <input className="num-input len-input" type="number" min="0" step="0.5"
+                         value={toDisplay(wireLenFt, units).toFixed(2)}
+                         onChange={(e) => setWireLen(fromDisplay(Number(e.target.value), units))} />
+                  {' '}{UNITS[units].abbrev}
+                  {verdict && (verdict.ok ? ': usable' : ': avoid')}
+                </div>
+                <div className="verdict-detail">
+                  {!verdict
+                    ? 'Type a length, click the map, or pick one from the table below.'
+                    : verdict.ok
+                      ? `Nearest zone is ${verdict.nearest.label}, `
+                        + `${fmtLen(verdict.clearance, units)} away `
+                        + `(${fmtLen(verdict.nearest.lo, units)} to ${fmtLen(verdict.nearest.hi, units)}).`
+                      : `Falls in ${verdict.hit.label} `
+                        + `(${fmtLen(verdict.hit.lo, units)} to ${fmtLen(verdict.hit.hi, units)}); `
+                        + `${fmtLen(verdict.clearance, units)} from the near edge.`}
+                  {wireLenFt > maxLenFt
+                    && ' Longer than one wavelength on the lowest band selected.'}
+                  {verdict && !verdict.ok && clearLength !== null && (
+                    <>
+                      {' '}
+                      <button className="btn link-btn" onClick={() => setWireLen(clearLength)}>
+                        Nearest clear length: {fmtLen(clearLength, units)}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {noBands ? (
+                <div className="panel"><div className="empty-note">
+                  Select at least one band.
+                </div></div>
+              ) : (
+                <LengthMap solution={solution} maxLenFt={maxLenFt} units={units}
+                           wireLenFt={wireLenFt} onPick={setWireLen} />
+              )}
+
+              {!noBands && (
+                <div className="panel">
+                  <div className="panel-header">Best lengths (widest clear spans)</div>
+                  {solution.suggestions.length === 0 ? (
+                    <div className="empty-note">
+                      No clear span left. Reduce the clearance margin or drop a band.
+                    </div>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Length</th><th>Usable from</th><th>to</th><th>Margin</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {solution.suggestions.map((s, i) => (
+                          <tr key={i} className="pick" onClick={() => setWireLen(s.center)}>
+                            <td className="best-length">{fmtLen(s.center, units)}</td>
+                            <td>{fmtLen(s.lo, units)}</td>
+                            <td>{fmtLen(s.hi, units)}</td>
+                            <td>+/- {fmtLen(s.clearance, units)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+
+              {!noBands && (
+                <div className="panel">
+                  <div className="panel-header">Half-wave lengths per band</div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Band</th><th>Edges</th><th>λ/2 span</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {solution.bands.map(band => {
+                        const [lo, hi] = bandEdgesMHz(band, segment);
+                        return (
+                          <tr key={band.m}>
+                            <td>{band.label}</td>
+                            <td>{fmtBandEdges(lo, hi)}</td>
+                            <td>
+                              {fmtLen(halfWaveFt(hi, velocityFactor), units)} -{' '}
+                              {fmtLen(halfWaveFt(lo, velocityFactor), units)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="info">
+            <p>
+              An end-fed wire whose length is a multiple of a half wavelength presents a
+              very high feedpoint impedance (thousands of ohms), which most tuners and 9:1
+              ununs handle badly. <strong>Pick a length that misses every half-wave multiple
+              on every band you plan to use</strong>, and keep it at least a quarter wave
+              long on the lowest band.
+            </p>
+            <p>
+              Lengths here are physical wire lengths using λ/2 = c / (2 f) times the
+              velocity factor; at 0.95 that is the familiar 468 / f(MHz) feet. Real wire
+              near ground, with insulators and a counterpoise, will differ, so favor
+              lengths with generous margin. A counterpoise or radial system is still
+              required; the feedpoint impedance also depends on it.
+            </p>
+            <p>
+              US band edges are from{' '}
+              <a href="https://www.law.cornell.edu/cfr/text/47/97.301">47 CFR 97.301</a>
+              {' '}as summarised by the{' '}
+              <a href="https://www.arrl.org/frequency-allocations">ARRL frequency chart</a>,
+              including the{' '}
+              <a href="https://www.arrl.org/news/new-60-meter-frequencies-available-as-of-february-13">60m
+              rules effective 13 February 2026</a>. Other regions follow the IARU band
+              plans; national rules vary within a region, so check your own licence
+              conditions before trusting the edges.
+            </p>
+            <p>
+              Method from Mike Markowski AB3AP,{' '}
+              <a href="http://udel.edu/~mm/ham/randomWire/">udel.edu/~mm/ham/randomWire/</a>.
+            </p>
+          </div>
+
+          <div className="footer">
+            {'\u00A9'} 2026 Christopher Hoover.{' '}
+            <a href="https://github.com/charlieh0tel/ham_radio/blob/master/LICENSE">MIT License</a>.{' '}
+            <a href="https://github.com/charlieh0tel/ham_radio">GitHub</a>.{' '}
+            <a href="https://github.com/charlieh0tel/ham_radio/issues">Bugs &amp; Feedback</a>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<RandomWire />);
+  </script>
+</body>
+</html>

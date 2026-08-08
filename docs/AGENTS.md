@@ -5,7 +5,17 @@ to this app.
 
 ## Project Overview
 
-This is a GitHub Pages site (`docs/`) containing an interactive antenna impedance matching tool with a Smith chart. The app is a single-file React application (`antenna-matching.html`) using inline JSX transpiled by Babel standalone, with mathjs for complex arithmetic and fmin for optimization.
+This is a GitHub Pages site (`docs/`) with `index.html` linking to one
+self-contained tool per page:
+
+- `antenna-matching.html`: antenna impedance matching with a Smith chart.
+  React + inline JSX transpiled by Babel standalone, mathjs for complex
+  arithmetic, fmin for optimization.
+- `random-wire.html`: end-fed random wire lengths that avoid half-wave
+  resonances on selected bands. React + Babel standalone, no other
+  dependencies. Band plans (US, IARU regions 1-3) are a data table.
+- `sherwood.html`: Sherwood receiver performance table. Plain JS with
+  Chart.js.
 
 ## Code Style
 
@@ -27,6 +37,7 @@ Before proposing a commit, always:
    - Gamma (reflection coefficient) calculations
    - Smith chart coordinate mappings (normalized impedance to chart position)
    - Matching network formulas
+   - Wavelength / frequency conversions and band edge data
 
 ## Testing Locally
 
@@ -53,7 +64,7 @@ The `docs/` directory is served by GitHub Pages from the `master` branch. Pushin
 
 ## Additional Guidelines
 
-- **Preserve working state**: This is a single-file app. A bad edit breaks everything. Be conservative with refactors.
+- **Preserve working state**: Each tool is a single file. A bad edit breaks everything. Be conservative with refactors.
 - **Test both matching modes**: Changes to shared code (Smith chart drawing, impedance math) must be verified in both Gamma and Hairpin match modes.
 - **Respect the single-file architecture**: Do not split into multiple files unless the user requests it. The single-file design is intentional for GitHub Pages simplicity.
 - **External dependencies are loaded from CDN** (React, ReactDOM, Babel, mathjs, fmin).
