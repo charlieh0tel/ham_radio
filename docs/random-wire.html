@@ -465,6 +465,15 @@
     /** Number of best-length suggestions listed. */
     const MAX_SUGGESTIONS = 8;
 
+    /** Below this, a length displays fine at one decimal, in display units. */
+    const LEN_ROUNDING_SLOP = 0.005;
+
+    /** Narrowest a map band may be drawn, SVG units, so hairlines stay visible. */
+    const MIN_BAND_WIDTH = 0.5;
+
+    /** Map length used when no band is selected and there is nothing to scale to. */
+    const EMPTY_MAP_LEN_FT = 100;
+
     /** Roundings tried for a recommended length, in feet, coarsest first. */
     const PICK_STEPS_FT = Object.freeze([1, 0.5, 0.1, 0.01]);
 
@@ -743,18 +752,26 @@
       if (zones.length === 0) return null;
 
       const hit = zones.find(z => lenFt >= z.lo && lenFt <= z.hi) ?? null;
+
+      // Inside a zone, the only distance worth reporting is the way out of
+      // that zone; taking a minimum over the others would quote a figure
+      // belonging to a zone the message does not name.
+      if (hit) {
+        return { ok: false, hit, nearest: hit,
+                 clearance: Math.min(lenFt - hit.lo, hit.hi - lenFt) };
+      }
+
       let nearest = null;
       let clearance = Infinity;
       for (const zone of zones) {
-        const distance = hit === zone
-          ? Math.min(lenFt - zone.lo, zone.hi - lenFt)  // room left inside the zone
-          : Math.min(Math.abs(lenFt - zone.lo), Math.abs(lenFt - zone.hi));
+        const distance = Math.min(Math.abs(lenFt - zone.lo), Math.abs(lenFt - zone.hi));
         if (distance < clearance) {
           clearance = distance;
           nearest = zone;
         }
       }
-      return { ok: !hit, hit, nearest, clearance: Number.isFinite(clearance) ? clearance : 0 };
+      return { ok: true, hit: null, nearest,
+               clearance: Number.isFinite(clearance) ? clearance : 0 };
     };
 
     // ============================================================
@@ -764,8 +781,17 @@
     const toDisplay = (lenFt, units) => lenFt * UNITS[units].perFoot;
     const fromDisplay = (len, units) => len / UNITS[units].perFoot;
 
-    const fmtLen = (lenFt, units, digits = 1) =>
-      `${toDisplay(lenFt, units).toFixed(digits)} ${UNITS[units].abbrev}`;
+    /**
+     * A length for display.  One decimal normally, but two when one would
+     * round the value somewhere it is not: a pick of 75.96 ft shown as "76.0"
+     * names a length the page reports as one to avoid, and a clearance of
+     * 0.04 ft shown as "0.0" reads as no clearance at all.
+     */
+    const fmtLen = (lenFt, units) => {
+      const value = toDisplay(lenFt, units);
+      const digits = Math.abs(Number(value.toFixed(1)) - value) < LEN_ROUNDING_SLOP ? 1 : 2;
+      return `${value.toFixed(digits)} ${UNITS[units].abbrev}`;
+    };
 
     /** Band edges in kHz below 1 MHz, MHz above, so LF bands stay readable. */
     const fmtBandEdges = (loMHz, hiMHz) => hiMHz < 1
@@ -852,11 +878,14 @@
         ticks.push(value);
       }
 
-      const handleMove = (event) => {
+      /** Length under the pointer, clamped to the map. */
+      const lenAtEvent = (event) => {
         const rect = event.currentTarget.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * MAP.width;
-        setHoverFt(Math.max(0, Math.min(maxLenFt, lenAt(x))));
+        return Math.max(0, Math.min(maxLenFt, lenAt(x)));
       };
+
+      const handleMove = (event) => setHoverFt(lenAtEvent(event));
 
       const hoverHit = hoverFt === null
         ? null
@@ -868,7 +897,7 @@
         <div className="map-container">
           <svg className="map-svg" viewBox={`0 0 ${MAP.width} ${MAP.height}`}
                onMouseMove={handleMove} onMouseLeave={() => setHoverFt(null)}
-               onClick={() => hoverFt !== null && onPick(hoverFt)}>
+               onClick={(event) => onPick(lenAtEvent(event))}>
             <defs>
               {/* Diagonal hatch marks the too-short zone without relying on hue. */}
               <pattern id="hatch-short" width="8" height="8" patternUnits="userSpaceOnUse"
@@ -880,13 +909,15 @@
             {/* Usable background */}
             {solution.usable.map((u, i) => (
               <rect key={`u${i}`} x={xOf(u.lo)} y={MAP.top}
-                    width={Math.max(0, xOf(u.hi) - xOf(u.lo))} height={MAP.barHeight}
+                    width={Math.max(MIN_BAND_WIDTH, xOf(u.hi) - xOf(u.lo))}
+                    height={MAP.barHeight}
                     fill={COLORS.usable} stroke={COLORS.usableEdge} strokeWidth="0.5" />
             ))}
             {/* Lengths to avoid */}
             {solution.avoid.map((a, i) => (
               <rect key={`a${i}`} x={xOf(Math.max(0, a.lo))} y={MAP.top}
-                    width={Math.max(0.5, xOf(Math.min(a.hi, maxLenFt)) - xOf(Math.max(0, a.lo)))}
+                    width={Math.max(MIN_BAND_WIDTH,
+                                    xOf(Math.min(a.hi, maxLenFt)) - xOf(Math.max(0, a.lo)))}
                     height={MAP.barHeight}
                     fill={a.kind === 'short' ? 'url(#hatch-short)' : COLORS.avoid}
                     opacity={a.kind === 'short' ? 1 : 0.9} />
@@ -948,7 +979,7 @@
       // longest wire worth considering for that band.
       const maxLenFt = useMemo(() => {
         const selected = bandsIn(region).filter(b => bands.includes(b.m));
-        if (selected.length === 0) return 100;
+        if (selected.length === 0) return EMPTY_MAP_LEN_FT;
         const lowestMHz = Math.min(...selected.map(b => bandEdgesMHz(b, segment)[0]));
         return 2 * halfWaveFt(lowestMHz, velocityFactor);
       }, [region, bands, segment, velocityFactor]);
@@ -1034,6 +1065,7 @@
                   {Object.entries(REGIONS).map(([key, def]) => (
                     <button key={key}
                             className={`btn preset-btn ${region === key ? 'active' : ''}`}
+                            aria-pressed={region === key}
                             onClick={() => setRegion(key)}>
                       {def.label}
                     </button>
@@ -1056,6 +1088,7 @@
                   {Object.entries(SEGMENTS).map(([key, def]) => (
                     <button key={key}
                             className={`btn segment-btn ${segment === key ? 'active' : ''}`}
+                            aria-pressed={segment === key}
                             onClick={() => set({ segment: key })}>
                       {def.label}
                     </button>
@@ -1067,6 +1100,7 @@
                     return (
                       <button key={band.m}
                               className={`btn band-btn ${bands.includes(band.m) ? 'active' : ''}`}
+                              aria-pressed={bands.includes(band.m)}
                               onClick={() => toggleBand(band.m)}>
                         {band.label}
                         <span className="band-freq">{fmtBandEdges(lo, hi)}</span>
@@ -1108,6 +1142,7 @@
                   {Object.entries(UNITS).map(([key, def]) => (
                     <button key={key}
                             className={`btn preset-btn ${units === key ? 'active' : ''}`}
+                            aria-pressed={units === key}
                             onClick={() => set({ units: key })}>
                       {def.label}
                     </button>
