@@ -459,6 +459,7 @@
      *
      * @typedef {keyof typeof REGIONS} RegionKey
      * @typedef {keyof typeof SEGMENTS} SegmentKey
+     * @typedef {keyof typeof MODES} ModeKey
      * @typedef {keyof typeof UNITS} UnitKey
      *
      * A length interval to keep away from, and why.
@@ -513,6 +514,39 @@
     /** Inches per foot, and the decimals kept on the inches part. */
     const INCHES_PER_FT = 12;
     const INCH_DIGITS = 1;
+
+    /** Feed system the impedance mode scores against. */
+    const UNUN_RATIO = 9;
+    const Z_SYSTEM_OHMS = 50;
+
+    /**
+     * Resistance of a quarter-wave monopole over ground, the anchor the
+     * impedance model is calibrated to.  The textbook value is near 36 ohms.
+     */
+    const QUARTER_WAVE_OHMS = 36;
+
+    /** Keeps a perfectly reflecting load from producing an infinite SWR. */
+    const MAX_GAMMA = 0.999999;
+
+    /** Default conductor: #14 AWG. */
+    const WIRE_DIAMETER_M = 1.628e-3;
+    const WIRE_RADIUS_M = WIRE_DIAMETER_M / 2;
+
+    /** Frequencies sampled per band when scoring a length. */
+    const SWR_SAMPLES_PER_BAND = 9;
+
+    /** Lengths sampled across the map when drawing the score curve. */
+    const SCORE_SAMPLES = 600;
+
+    /** Top of the SWR axis on the score curve; plotted logarithmically. */
+    const SWR_PLOT_MAX = 20;
+
+    /**
+     * Typical SWR a length has to beat to be called good.  A wide-range tuner
+     * will work well below this; past it the feedline loss and the tuner both
+     * start to matter.
+     */
+    const SWR_GOOD = 5;
 
     /** Narrowest a map band may be drawn, SVG units, so hairlines stay visible. */
     const MIN_BAND_WIDTH = 0.5;
@@ -622,15 +656,33 @@
       cw:   { label: 'CW only', key: /** @type {'cw'} */ ('cw') },
     });
 
+    /**
+     * How a length is judged.  The classical method is the published rule and
+     * stays the default; the impedance method scores the same lengths against
+     * a model of the feedpoint rather than excluding them outright.
+     */
+    const MODES = Object.freeze({
+      classical: {
+        label: 'Half-wave rule',
+        note: 'Excludes lengths near a half-wave multiple, after AB3AP.',
+      },
+      impedance: {
+        label: 'Impedance',
+        note: `Scores lengths by modelled SWR at the radio through a `
+          + `${UNUN_RATIO}:1 unun.  Indicative only: height, ground and `
+          + `counterpoise move the real figures.`,
+      },
+    });
+
     const URL_KEYS = Object.freeze({
       region: 'region', bands: 'bands', segment: 'seg', velocityFactor: 'vf',
-      marginPct: 'margin', units: 'u', wireLenM: 'len_m',
+      marginPct: 'margin', units: 'u', wireLenM: 'len_m', mode: 'mode',
     });
 
     /**
      * @type {Readonly<{region: RegionKey, bands: number[], segment: SegmentKey,
      *                 velocityFactor: number, marginPct: number, units: UnitKey,
-     *                 wireLenM: Meters}>}
+     *                 wireLenM: Meters, mode: ModeKey}>}
      */
     /**
      * Wire length used to be written in feet under ?len=.  New links carry
@@ -643,6 +695,7 @@
       region: 'us',
       bands: [80, 40, 20, 15, 10],
       segment: 'full',
+      mode: 'classical',
       velocityFactor: DEFAULT_VELOCITY_FACTOR,
       marginPct: DEFAULT_MARGIN_PCT,
       units: 'ft',
@@ -964,6 +1017,172 @@
     };
 
     // ============================================================
+    // Feedpoint impedance
+    //
+    // The keep-out rule above is a proxy: half-wave multiples are bad
+    // because the feedpoint impedance spikes there.  This models the
+    // impedance directly, so a length can be scored rather than merely
+    // accepted or rejected.  It also sees the low impedance of an odd
+    // quarter wave, which the keep-out rule cannot express.
+    // ============================================================
+
+    /**
+     * Minimal complex arithmetic; only what the impedance model needs.
+     * @typedef {{re: number, im: number}} Complex
+     */
+    /** @param {number} re @param {number} im @returns {Complex} */
+    const cpx = (re, im) => ({ re, im });
+    /** @param {Complex} a @param {Complex} b @returns {Complex} */
+    const cAdd = (a, b) => cpx(a.re + b.re, a.im + b.im);
+    /** @param {Complex} a @param {Complex} b @returns {Complex} */
+    const cSub = (a, b) => cpx(a.re - b.re, a.im - b.im);
+    /** @param {Complex} a @param {Complex} b @returns {Complex} */
+    const cMul = (a, b) => cpx(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+    /** @param {Complex} a @param {Complex} b @returns {Complex} */
+    const cDiv = (a, b) => {
+      const d = b.re * b.re + b.im * b.im;
+      return cpx((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d);
+    };
+    /** @param {Complex} a @returns {number} */
+    const cAbs = (a) => Math.hypot(a.re, a.im);
+    /** @param {Complex} z @returns {Complex} */
+    const cCosh = (z) => cpx(Math.cosh(z.re) * Math.cos(z.im), Math.sinh(z.re) * Math.sin(z.im));
+    /** @param {Complex} z @returns {Complex} */
+    const cSinh = (z) => cpx(Math.sinh(z.re) * Math.cos(z.im), Math.cosh(z.re) * Math.sin(z.im));
+    /** @param {Complex} z @returns {Complex} */
+    const cCoth = (z) => cDiv(cCosh(z), cSinh(z));
+
+    /**
+     * Average characteristic impedance of a wire antenna, in ohms.
+     * Schelkunoff's thin-wire result, Z0 = 60 (ln(2l/a) - 1), for a wire of
+     * length l and radius a.
+     *
+     * @param {Meters} lenM
+     * @param {Meters} radiusM
+     * @returns {number} ohms
+     */
+    const wireZ0 = (lenM, radiusM) => 60 * (Math.log(2 * lenM / radiusM) - 1);
+
+    /**
+     * Feedpoint impedance of an end-fed wire, open at the far end, from the
+     * transmission-line approximation Zin = Z0 coth(gamma l), with
+     * gamma = alpha + j beta.
+     *
+     * Radiation is folded into alpha rather than modelled.  alpha is set so a
+     * quarter wave presents QUARTER_WAVE_OHMS: at l = lambda/4 the argument is
+     * alpha l + j pi/2, and coth of that is tanh(alpha l).  The same
+     * calibration fixes the half-wave value at Z0^2 / QUARTER_WAVE_OHMS, so
+     * the model reproduces both anchors a real antenna is known by.
+     *
+     * This is an envelope, not a prediction.  Height, ground, counterpoise and
+     * nearby objects move the real peaks by a factor of two or more.
+     *
+     * @param {Meters} lenM
+     * @param {Hertz} freqHz
+     * @param {number} velocityFactor
+     * @param {Meters} radiusM
+     * @returns {Complex} ohms
+     */
+    const endFedZin = (lenM, freqHz, velocityFactor, radiusM) => {
+      const z0 = wireZ0(lenM, radiusM);
+      const wavelengthM = 2 * halfWaveM(freqHz, velocityFactor);
+      const alpha = Math.atanh(QUARTER_WAVE_OHMS / z0) / (wavelengthM / 4);
+      const beta = 2 * Math.PI / wavelengthM;
+      return cMul(cpx(z0, 0), cCoth(cpx(alpha * lenM, beta * lenM)));
+    };
+
+    /**
+     * SWR seen at the radio, through the unun, for a feedpoint impedance.
+     * @param {Complex} zLoad
+     * @returns {number}
+     */
+    const swrAtRadio = (zLoad) => {
+      const zRadio = cpx(zLoad.re / UNUN_RATIO, zLoad.im / UNUN_RATIO);
+      const gamma = cDiv(cSub(zRadio, cpx(Z_SYSTEM_OHMS, 0)),
+                         cAdd(zRadio, cpx(Z_SYSTEM_OHMS, 0)));
+      const magnitude = Math.min(cAbs(gamma), MAX_GAMMA);
+      return (1 + magnitude) / (1 - magnitude);
+    };
+
+    /**
+     * Score one length against the selected bands: the geometric mean of the
+     * SWR at the radio, sampled across every band.
+     *
+     * The mean is geometric because SWR is a ratio.  A worst-case score was
+     * tried first and is useless: the lowest band always sets it, so the score
+     * collapses into "prefer the longest wire" no matter what else happens.
+     *
+     * @param {Meters} lenM
+     * @param {Band[]} bands
+     * @param {SegmentKey} segment
+     * @param {number} velocityFactor
+     * @param {Meters} radiusM
+     * @returns {?{swr: number, worst: {swr: number, band: Band, freqHz: Hertz}}}
+     */
+    const scoreLength = (lenM, bands, segment, velocityFactor, radiusM) => {
+      let logSum = 0;
+      let count = 0;
+      /** @type {?{swr: number, band: Band, freqHz: Hertz}} */
+      let worst = null;
+      for (const band of bands) {
+        const [loHz, hiHz] = bandEdgesHz(band, segment);
+        for (let i = 0; i < SWR_SAMPLES_PER_BAND; i++) {
+          const freqHz = loHz + (hiHz - loHz) * i / (SWR_SAMPLES_PER_BAND - 1);
+          const swr = swrAtRadio(endFedZin(lenM, freqHz, velocityFactor, radiusM));
+          logSum += Math.log(swr);
+          count++;
+          if (worst === null || swr > worst.swr) worst = { swr, band, freqHz };
+        }
+      }
+      if (count === 0 || worst === null) return null;
+      return { swr: Math.exp(logSum / count), worst };
+    };
+
+    /**
+     * @typedef {Object} ScorePoint
+     * @property {Meters} lenM
+     * @property {number} swr          geometric mean across the selected bands
+     * @property {{swr: number, band: Band, freqHz: Hertz}} worst
+     */
+
+    /**
+     * Score the whole length axis, then offer its local minima best first.
+     * Only strict minima are offered: a length partway down a slope is always
+     * bettered by moving along it, so it is not worth recommending.
+     *
+     * @param {RegionKey} region
+     * @param {number[]} bandsM
+     * @param {SegmentKey} segment
+     * @param {number} velocityFactor
+     * @param {Meters} radiusM
+     * @param {Meters} maxLenM
+     * @returns {{bands: Band[], curve: ScorePoint[], suggestions: ScorePoint[],
+     *            shortLimit: Meters}}
+     */
+    const solveImpedance = (region, bandsM, segment, velocityFactor, radiusM, maxLenM) => {
+      const bands = bandsIn(region).filter(b => bandsM.includes(b.m));
+      const shortLimit = tooShortM(bands, segment, velocityFactor);
+      if (bands.length === 0) return { bands, curve: [], suggestions: [], shortLimit };
+
+      const step = maxLenM / (SCORE_SAMPLES - 1);
+      /** @type {ScorePoint[]} */
+      const curve = [];
+      for (let i = 0; i < SCORE_SAMPLES; i++) {
+        const lenM = Math.max(step, i * step);
+        const scored = scoreLength(lenM, bands, segment, velocityFactor, radiusM);
+        if (scored) curve.push({ lenM, swr: scored.swr, worst: scored.worst });
+      }
+
+      const suggestions = curve
+        .filter((point, i) => i > 0 && i < curve.length - 1
+          && point.swr < curve[i - 1].swr && point.swr <= curve[i + 1].swr
+          && point.lenM >= shortLimit)
+        .sort((a, b) => a.swr - b.swr)
+        .slice(0, MAX_SUGGESTIONS);
+      return { bands, curve, suggestions, shortLimit };
+    };
+
+    // ============================================================
     // Formatting
     // ============================================================
 
@@ -1057,10 +1276,12 @@
         : rawBands.split(',').map(Number).filter(m => bandsIn(region).some(b => b.m === m));
       const segment = params.get(URL_KEYS.segment);
       const units = params.get(URL_KEYS.units);
+      const mode = params.get(URL_KEYS.mode);
       return {
         region,
         bands,
         segment: isKeyOf(SEGMENTS, segment) ? segment : DEFAULTS.segment,
+        mode: isKeyOf(MODES, mode) ? mode : DEFAULTS.mode,
         velocityFactor: clamp(
           parseNum(params.get(URL_KEYS.velocityFactor), DEFAULTS.velocityFactor),
           VELOCITY_FACTOR_RANGE),
@@ -1083,6 +1304,7 @@
     const isAtDefaults = (state, autoLenM) =>
       state.region === DEFAULTS.region &&
       state.segment === DEFAULTS.segment &&
+      state.mode === DEFAULTS.mode &&
       state.velocityFactor === DEFAULTS.velocityFactor &&
       state.marginPct === DEFAULTS.marginPct &&
       state.units === DEFAULTS.units &&
@@ -1096,10 +1318,12 @@
 
     /** Horizontal map of wire length: red where resonant, green where usable. */
     /**
-     * @param {{solution: ReturnType<typeof solve>, maxLenM: Meters, units: UnitKey,
+     * @param {{solution: ReturnType<typeof solve>,
+     *          score: ?ReturnType<typeof solveImpedance>,
+     *          maxLenM: Meters, units: UnitKey,
      *          wireLenM: Meters, onPick: (lenM: Meters) => void}} props
      */
-    function LengthMap({ solution, maxLenM, units, wireLenM, onPick }) {
+    function LengthMap({ solution, score, maxLenM, units, wireLenM, onPick }) {
       const [hoverM, setHoverM] = useState(/** @type {?Meters} */ (null));
 
       const plotWidth = MAP.width - MAP.left - MAP.right;
@@ -1135,6 +1359,21 @@
 
       const barBottom = MAP.top + MAP.barHeight;
 
+      /** SWR plotted logarithmically: it is a ratio, and the range is wide. */
+      const yOfSwr = (/** @type {number} */ swr) => barBottom - MAP.barHeight
+        * Math.min(1, Math.max(0, Math.log(swr) / Math.log(SWR_PLOT_MAX)));
+
+      const curvePath = score === null ? '' : score.curve
+        .map((point, i) => `${i === 0 ? 'M' : 'L'} ${xOf(point.lenM).toFixed(2)} `
+          + `${yOfSwr(point.swr).toFixed(2)}`)
+        .join(' ');
+
+      /** The score under the pointer, for the readout. */
+      const hoverScore = (score === null || hoverM === null) ? null
+        : score.curve.reduce((best, point) =>
+            Math.abs(point.lenM - hoverM) < Math.abs(best.lenM - hoverM) ? point : best,
+          score.curve[0]);
+
       return (
         <div className="map-container">
           <svg className="map-svg" viewBox={`0 0 ${MAP.width} ${MAP.height}`}
@@ -1149,14 +1388,14 @@
               </pattern>
             </defs>
             {/* Usable background */}
-            {solution.usable.map((u, i) => (
+            {score === null && solution.usable.map((u, i) => (
               <rect key={`u${i}`} x={xOf(u.lo)} y={MAP.top}
                     width={Math.max(MIN_BAND_WIDTH, xOf(u.hi) - xOf(u.lo))}
                     height={MAP.barHeight}
                     fill={COLORS.usable} stroke={COLORS.usableEdge} strokeWidth="0.5" />
             ))}
             {/* Lengths to avoid */}
-            {solution.avoid.map((a, i) => (
+            {score === null && solution.avoid.map((a, i) => (
               <rect key={`a${i}`} x={xOf(Math.max(0, a.lo))} y={MAP.top}
                     width={Math.max(MIN_BAND_WIDTH,
                                     xOf(Math.min(a.hi, maxLenM)) - xOf(Math.max(0, a.lo)))}
@@ -1164,6 +1403,26 @@
                     fill={a.kind === 'short' ? 'url(#hatch-short)' : COLORS.avoid}
                     opacity={a.kind === 'short' ? 1 : 0.9} />
             ))}
+            {/* Modelled SWR, with the too-short zone still marked */}
+            {score !== null && (
+              <g>
+                <rect x={MAP.left} y={MAP.top}
+                      width={Math.max(MIN_BAND_WIDTH, xOf(Math.min(score.shortLimit, maxLenM)) - MAP.left)}
+                      height={MAP.barHeight} fill="url(#hatch-short)" />
+                {[2, 5, 10].map(swr => (
+                  <g key={swr}>
+                    <line x1={MAP.left} y1={yOfSwr(swr)} x2={MAP.width - MAP.right}
+                          y2={yOfSwr(swr)} stroke={COLORS.axis} strokeWidth="0.5"
+                          strokeDasharray="3 3" />
+                    <text x={MAP.left - 4} y={yOfSwr(swr) + 3} fill={COLORS.label}
+                          fontSize={MAP.tickFontSize} textAnchor="end"
+                          fontFamily="monospace">{swr}:1</text>
+                  </g>
+                ))}
+                <path d={curvePath} fill="none" stroke={COLORS.usableEdge}
+                      strokeWidth="1.5" />
+              </g>
+            )}
             {/* Axis and ticks */}
             <line x1={MAP.left} y1={barBottom} x2={MAP.width - MAP.right} y2={barBottom}
                   stroke={COLORS.axis} strokeWidth="1" />
@@ -1195,15 +1454,29 @@
           <div className="map-readout">
             {hoverM === null
               ? 'Click the map to set the wire length.'
-              : `${fmtLen(hoverM, units)} - ${hoverHit ? `avoid: ${hoverHit.label}` : 'usable'}`}
+              : score !== null && hoverScore
+                ? `${fmtLen(hoverM, units)} - SWR ${hoverScore.swr.toFixed(1)}:1 typical, `
+                  + `worst ${hoverScore.worst.swr.toFixed(1)}:1 on ${hoverScore.worst.band.label}`
+                : `${fmtLen(hoverM, units)} - ${hoverHit ? `avoid: ${hoverHit.label}` : 'usable'}`}
           </div>
           <div className="map-legend">
-            <span><span className="swatch" style={{ background: COLORS.avoid }}></span>
-              near a half-wave resonance</span>
-            <span><span className="swatch swatch-hatch"></span>
-              shorter than λ/4</span>
-            <span><span className="swatch" style={{ background: COLORS.usable,
-              boxShadow: `inset 0 0 0 1px ${COLORS.usableEdge}` }}></span>usable</span>
+            {score === null ? (
+              <>
+                <span><span className="swatch" style={{ background: COLORS.avoid }}></span>
+                  near a half-wave resonance</span>
+                <span><span className="swatch swatch-hatch"></span>
+                  shorter than λ/4</span>
+                <span><span className="swatch" style={{ background: COLORS.usable,
+                  boxShadow: `inset 0 0 0 1px ${COLORS.usableEdge}` }}></span>usable</span>
+              </>
+            ) : (
+              <>
+                <span><span className="swatch" style={{ background: COLORS.usableEdge }}></span>
+                  modelled SWR at the radio, lower is better</span>
+                <span><span className="swatch swatch-hatch"></span>
+                  shorter than λ/4</span>
+              </>
+            )}
             <span><span className="swatch" style={{ background: COLORS.marker }}></span>
               your wire</span>
           </div>
@@ -1217,7 +1490,8 @@
       /** @param {Partial<ReturnType<typeof getUrlParams>>} updates */
       const set = (updates) => setP(prev => ({ ...prev, ...updates }));
 
-      const { region, bands, segment, velocityFactor, marginPct, units, wireLenM } = p;
+      const { region, bands, segment, velocityFactor, marginPct, units, wireLenM,
+              mode } = p;
 
       // Map spans one full wavelength at the lowest selected band, which is the
       // longest wire worth considering for that band.
@@ -1233,6 +1507,19 @@
       const solution = useMemo(
         () => solve(region, bands, segment, velocityFactor, marginPct, maxLenM, units),
         [region, bands, segment, velocityFactor, marginPct, maxLenM, units]);
+
+      const score = useMemo(
+        () => (mode === 'impedance'
+          ? solveImpedance(region, bands, segment, velocityFactor, WIRE_RADIUS_M, maxLenM)
+          : null),
+        [mode, region, bands, segment, velocityFactor, maxLenM]);
+
+      /** Modelled SWR for the length in hand, for the verdict line. */
+      const scoreHere = useMemo(
+        () => (mode === 'impedance' && wireLenM > 0 && solution.bands.length > 0
+          ? scoreLength(wireLenM, solution.bands, segment, velocityFactor, WIRE_RADIUS_M)
+          : null),
+        [mode, wireLenM, solution, segment, velocityFactor]);
 
       // Only searched when the asked-for margin leaves nothing.
       const fallback = useMemo(
@@ -1261,11 +1548,13 @@
         const wasFirstRun = firstRun.current;
         firstRun.current = false;
         if (wasFirstRun && wireLenM > 0) return;
-        const best = solution.suggestions[0];
-        if (!best) return;
-        autoLenM.current = best.pick;
-        set({ wireLenM: autoLenM.current });
-      }, [solution]);
+        const best = mode === 'impedance'
+          ? (score ? score.suggestions[0]?.lenM : undefined)
+          : solution.suggestions[0]?.pick;
+        if (best === undefined) return;
+        autoLenM.current = best;
+        set({ wireLenM: best });
+      }, [solution, score, mode]);
 
       useEffect(() => {
         if (isAtDefaults(p, autoLenM.current)) {
@@ -1276,6 +1565,7 @@
         params.set(URL_KEYS.region, region);
         params.set(URL_KEYS.bands, bands.join(','));
         params.set(URL_KEYS.segment, segment);
+        params.set(URL_KEYS.mode, mode);
         params.set(URL_KEYS.velocityFactor, String(velocityFactor));
         params.set(URL_KEYS.marginPct, String(marginPct));
         params.set(URL_KEYS.units, units);
@@ -1312,6 +1602,21 @@
 
           <div className="main-content">
             <div className="column">
+              <div className="panel">
+                <div className="panel-header">Method</div>
+                <div className="segment-toggle">
+                  {entriesOf(MODES).map(([key, def]) => (
+                    <button key={key}
+                            className={`btn segment-btn ${mode === key ? 'active' : ''}`}
+                            aria-pressed={mode === key}
+                            onClick={() => set({ mode: key })}>
+                      {def.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="control-hint">{MODES[mode].note}</div>
+              </div>
+
               <div className="panel">
                 <div className="panel-header">Band plan</div>
                 <div className="presets">
@@ -1366,6 +1671,14 @@
 
               <div className="panel">
                 <div className="panel-header">Assumptions</div>
+                {mode === 'impedance' && (
+                  <div className="control-hint" style={{ marginBottom: '10px' }}>
+                    Feed is a {UNUN_RATIO}:1 unun into {Z_SYSTEM_OHMS} ohms, conductor
+                    is #14 AWG. The model is calibrated to {QUARTER_WAVE_OHMS} ohms at
+                    a quarter wave; it is an envelope, not a prediction for your site.
+                  </div>
+                )}
+                {mode === 'classical' && (
                 <label className="control-label">
                   Clearance from resonance: <span className="control-value">{marginPct}%</span>
                   <input className="control-slider" type="range"
@@ -1379,6 +1692,7 @@
                     on both sides.
                   </div>
                 </label>
+                )}
                 <label className="control-label">
                   Wire velocity factor:{' '}
                   <input className="num-input" type="number" step="0.01"
@@ -1407,17 +1721,28 @@
             </div>
 
             <div className="column column-wide">
-              <div className={`verdict ${verdict ? (verdict.ok ? 'good' : 'bad') : ''}`}>
+              <div className={`verdict ${mode === 'impedance'
+                ? (scoreHere ? (scoreHere.swr <= SWR_GOOD ? 'good' : 'bad') : '')
+                : verdict ? (verdict.ok ? 'good' : 'bad') : ''}`}>
                 <div className="verdict-headline">
                   Wire length{' '}
                   <input className="num-input len-input" type="number" min="0" step="0.5"
                          value={toDisplay(wireLenM, units).toFixed(2)}
                          onChange={(e) => setWireLen(fromDisplay(Number(e.target.value), units))} />
                   {' '}{UNITS[units].abbrev}
-                  {verdict && (verdict.ok ? ': usable' : ': avoid')}
+                  {mode === 'impedance'
+                    ? (scoreHere ? `: SWR ${scoreHere.swr.toFixed(1)}:1` : '')
+                    : verdict && (verdict.ok ? ': usable' : ': avoid')}
                 </div>
                 <div className="verdict-detail">
-                  {!verdict
+                  {mode === 'impedance' ? (
+                    !scoreHere
+                      ? 'Type a length, click the map, or pick one from the table below.'
+                      : `Typical SWR at the radio through the ${UNUN_RATIO}:1, `
+                        + `geometric mean across the selected bands.  Worst sample is `
+                        + `${scoreHere.worst.swr.toFixed(1)}:1 on ${scoreHere.worst.band.label} `
+                        + `at ${(scoreHere.worst.freqHz / 1e6).toFixed(3)} MHz.`
+                  ) : !verdict
                     ? 'Type a length, click the map, or pick one from the table below.'
                     : verdict.ok
                       ? `Nearest zone is ${verdict.nearest.label}, `
@@ -1428,7 +1753,7 @@
                         + `${fmtLen(verdict.clearance, units)} from the near edge.`}
                   {wireLenM > maxLenM
                     && ' Longer than one wavelength on the lowest band selected.'}
-                  {verdict && !verdict.ok && clearLength !== null && (
+                  {mode === 'classical' && verdict && !verdict.ok && clearLength !== null && (
                     <>
                       {' '}
                       <button className="btn link-btn" onClick={() => setWireLen(clearLength)}>
@@ -1444,13 +1769,42 @@
                   Select at least one band.
                 </div></div>
               ) : (
-                <LengthMap solution={solution} maxLenM={maxLenM} units={units}
-                           wireLenM={wireLenM} onPick={setWireLen} />
+                <LengthMap solution={solution} score={score} maxLenM={maxLenM}
+                           units={units} wireLenM={wireLenM} onPick={setWireLen} />
               )}
 
               {!noBands && (
                 <div className="panel">
-                  <div className="panel-header">Best lengths (widest clear spans)</div>
+                  <div className="panel-header">
+                    {mode === 'impedance'
+                      ? 'Best lengths (lowest modelled SWR)'
+                      : 'Best lengths (widest clear spans)'}
+                  </div>
+                  {mode === 'impedance' ? (
+                    score === null || score.suggestions.length === 0 ? (
+                      <div className="empty-note">
+                        No length scores better than its neighbours here.
+                      </div>
+                    ) : (
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Length</th><th>Typical SWR</th><th>Worst</th><th>On</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {score.suggestions.map((point, i) => (
+                            <tr key={i} className="pick" onClick={() => setWireLen(point.lenM)}>
+                              <td className="best-length">{fmtLen(point.lenM, units)}</td>
+                              <td>{point.swr.toFixed(1)}:1</td>
+                              <td>{point.worst.swr.toFixed(1)}:1</td>
+                              <td>{point.worst.band.label}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )
+                  ) : (<>
                   {solution.suggestions.length === 0 ? (
                     <div className="empty-note">
                       No length clears every selected band at {marginPct}%.
@@ -1484,6 +1838,7 @@
                       </tbody>
                     </table>
                   )}
+                  </>)}
                 </div>
               )}
 

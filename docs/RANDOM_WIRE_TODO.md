@@ -50,19 +50,28 @@ at `l = lambda/4`, which then yields `Z0^2/36` (several kilohms) at
 predict a specific installation.  Cheap enough for the browser, no new
 dependencies.
 
-### Proposed approach
+### Status
 
-Do not replace the selector.  Keep resonance-avoidance as the thing
-that picks lengths, so recommendations stay stable and explainable, and
-add the impedance curve as a scoring / plot layer labeled
-indicative-only.
+Done: the page now carries both methods behind a Method toggle
+(`?mode=`), classical by default.  The impedance mode scores every
+length by the geometric mean of the modelled SWR at the radio and
+offers the local minima.  A worst-case score was tried first and
+discarded: the lowest band always sets it, so it collapses into "prefer
+the longest wire".
 
-Two wins available independent of the full model:
+Still open:
 
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
-      percentage.
-- [ ] Add an odd-`lambda/4` low-Z check.  Real gap today regardless of
-      which model is adopted.
+      percentage.  Applies to the classical mode only.
+- [ ] Expose the unun ratio and conductor diameter, currently fixed at
+      9:1 and #14 AWG.
+
+Dropped: a separate odd-`lambda/4` keep-out.  Measured, it empties the
+solution space (HF-all returns nothing, the classic set drops to a
+0.63 ft widest span), and the published tables sit *closer* to odd
+quarter waves than chance because those points are the midpoints
+between the half waves they avoid.  The impedance mode sees the low-Z
+case as cost, which is the useful form of it.
 
 ## NEC: offline only, not in the loop
 
