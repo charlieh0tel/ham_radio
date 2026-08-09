@@ -10,15 +10,26 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-const SCRIPT_RE = /<script\b[^>]*type=["']text\/babel["'][^>]*>([\s\S]*?)<\/script>/i;
+const SCRIPT_RE = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
 
-/** @param {string} html @returns {{body: string, startLine: number}} */
+/**
+ * The app is the largest inline block: the pages also carry small loader
+ * scripts, and which one is the app differs per page (text/babel where Babel
+ * transpiles JSX, a bare <script> where it does not).
+ *
+ * @param {string} html
+ * @returns {{body: string, startLine: number}}
+ */
 export function extractScript(html) {
-  const match = SCRIPT_RE.exec(html);
-  if (!match) throw new Error('no <script type="text/babel"> block found');
-  const startLine = html.slice(0, match.index + match[0].indexOf('>') + 1)
+  let best = null;
+  for (const match of html.matchAll(SCRIPT_RE)) {
+    if (/\bsrc=/i.test(match[1])) continue;   // external, nothing to check
+    if (best === null || match[2].length > best[2].length) best = match;
+  }
+  if (best === null) throw new Error('no inline <script> block found');
+  const startLine = html.slice(0, best.index + best[0].indexOf('>') + 1)
     .split('\n').length;
-  return { body: match[1], startLine };
+  return { body: best[2], startLine };
 }
 
 const [source, target] = process.argv.slice(2);
@@ -30,4 +41,7 @@ if (!source || !target) {
 const html = await readFile(resolve(source), 'utf8');
 const { body, startLine } = extractScript(html);
 await mkdir(dirname(resolve(target)), { recursive: true });
-await writeFile(resolve(target), '\n'.repeat(startLine - 1) + body.replace(/^\n/, ''));
+// Each page is checked in its own module scope; as plain scripts they would
+// share one global namespace and collide on every common identifier.
+await writeFile(resolve(target),
+  '\n'.repeat(startLine - 1) + body.replace(/^\n/, '') + '\nexport {};\n');

@@ -20,7 +20,7 @@
     "allowUmdGlobalAccess": true
   },
   "include": [
-    ".check/random-wire.jsx",
+    ".check/*.jsx",
     "globals.d.ts"
   ]
 }

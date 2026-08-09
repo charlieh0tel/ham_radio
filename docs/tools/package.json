@@ -4,8 +4,9 @@
   "type": "module",
   "description": "Dev-time type checking for the single-file pages in docs/.",
   "scripts": {
-    "extract": "node extract.mjs ../random-wire.html .check/random-wire.jsx",
-    "check": "npm run extract && tsc -p tsconfig.check.json"
+    "extract": "node extract.mjs ../random-wire.html .check/random-wire.jsx && node extract.mjs ../antenna-matching.html .check/antenna-matching.jsx && node extract.mjs ../sherwood.html .check/sherwood.jsx",
+    "check": "npm run extract && tsc -p tsconfig.check.json",
+    "check:all": "npm run extract && tsc -p tsconfig.all.json"
   },
   "devDependencies": {
     "@types/react": "^18.3.31",
