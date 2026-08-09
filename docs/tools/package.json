@@ -1,0 +1,15 @@
+{
+  "name": "ham-radio-docs-tools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-time type checking for the single-file pages in docs/.",
+  "scripts": {
+    "extract": "node extract.mjs ../random-wire.html .check/random-wire.jsx",
+    "check": "npm run extract && tsc -p tsconfig.check.json"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.6.0"
+  }
+}

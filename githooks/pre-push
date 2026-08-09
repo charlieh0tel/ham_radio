@@ -1,0 +1,14 @@
+#!/bin/sh
+# Type check the docs/ pages before a push, since pushing master deploys them.
+# Enable with: git config core.hooksPath githooks
+
+set -e
+
+repo_root=$(git rev-parse --show-toplevel)
+
+if [ ! -d "$repo_root/docs/tools/node_modules" ]; then
+  echo "pre-push: docs/tools deps missing; run 'npm --prefix docs/tools install'" >&2
+  exit 1
+fi
+
+npm --prefix "$repo_root/docs/tools" run --silent check

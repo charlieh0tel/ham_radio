@@ -1,0 +1,27 @@
+name: docs typecheck
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-typecheck.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-typecheck.yml'
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: docs/tools/package-lock.json
+      - run: npm ci
+        working-directory: docs/tools
+      - run: npm run check
+        working-directory: docs/tools

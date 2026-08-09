@@ -23,11 +23,41 @@ self-contained tool per page:
   `const`/`let`, never `var`.
 - Consistent 2-space indentation.
 - Use template literals over string concatenation.
+- Type every function parameter and return with JSDoc; the checker below
+  runs under `strict`, so an unannotated parameter is an error.
+- Name the unit in the type, not only in the identifier: `Feet`,
+  `KiloHertz`, `MegaHertz` are declared as aliases in `random-wire.html`.
+- Do not annotate a lookup table with `Object<string, ...>`. That widens
+  its keys to `string` and defeats the narrowing that keeps a bad URL
+  parameter out of the table.
+
+## Type Checking
+
+`docs/tools/` holds a dev-time type checker. It is not part of the site:
+nothing there is served, and the pages still run Babel standalone in the
+browser exactly as before. Only `random-wire.html` is checked today;
+the other two pages need ambient declarations for their CDN globals
+(`mathjs`, `fmin`, `Chart`) before they can join.
+
+```sh
+npm --prefix docs/tools install   # once
+npm --prefix docs/tools run check
+```
+
+`tools/extract.mjs` pulls the `<script type="text/babel">` body into a
+gitignored `.check/` directory, padded so a diagnostic's line number
+matches the HTML. `tsc` then checks it with `checkJs` and `strict`.
+
+The check must pass before committing and before pushing. A `pre-push`
+hook is in `githooks/`; enable it with
+`git config core.hooksPath githooks`. CI runs the same command on any
+push or PR touching `docs/`.
 
 ## Before Committing
 
 Before proposing a commit, always:
 
+0. **Type check**: `npm --prefix docs/tools run check` must pass clean.
 1. **Syntax check**: Verify the HTML is well-formed and all `<script>` blocks have valid JavaScript/JSX syntax.
 2. **Style review**: Ensure code follows the style guidelines above. No unused variables, no console.log left behind, no commented-out dead code.
 3. **Lint**: Since there is no formal linter configured, manually review for common issues: missing semicolons (if the file uses them consistently), unclosed brackets, mismatched JSX tags, undeclared variables.
