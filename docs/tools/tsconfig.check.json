@@ -3,7 +3,8 @@
     "target": "ES2022",
     "lib": [
       "ES2022",
-      "DOM"
+      "DOM",
+      "DOM.Iterable"
     ],
     "jsx": "react",
     "allowJs": true,
@@ -21,6 +22,7 @@
   },
   "include": [
     ".check/random-wire.jsx",
+    ".check/sherwood.jsx",
     "globals.d.ts"
   ]
 }

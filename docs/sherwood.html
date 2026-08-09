@@ -293,13 +293,72 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 <script>
 const TARGET = 'http://www.sherweng.com/table.html';
 
+/**
+ * One tested receiver, as parsed from the Sherwood table.  Numeric fields are
+ * null when the table leaves them blank.
+ *
+ * @typedef {Object} Radio
+ * @property {string} model
+ * @property {string} brand
+ * @property {?Date} dateAdded
+ * @property {number} drNarrow    narrow-spaced dynamic range, dB
+ * @property {?number} drWide     wide-spaced dynamic range, dB
+ * @property {?number} blocking
+ * @property {?number} loNoise
+ * @property {?number} filterUlt
+ * @property {?string} fe         front-end grade, A-F
+ * @property {string[]} footnotes
+ */
+
+/**
+ * Radio fields holding a measurement, the ones charts and ranges use.
+ * @typedef {'drNarrow'|'drWide'|'blocking'|'loNoise'|'filterUlt'} NumericKey
+ */
+
+/**
+ * Whether a scraped superscript is a footnote this page knows about.  The
+ * keys come from someone else's markup, so they stay strings until proven.
+ *
+ * @param {string} key
+ * @returns {key is keyof typeof FN_DEFS}
+ */
+function isFootnote(key) {
+  return Object.prototype.hasOwnProperty.call(FN_DEFS, key);
+}
+
+/**
+ * Element lookups that fail loudly.  Every id below is in this file's own
+ * markup, so a miss is a typo, not a condition to handle at the call site.
+ *
+ * @param {string} id
+ * @returns {HTMLElement}
+ */
+function byId(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error('missing #' + id);
+  return el;
+}
+
+/** @param {string} id @returns {HTMLInputElement} */
+function inputById(id) {
+  return /** @type {HTMLInputElement} */ (byId(id));
+}
+
+/** @param {string} id @returns {HTMLSelectElement} */
+function selectById(id) {
+  return /** @type {HTMLSelectElement} */ (byId(id));
+}
+
 const PROXIES = [
   { label:'corsproxy.io',
-    fetch: async u => { const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(u)); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); } },
+    /** @param {string} u @returns {Promise<string>} */
+    fetch: async (/** @type {string} */ u) => { const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(u)); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); } },
   { label:'allorigins.win',
-    fetch: async u => { const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(u)); if(!r.ok) throw new Error('HTTP '+r.status); const j=await r.json(); if(!j.contents) throw new Error('empty'); return j.contents; } },
+    /** @param {string} u @returns {Promise<string>} */
+    fetch: async (/** @type {string} */ u) => { const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(u)); if(!r.ok) throw new Error('HTTP '+r.status); const j=await r.json(); if(!j.contents) throw new Error('empty'); return j.contents; } },
   { label:'thingproxy.freeboard.io',
-    fetch: async u => { const r=await fetch('https://thingproxy.freeboard.io/fetch/'+u); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); } }
+    /** @param {string} u @returns {Promise<string>} */
+    fetch: async (/** @type {string} */ u) => { const r=await fetch('https://thingproxy.freeboard.io/fetch/'+u); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); } }
 ];
 
 // ── Footnote definitions (from Sherwood's key) ──────────────────────────
@@ -350,28 +409,42 @@ const FN_DEFS = {
   '70': '70 cm data, preamp ON — RMDR limited'
 };
 
-let ALL_DATA = [], FOOTNOTES_SEEN = new Set();
-let sortCol = 'drNarrow', sortAsc = false;
+/** @type {Radio[]} */
+let ALL_DATA = [];
+/** @type {Set<string>} */
+let FOOTNOTES_SEEN = new Set();
+/** @type {keyof Radio} */
+let sortCol = 'drNarrow';
+let sortAsc = false;
+/** @type {Set<string>} */
 let selectedModels = new Set();
-let SC = null, BC = null, LOC = null;
+/** Scatter, bar and local-noise charts; null until first drawn. */
+/** @type {?Chart} */
+let SC = null;
+/** @type {?Chart} */
+let BC = null;
+/** @type {?Chart} */
+let LOC = null;
 
+/** @type {?ReturnType<typeof setTimeout>} */
 let _debounceTimer = null;
 function debouncedUpdate() {
-  clearTimeout(_debounceTimer);
+  if (_debounceTimer !== null) clearTimeout(_debounceTimer);
   _debounceTimer = setTimeout(update, 150);
 }
 
 // ── Screens ─────────────────────────────────────────────────────────────
+/** @param {string} id */
 function show(id) {
   ['permission-screen','loading-screen','error-screen','dashboard'].forEach(s => {
-    document.getElementById(s).style.display = 'none';
+    byId(s).style.display = 'none';
   });
-  const el = document.getElementById(id);
+  const el = byId(id);
   el.style.display = id === 'loading-screen' ? 'flex' : 'block';
 }
 
 function showNoConsent() {
-  document.getElementById('permission-screen').innerHTML =
+  byId('permission-screen').innerHTML =
     '<div class="card"><h2>No problem</h2><p>Visit the original table at <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com/table.html</a>.</p><div class="btn-row"><button class="btn" onclick="location.reload()">Go back</button></div></div>';
 }
 
@@ -381,9 +454,9 @@ async function startFetch() {
   const errors = [];
   for (const proxy of PROXIES) {
     try {
-      document.getElementById('loading-msg').textContent = 'Trying ' + proxy.label + '…';
+      byId('loading-msg').textContent = 'Trying ' + proxy.label + '…';
       const html = await proxy.fetch(TARGET);
-      document.getElementById('loading-msg').textContent = 'Parsing table…';
+      byId('loading-msg').textContent = 'Parsing table…';
       const { data, footnotes } = parseSherwoodHTML(html);
       if (!data.length) {
         console.warn('Parsed 0 rows — page structure may have changed');
@@ -393,20 +466,26 @@ async function startFetch() {
       buildBrandFilter();
       buildFootnoteKey();
       const dm = html.match(/Updated\s+([\d]+\s+\w+\s+[\d]{4})/i);
-      if (dm) document.getElementById('data-date').textContent = 'Updated: ' + dm[1];
+      if (dm) byId('data-date').textContent = 'Updated: ' + dm[1];
       show('dashboard');
       update();
       return;
-    } catch(e) { errors.push(proxy.label + ': ' + e.message); }
+    } catch(e) { errors.push(proxy.label + ': ' + (e instanceof Error ? e.message : String(e))); }
   }
-  document.getElementById('error-detail').textContent = errors.join('\n');
+  byId('error-detail').textContent = errors.join('\n');
   show('error-screen');
 }
 
 // ── Parser ───────────────────────────────────────────────────────────────
+/**
+ * @param {string} html
+ * @returns {{data: Radio[], footnotes: Set<string>}}
+ */
 function parseSherwoodHTML(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
+  /** @type {Radio[]} */
   const data = [];
+  /** @type {Set<string>} */
   const footnotesSeen = new Set();
 
   for (const tr of doc.querySelectorAll('tr')) {
@@ -423,17 +502,21 @@ function parseSherwoodHTML(html) {
     const modelRaw = cleanModelName(raw.replace(/^(Added|Updated|Corrected|Edited)\s+[\d\/]+\s*/i, '').trim());
     if (!modelRaw) continue;
 
-    function firstInt(cell) { const m = cell.textContent.trim().match(/-?\d+/); return m ? parseInt(m[0],10) : null; }
+    /** @param {Element} cell @returns {?number} */
+    function firstInt(cell) {
+      const m = (cell.textContent ?? '').trim().match(/-?\d+/);
+      return m ? parseInt(m[0],10) : null;
+    }
 
     const drNarrow = firstInt(cells[12]);
     if (drNarrow == null) continue;
 
     // Extract footnote superscripts from each relevant cell
+    /** @param {Element} cell @returns {string[]} */
     function getFns(cell) {
-      return Array.from(cell.querySelectorAll('a,sup,b')).map(el => {
-        const t = el.textContent.trim().toLowerCase();
-        return t;
-      }).filter(t => t && FN_DEFS[t]);
+      return Array.from(cell.querySelectorAll('a,sup,b'))
+        .map(el => (el.textContent ?? '').trim().toLowerCase())
+        .filter(t => t && isFootnote(t));
     }
 
     const fns = [
@@ -444,8 +527,8 @@ function parseSherwoodHTML(html) {
     ];
     // Also scan anchor href #key text
     Array.from(cells[0].querySelectorAll('a[href]')).forEach(a => {
-      const t = a.textContent.trim().toLowerCase();
-      if (FN_DEFS[t]) fns.push(t);
+      const t = (a.textContent ?? '').trim().toLowerCase();
+      if (isFootnote(t)) fns.push(t);
     });
     const uniqueFns = [...new Set(fns)];
     uniqueFns.forEach(f => footnotesSeen.add(f));
@@ -469,6 +552,7 @@ function parseSherwoodHTML(html) {
   return { data, footnotes: footnotesSeen };
 }
 
+/** @param {string} s @returns {?Date} */
 function parseDateStr(s) {
   // mm/dd/yy or mm/dd/yyyy
   const parts = s.split('/');
@@ -490,6 +574,7 @@ const KNOWN_BRANDS = ['Yaesu','Icom','Kenwood','Elecraft','FlexRadio','Apache','
   'Signal/One','Racal','Lowe','Palstar','Grundig','Lab599','Aerial-51','Expert',
   'Xiegu','Elad','CommRadio','KWZ','Perseus'];
 
+/** @param {string} name @returns {string} */
 function cleanModelName(name) {
   // If name starts with a known brand, nothing to move
   const lower = name.toLowerCase();
@@ -504,6 +589,7 @@ function cleanModelName(name) {
   return name;
 }
 
+/** @param {string} model @returns {string} */
 function extractBrand(model) {
   const known = KNOWN_BRANDS;
   for (const b of known) if (model.toLowerCase().includes(b.toLowerCase())) return b;
@@ -512,12 +598,12 @@ function extractBrand(model) {
 
 // ── Footnote key ─────────────────────────────────────────────────────────
 function buildFootnoteKey() {
-  const grid = document.getElementById('fn-grid');
+  const grid = byId('fn-grid');
   grid.innerHTML = '';
   const sorted = [...FOOTNOTES_SEEN].sort();
   if (!sorted.length) return;
   sorted.forEach(key => {
-    if (!FN_DEFS[key]) return;
+    if (!isFootnote(key)) return;
     const dt = document.createElement('dt');
     dt.textContent = key + ': ';
     const dd = document.createElement('dd');
@@ -527,12 +613,12 @@ function buildFootnoteKey() {
     wrap.appendChild(dt); wrap.appendChild(dd);
     grid.appendChild(wrap);
   });
-  document.getElementById('fn-key').style.display = sorted.length ? 'block' : 'none';
+  byId('fn-key').style.display = sorted.length ? 'block' : 'none';
 }
 
 // ── Filters / sort ────────────────────────────────────────────────────────
 function buildBrandFilter() {
-  const sel = document.getElementById('brand-filter');
+  const sel = byId('brand-filter');
   sel.innerHTML = '<option value="">All brands</option>';
   [...new Set(ALL_DATA.map(r => r.brand))].sort().forEach(b => {
     const o = document.createElement('option'); o.value = b; o.textContent = b; sel.appendChild(o);
@@ -540,9 +626,9 @@ function buildBrandFilter() {
 }
 
 function getFiltered() {
-  const q  = document.getElementById('search').value.toLowerCase();
-  const br = document.getElementById('brand-filter').value;
-  const fe = document.getElementById('fe-filter').value;
+  const q  = inputById('search').value.toLowerCase();
+  const br = selectById('brand-filter').value;
+  const fe = selectById('fe-filter').value;
   return ALL_DATA.filter(r => {
     if (q  && !r.model.toLowerCase().includes(q) && !r.brand.toLowerCase().includes(q)) return false;
     if (br && r.brand !== br) return false;
@@ -551,6 +637,7 @@ function getFiltered() {
   });
 }
 
+/** @param {keyof Radio} col */
 function setSort(col) {
   sortAsc = sortCol === col ? !sortAsc : col === 'model' || col === 'dateAdded';
   sortCol = col;
@@ -568,9 +655,13 @@ function setSort(col) {
   buildTable(getFiltered());
 }
 
+/** @param {Radio[]} rows @returns {Radio[]} */
 function getSorted(rows) {
   return [...rows].sort((a, b) => {
-    let av = a[sortCol], bv = b[sortCol];
+    /** @type {any} */
+    let av = a[sortCol];
+    /** @type {any} */
+    let bv = b[sortCol];
     if (av == null && bv == null) return 0;
     if (av == null) return 1; if (bv == null) return -1;
     if (av instanceof Date) { av = av.getTime(); bv = bv instanceof Date ? bv.getTime() : 0; }
@@ -582,8 +673,15 @@ function getSorted(rows) {
 // ── Colors ────────────────────────────────────────────────────────────────
 const FE_COLOR = { A:'#1D9E75', B:'#378ADD', C:'#EF9F27', D:'#D85A30' };
 const UNKNOWN_COLOR = '#888780';
-function ptColor(fe) { return FE_COLOR[fe] || UNKNOWN_COLOR; }
+/** @param {?string} fe @returns {string} */
+function ptColor(fe) {
+  return fe !== null && Object.prototype.hasOwnProperty.call(FE_COLOR, fe)
+    ? FE_COLOR[/** @type {keyof typeof FE_COLOR} */ (fe)]
+    : UNKNOWN_COLOR;
+}
+/** @param {?number} v @returns {string} */
 function drColor(v) {
+  if (v === null) return '#888780';
   if (v >= 105) return '#1D9E75'; if (v >= 95) return '#378ADD';
   if (v >= 85)  return '#EF9F27'; if (v >= 75) return '#D85A30';
   return '#888780';
@@ -591,13 +689,15 @@ function drColor(v) {
 function isDark() { return matchMedia('(prefers-color-scheme:dark)').matches; }
 
 // ── Selection ─────────────────────────────────────────────────────────────
+/** @param {string} model */
 function setHighlight(model) {
   if (selectedModels.has(model)) selectedModels.delete(model);
   else selectedModels.add(model);
   document.querySelectorAll('tbody tr').forEach(tr => {
-    tr.classList.toggle('highlighted', selectedModels.has(tr.dataset.model));
+    const row = /** @type {HTMLTableRowElement} */ (tr);
+    tr.classList.toggle('highlighted', selectedModels.has(row.dataset.model ?? ''));
   });
-  document.getElementById('clear-btn').style.display = selectedModels.size ? 'inline-block' : 'none';
+  byId('clear-btn').style.display = selectedModels.size ? 'inline-block' : 'none';
   rebuildChartHighlight();
   updateSelBadge();
 }
@@ -605,7 +705,7 @@ function setHighlight(model) {
 function clearSelection() {
   selectedModels.clear();
   document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('highlighted'));
-  document.getElementById('clear-btn').style.display = 'none';
+  byId('clear-btn').style.display = 'none';
   rebuildChartHighlight();
   updateSelBadge();
 }
@@ -620,22 +720,23 @@ function updateBarHighlight() {
   if (!BC) return;
   const ds = BC.data.datasets[0];
   const hasSel = selectedModels.size > 0;
-  ds.backgroundColor = ds._fullLabels.map((full, i) =>
+  ds.backgroundColor = ds._fullLabels.map((/** @type {string} */ full, /** @type {number} */ i) =>
     (!hasSel || selectedModels.has(full)) ? ds._baseColors[i] : ds._baseColors[i] + '33'
   );
   BC.update('none');
 }
 
+/** @param {any} chart */
 function updateScatterHighlight(chart) {
   if (!chart) return;
   const hasSel = selectedModels.size > 0;
-  chart.data.datasets.forEach(ds => {
+  chart.data.datasets.forEach((/** @type {any} */ ds) => {
     if (ds.label === '_diag') return;
     const fe = ds.label === '?' ? null : ds.label;
     const base = ptColor(fe);
-    ds.pointRadius      = ds.data.map(p => (!hasSel || selectedModels.has(p.label)) ? 5 : 4);
+    ds.pointRadius      = ds.data.map((/** @type {any} */ p) => (!hasSel || selectedModels.has(p.label)) ? 5 : 4);
     ds.pointHoverRadius = 7;
-    ds.backgroundColor  = ds.data.map(p =>
+    ds.backgroundColor  = ds.data.map((/** @type {any} */ p) =>
       (!hasSel || selectedModels.has(p.label)) ? base : base + '33'
     );
     ds.pointBorderWidth = 0;
@@ -653,6 +754,7 @@ function chartColors() {
 }
 
 // ── Chart helpers ─────────────────────────────────────────────────────────
+/** @param {Radio[]} rows @param {keyof Radio} xKey @param {keyof Radio} yKey */
 function pointDatasets(rows, xKey, yKey) {
   return ['A','B','C','D',null].map(g => {
     const pts = rows
@@ -673,6 +775,7 @@ function pointDatasets(rows, xKey, yKey) {
   }).filter(d => d.data.length);
 }
 
+/** @param {string} lc @param {number} lo @param {number} hi */
 function diagDataset(lc, lo, hi) {
   lo = lo || 40; hi = hi || 120;
   return {
@@ -683,14 +786,19 @@ function diagDataset(lc, lo, hi) {
   };
 }
 
+/** @param {string} xLabel @param {string} yLabel @param {string} gc
+ * @param {string} tc @param {boolean} [filterDiag]
+ * @returns {any} */
 function chartOptions(xLabel, yLabel, gc, tc, filterDiag) {
   return {
     responsive:true, maintainAspectRatio:false,
     plugins:{
       legend:{display:false},
       tooltip:{
-        filter: filterDiag ? (item => item.dataset.label !== '_diag') : undefined,
-        callbacks:{ label: d => d.raw.label + ': ' + xLabel.split(' ')[0] + ' ' + d.raw.x + ' / ' + yLabel.split(' ')[0] + ' ' + d.raw.y + ' dB' }
+        filter: filterDiag
+          ? ((/** @type {any} */ item) => item.dataset.label !== '_diag')
+          : undefined,
+        callbacks:{ label: (/** @type {any} */ d) => d.raw.label + ': ' + xLabel.split(' ')[0] + ' ' + d.raw.x + ' / ' + yLabel.split(' ')[0] + ' ' + d.raw.y + ' dB' }
       }
     },
     scales:{
@@ -701,8 +809,15 @@ function chartOptions(xLabel, yLabel, gc, tc, filterDiag) {
 }
 
 // ── Chart: wide vs narrow DR scatter ─────────────────────────────────────
+/**
+ * @param {Radio[]} rows
+ * @param {NumericKey} key
+ * @param {number} defaultMin
+ * @param {number} defaultMax
+ * @param {number} pad
+ */
 function scaleRange(rows, key, defaultMin, defaultMax, pad) {
-  const vals = rows.filter(r => r[key] != null).map(r => r[key]);
+  const vals = /** @type {number[]} */ (rows.map(r => r[key]).filter(v => v != null));
   if (!vals.length) return { min: defaultMin, max: defaultMax };
   return {
     min: Math.min(defaultMin, Math.floor(Math.min(...vals) / pad) * pad),
@@ -710,6 +825,7 @@ function scaleRange(rows, key, defaultMin, defaultMax, pad) {
   };
 }
 
+/** @param {Radio[]} rows */
 function buildScatter(rows) {
   if (SC) { SC.destroy(); SC = null; }
   const cc = chartColors();
@@ -718,7 +834,7 @@ function buildScatter(rows) {
   const yr = scaleRange(rows, 'drNarrow', 40, 120, 10);
   opts.scales.x.min = xr.min; opts.scales.x.max = xr.max;
   opts.scales.y.min = yr.min; opts.scales.y.max = yr.max;
-  SC = new Chart(document.getElementById('scatter'), {
+  SC = new Chart(byId('scatter'), {
     type:'scatter',
     data:{ datasets:[ diagDataset(cc.line, Math.min(xr.min,yr.min), Math.max(xr.max,yr.max)), ...pointDatasets(rows,'drWide','drNarrow') ] },
     options: opts
@@ -726,6 +842,7 @@ function buildScatter(rows) {
 }
 
 // ── Chart: top 15 bar ────────────────────────────────────────────────────
+/** @param {Radio[]} rows */
 function buildBar(rows) {
   if (BC) { BC.destroy(); BC = null; }
   const cc = chartColors();
@@ -735,7 +852,7 @@ function buildBar(rows) {
   const baseColors = top.map(r => ptColor(r.fe));
   const fullLabels = top.map(r => r.model);
   const hasSel = selectedModels.size > 0;
-  BC = new Chart(document.getElementById('bar'), {
+  BC = new Chart(byId('bar'), {
     type:'bar',
     data:{
       labels: top.map(r => r.model.length > 22 ? r.model.slice(0,21)+'…' : r.model),
@@ -750,7 +867,7 @@ function buildBar(rows) {
     },
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:d=>'Narrow DR: '+d.raw+' dB'}} },
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(/** @type {any} */ d)=>'Narrow DR: '+d.raw+' dB'}} },
       scales:{
         x:{ ticks:{color:cc.text,font:{size:12}}, grid:{color:cc.grid}, min:barMin },
         y:{ ticks:{color:cc.text,font:{size:12},maxRotation:0,autoSkip:false}, grid:{display:false} }
@@ -760,6 +877,7 @@ function buildBar(rows) {
 }
 
 // ── Chart: LO noise vs narrow DR ─────────────────────────────────────────
+/** @param {Radio[]} rows */
 function buildLOScatter(rows) {
   if (LOC) { LOC.destroy(); LOC = null; }
   const cc = chartColors();
@@ -768,8 +886,8 @@ function buildLOScatter(rows) {
   const lyr = scaleRange(rows, 'drNarrow', 40, 120, 10);
   opts.scales.x.min = lxr.min; opts.scales.x.max = lxr.max;
   opts.scales.y.min = lyr.min; opts.scales.y.max = lyr.max;
-  opts.plugins.tooltip.callbacks.label = d => d.raw.label + ': LO ' + d.raw.x + ' dBc/Hz, narrow DR ' + d.raw.y + ' dB';
-  LOC = new Chart(document.getElementById('lo-scatter'), {
+  opts.plugins.tooltip.callbacks.label = (/** @type {any} */ d) => d.raw.label + ': LO ' + d.raw.x + ' dBc/Hz, narrow DR ' + d.raw.y + ' dB';
+  LOC = new Chart(byId('lo-scatter'), {
     type:'scatter',
     data:{ datasets: pointDatasets(rows,'loNoise','drNarrow') },
     options: opts
@@ -777,15 +895,17 @@ function buildLOScatter(rows) {
 }
 
 // ── Table ─────────────────────────────────────────────────────────────────
+/** @param {Radio[]} rows */
 function buildTable(rows) {
   const s = getSorted(rows);
   const drValues = s.filter(r => r.drNarrow != null).map(r => r.drNarrow);
   const maxN = drValues.length ? Math.max(...drValues) : 1;
-  document.getElementById('row-count').textContent = s.length + ' radio' + (s.length !== 1 ? 's' : '');
+  byId('row-count').textContent = s.length + ' radio' + (s.length !== 1 ? 's' : '');
 
-  document.getElementById('tbody').innerHTML = s.map(r => {
+  byId('tbody').innerHTML = s.map(r => {
     const fnHtml = r.footnotes.length
-      ? r.footnotes.map(f => '<sup class="fn" title="' + (FN_DEFS[f]||f) + '">[' + f + ']</sup>').join(' ')
+      ? r.footnotes.map(f => '<sup class="fn" title="'
+          + (isFootnote(f) ? FN_DEFS[f] : f) + '">[' + f + ']</sup>').join(' ')
       : '—';
     const dateStr = r.dateAdded
       ? r.dateAdded.toLocaleDateString('en-US',{year:'numeric',month:'short'})
@@ -806,16 +926,18 @@ function buildTable(rows) {
   }).join('');
 }
 
+/** @param {string} s @returns {string} */
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── Stats ─────────────────────────────────────────────────────────────────
+/** @param {Radio[]} rows */
 function updateStats(rows) {
-  const ns = rows.filter(r => r.drNarrow != null).map(r => r.drNarrow);
-  const ws = rows.filter(r => r.drWide   != null).map(r => r.drWide);
-  document.getElementById('s-count').textContent = rows.length;
-  document.getElementById('s-best').textContent  = ns.length ? Math.max(...ns)+' dB' : '—';
-  document.getElementById('s-avg').textContent   = ns.length ? Math.round(ns.reduce((a,b)=>a+b)/ns.length)+' dB' : '—';
-  document.getElementById('s-wide').textContent  = ws.length ? Math.round(ws.reduce((a,b)=>a+b)/ws.length)+' dB' : '—';
+  const ns = /** @type {number[]} */ (rows.map(r => r.drNarrow).filter(v => v != null));
+  const ws = /** @type {number[]} */ (rows.map(r => r.drWide).filter(v => v != null));
+  byId('s-count').textContent = String(rows.length);
+  byId('s-best').textContent  = ns.length ? Math.max(...ns)+' dB' : '—';
+  byId('s-avg').textContent   = ns.length ? Math.round(ns.reduce((a,b)=>a+b)/ns.length)+' dB' : '—';
+  byId('s-wide').textContent  = ws.length ? Math.round(ws.reduce((a,b)=>a+b)/ws.length)+' dB' : '—';
 }
 
 // ── Main update ───────────────────────────────────────────────────────────
@@ -830,7 +952,7 @@ function update() {
 }
 
 function updateSelBadge() {
-  const badge = document.getElementById('sel-badge');
+  const badge = byId('sel-badge');
   if (selectedModels.size) {
     badge.textContent = selectedModels.size + ' selected';
     badge.style.display = 'inline-block';
@@ -840,14 +962,14 @@ function updateSelBadge() {
 }
 
 // ── Event delegation for table rows ──────────────────────────────────────
-document.getElementById('tbody').addEventListener('click', function(e) {
-  const tr = e.target.closest('tr[data-model]');
-  if (tr) setHighlight(tr.dataset.model);
+byId('tbody').addEventListener('click', function(e) {
+  const tr = /** @type {Element} */ (e.target).closest('tr[data-model]');
+  if (tr) setHighlight(/** @type {HTMLElement} */ (tr).dataset.model ?? '');
 });
-document.getElementById('tbody').addEventListener('keydown', function(e) {
+byId('tbody').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
-    const tr = e.target.closest('tr[data-model]');
-    if (tr) { e.preventDefault(); setHighlight(tr.dataset.model); }
+    const tr = /** @type {Element} */ (e.target).closest('tr[data-model]');
+    if (tr) { e.preventDefault(); setHighlight(/** @type {HTMLElement} */ (tr).dataset.model ?? ''); }
   }
 });
 </script>
