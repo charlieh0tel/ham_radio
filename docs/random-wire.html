@@ -835,6 +835,9 @@
       ? `${(loMHz * 1e3).toFixed(1)}-${(hiMHz * 1e3).toFixed(1)} kHz`
       : `${loMHz.toFixed(3)}-${hiMHz.toFixed(3)}`;
 
+    /** Unit note for anything printed by fmtBandEdges, which labels only kHz. */
+    const BAND_EDGE_UNIT_HINT = 'Frequencies in MHz unless marked';
+
     /** Tick step in display units that yields roughly TARGET_TICKS ticks. */
     const tickStep = (spanDisplay) => {
       const ideal = spanDisplay / TARGET_TICKS;
@@ -1145,7 +1148,7 @@
                     );
                   })}
                 </div>
-                <div className="control-hint right">Frequencies in MHz unless marked</div>
+                <div className="control-hint right">{BAND_EDGE_UNIT_HINT}</div>
               </div>
 
               <div className="panel">
@@ -1296,6 +1299,7 @@
                       })}
                     </tbody>
                   </table>
+                  <div className="control-hint right">{BAND_EDGE_UNIT_HINT}</div>
                 </div>
               )}
             </div>
