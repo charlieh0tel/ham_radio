@@ -516,14 +516,27 @@
     const INCH_DIGITS = 1;
 
     /** Feed system the impedance mode scores against. */
-    const UNUN_RATIO = 9;
     const Z_SYSTEM_OHMS = 50;
 
     /**
-     * Resistance of a quarter-wave monopole over ground, the anchor the
-     * impedance model is calibrated to.  The textbook value is near 36 ohms.
+     * Impedance ratios offered for the transformer at the feedpoint: a direct
+     * connection, the usual 4:1 and 9:1 ununs for a random wire, and the 49:1
+     * and 64:1 wound for end-fed half waves.
      */
-    const QUARTER_WAVE_OHMS = 36;
+    const UNUN_RATIOS = Object.freeze([1, 4, 9, 49, 64]);
+    const DEFAULT_UNUN_RATIO = 9;
+
+    /**
+     * Feedpoint resistance of an end-fed half wave, the anchor the impedance
+     * model is calibrated to.  Published figures cluster near 2400-2500 ohms,
+     * which is what a 49:1 transformer is wound for (2450/49 = 50).
+     *
+     * The half wave is the better of the two anchors available.  Pinning the
+     * textbook 36 ohm quarter-wave monopole instead assumes a perfect ground
+     * plane, and since one anchor fixes the other, that put the half wave near
+     * 5000 ohms, about twice what real antennas show.
+     */
+    const HALF_WAVE_OHMS = 2450;
 
     /** Keeps a perfectly reflecting load from producing an infinite SWR. */
     const MAX_GAMMA = 0.999999;
@@ -573,6 +586,8 @@
       width: 1000, height: 150,
       left: 8, right: 8, top: 10,
       barHeight: 62,
+      // The score curve needs the vertical room that a flat bar does not.
+      curveHeight: 96,
       tickFontSize: 18,
       axisFontSize: 16,
     });
@@ -663,26 +678,27 @@
      */
     const MODES = Object.freeze({
       classical: {
-        label: 'Half-wave rule',
+        label: 'Classic half-wave rule',
         note: 'Excludes lengths near a half-wave multiple, after AB3AP.',
       },
       impedance: {
         label: 'Impedance',
-        note: `Scores lengths by modelled SWR at the radio through a `
-          + `${UNUN_RATIO}:1 unun.  Indicative only: height, ground and `
-          + `counterpoise move the real figures.`,
+        note: 'Scores lengths by modelled SWR at the radio through the unun.  '
+          + 'Indicative only: height, ground and counterpoise move the real '
+          + 'figures.',
       },
     });
 
     const URL_KEYS = Object.freeze({
       region: 'region', bands: 'bands', segment: 'seg', velocityFactor: 'vf',
       marginPct: 'margin', units: 'u', wireLenM: 'len_m', mode: 'mode',
+      ununRatio: 'unun',
     });
 
     /**
      * @type {Readonly<{region: RegionKey, bands: number[], segment: SegmentKey,
      *                 velocityFactor: number, marginPct: number, units: UnitKey,
-     *                 wireLenM: Meters, mode: ModeKey}>}
+     *                 wireLenM: Meters, mode: ModeKey, ununRatio: number}>}
      */
     /**
      * Wire length used to be written in feet under ?len=.  New links carry
@@ -695,7 +711,8 @@
       region: 'us',
       bands: [80, 40, 20, 15, 10],
       segment: 'full',
-      mode: 'classical',
+      mode: 'impedance',
+      ununRatio: DEFAULT_UNUN_RATIO,
       velocityFactor: DEFAULT_VELOCITY_FACTOR,
       marginPct: DEFAULT_MARGIN_PCT,
       units: 'ft',
@@ -1068,14 +1085,22 @@
      * transmission-line approximation Zin = Z0 coth(gamma l), with
      * gamma = alpha + j beta.
      *
-     * Radiation is folded into alpha rather than modelled.  alpha is set so a
-     * quarter wave presents QUARTER_WAVE_OHMS: at l = lambda/4 the argument is
-     * alpha l + j pi/2, and coth of that is tanh(alpha l).  The same
-     * calibration fixes the half-wave value at Z0^2 / QUARTER_WAVE_OHMS, so
-     * the model reproduces both anchors a real antenna is known by.
+     * Radiation is folded into alpha rather than modelled.  alpha comes from
+     * the half-wave anchor: at l = lambda/2 the argument is alpha l + j pi, and
+     * coth of that is coth(alpha l), about 1 / (alpha l) while alpha l is
+     * small, so Zin there is Z0 / (alpha l).  Writing alpha against a
+     * quarter-wave length makes alpha l twice as large at a half wave, hence
+     * the factor of two below.
      *
-     * This is an envelope, not a prediction.  Height, ground, counterpoise and
-     * nearby objects move the real peaks by a factor of two or more.
+     * The two ends are not independent: fixing one fixes the other at about
+     * Z0^2 / (2 R).  With the half wave pinned at HALF_WAVE_OHMS, a quarter
+     * wave lands near 70-120 ohms, which is what a real end-fed with a modest
+     * counterpoise shows, rather than the 36 ohms of an ideal ground plane.
+     *
+     * Height above ground and ground quality are not parameters.  Both are
+     * implicit in the anchor, which is why this is an envelope rather than a
+     * prediction: ground reflection moves R and X with h/lambda, and at low
+     * heights ground loss damps the peaks this model draws at full height.
      *
      * @param {Meters} lenM
      * @param {Hertz} freqHz
@@ -1086,7 +1111,9 @@
     const endFedZin = (lenM, freqHz, velocityFactor, radiusM) => {
       const z0 = wireZ0(lenM, radiusM);
       const wavelengthM = 2 * halfWaveM(freqHz, velocityFactor);
-      const alpha = Math.atanh(QUARTER_WAVE_OHMS / z0) / (wavelengthM / 4);
+      // Quarter-wave resistance implied by the half-wave anchor.
+      const quarterOhms = z0 * z0 / (2 * HALF_WAVE_OHMS);
+      const alpha = Math.atanh(quarterOhms / z0) / (wavelengthM / 4);
       const beta = 2 * Math.PI / wavelengthM;
       return cMul(cpx(z0, 0), cCoth(cpx(alpha * lenM, beta * lenM)));
     };
@@ -1094,10 +1121,11 @@
     /**
      * SWR seen at the radio, through the unun, for a feedpoint impedance.
      * @param {Complex} zLoad
+     * @param {number} ununRatio  impedance ratio, 1 for a direct connection
      * @returns {number}
      */
-    const swrAtRadio = (zLoad) => {
-      const zRadio = cpx(zLoad.re / UNUN_RATIO, zLoad.im / UNUN_RATIO);
+    const swrAtRadio = (zLoad, ununRatio) => {
+      const zRadio = cpx(zLoad.re / ununRatio, zLoad.im / ununRatio);
       const gamma = cDiv(cSub(zRadio, cpx(Z_SYSTEM_OHMS, 0)),
                          cAdd(zRadio, cpx(Z_SYSTEM_OHMS, 0)));
       const magnitude = Math.min(cAbs(gamma), MAX_GAMMA);
@@ -1117,9 +1145,10 @@
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
      * @param {Meters} radiusM
+     * @param {number} ununRatio
      * @returns {?{swr: number, worst: {swr: number, band: Band, freqHz: Hertz}}}
      */
-    const scoreLength = (lenM, bands, segment, velocityFactor, radiusM) => {
+    const scoreLength = (lenM, bands, segment, velocityFactor, radiusM, ununRatio) => {
       let logSum = 0;
       let count = 0;
       /** @type {?{swr: number, band: Band, freqHz: Hertz}} */
@@ -1128,7 +1157,8 @@
         const [loHz, hiHz] = bandEdgesHz(band, segment);
         for (let i = 0; i < SWR_SAMPLES_PER_BAND; i++) {
           const freqHz = loHz + (hiHz - loHz) * i / (SWR_SAMPLES_PER_BAND - 1);
-          const swr = swrAtRadio(endFedZin(lenM, freqHz, velocityFactor, radiusM));
+          const swr = swrAtRadio(endFedZin(lenM, freqHz, velocityFactor, radiusM),
+                                 ununRatio);
           logSum += Math.log(swr);
           count++;
           if (worst === null || swr > worst.swr) worst = { swr, band, freqHz };
@@ -1155,11 +1185,13 @@
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
      * @param {Meters} radiusM
+     * @param {number} ununRatio
      * @param {Meters} maxLenM
      * @returns {{bands: Band[], curve: ScorePoint[], suggestions: ScorePoint[],
      *            shortLimit: Meters}}
      */
-    const solveImpedance = (region, bandsM, segment, velocityFactor, radiusM, maxLenM) => {
+    const solveImpedance = (region, bandsM, segment, velocityFactor, radiusM,
+                            ununRatio, maxLenM) => {
       const bands = bandsIn(region).filter(b => bandsM.includes(b.m));
       const shortLimit = tooShortM(bands, segment, velocityFactor);
       if (bands.length === 0) return { bands, curve: [], suggestions: [], shortLimit };
@@ -1169,7 +1201,8 @@
       const curve = [];
       for (let i = 0; i < SCORE_SAMPLES; i++) {
         const lenM = Math.max(step, i * step);
-        const scored = scoreLength(lenM, bands, segment, velocityFactor, radiusM);
+        const scored = scoreLength(lenM, bands, segment, velocityFactor, radiusM,
+                                   ununRatio);
         if (scored) curve.push({ lenM, swr: scored.swr, worst: scored.worst });
       }
 
@@ -1277,11 +1310,14 @@
       const segment = params.get(URL_KEYS.segment);
       const units = params.get(URL_KEYS.units);
       const mode = params.get(URL_KEYS.mode);
+      const ununRatio = parseNum(params.get(URL_KEYS.ununRatio), DEFAULTS.ununRatio);
       return {
         region,
         bands,
         segment: isKeyOf(SEGMENTS, segment) ? segment : DEFAULTS.segment,
         mode: isKeyOf(MODES, mode) ? mode : DEFAULTS.mode,
+        // An unlisted ratio would leave the control with nothing selected.
+        ununRatio: UNUN_RATIOS.includes(ununRatio) ? ununRatio : DEFAULTS.ununRatio,
         velocityFactor: clamp(
           parseNum(params.get(URL_KEYS.velocityFactor), DEFAULTS.velocityFactor),
           VELOCITY_FACTOR_RANGE),
@@ -1305,6 +1341,7 @@
       state.region === DEFAULTS.region &&
       state.segment === DEFAULTS.segment &&
       state.mode === DEFAULTS.mode &&
+      state.ununRatio === DEFAULTS.ununRatio &&
       state.velocityFactor === DEFAULTS.velocityFactor &&
       state.marginPct === DEFAULTS.marginPct &&
       state.units === DEFAULTS.units &&
@@ -1357,10 +1394,11 @@
         ? null
         : solution.avoid.find(a => hoverM >= a.lo && hoverM <= a.hi);
 
-      const barBottom = MAP.top + MAP.barHeight;
+      const plotHeight = score === null ? MAP.barHeight : MAP.curveHeight;
+      const barBottom = MAP.top + plotHeight;
 
       /** SWR plotted logarithmically: it is a ratio, and the range is wide. */
-      const yOfSwr = (/** @type {number} */ swr) => barBottom - MAP.barHeight
+      const yOfSwr = (/** @type {number} */ swr) => barBottom - plotHeight
         * Math.min(1, Math.max(0, Math.log(swr) / Math.log(SWR_PLOT_MAX)));
 
       const curvePath = score === null ? '' : score.curve
@@ -1391,7 +1429,7 @@
             {score === null && solution.usable.map((u, i) => (
               <rect key={`u${i}`} x={xOf(u.lo)} y={MAP.top}
                     width={Math.max(MIN_BAND_WIDTH, xOf(u.hi) - xOf(u.lo))}
-                    height={MAP.barHeight}
+                    height={plotHeight}
                     fill={COLORS.usable} stroke={COLORS.usableEdge} strokeWidth="0.5" />
             ))}
             {/* Lengths to avoid */}
@@ -1399,7 +1437,7 @@
               <rect key={`a${i}`} x={xOf(Math.max(0, a.lo))} y={MAP.top}
                     width={Math.max(MIN_BAND_WIDTH,
                                     xOf(Math.min(a.hi, maxLenM)) - xOf(Math.max(0, a.lo)))}
-                    height={MAP.barHeight}
+                    height={plotHeight}
                     fill={a.kind === 'short' ? 'url(#hatch-short)' : COLORS.avoid}
                     opacity={a.kind === 'short' ? 1 : 0.9} />
             ))}
@@ -1408,14 +1446,14 @@
               <g>
                 <rect x={MAP.left} y={MAP.top}
                       width={Math.max(MIN_BAND_WIDTH, xOf(Math.min(score.shortLimit, maxLenM)) - MAP.left)}
-                      height={MAP.barHeight} fill="url(#hatch-short)" />
+                      height={plotHeight} fill="url(#hatch-short)" opacity="0.5" />
                 {[2, 5, 10].map(swr => (
                   <g key={swr}>
                     <line x1={MAP.left} y1={yOfSwr(swr)} x2={MAP.width - MAP.right}
                           y2={yOfSwr(swr)} stroke={COLORS.axis} strokeWidth="0.5"
                           strokeDasharray="3 3" />
-                    <text x={MAP.left - 4} y={yOfSwr(swr) + 3} fill={COLORS.label}
-                          fontSize={MAP.tickFontSize} textAnchor="end"
+                    <text x={MAP.left + 6} y={yOfSwr(swr) - 4} fill={COLORS.label}
+                          fontSize={MAP.tickFontSize} textAnchor="start"
                           fontFamily="monospace">{swr}:1</text>
                   </g>
                 ))}
@@ -1491,7 +1529,7 @@
       const set = (updates) => setP(prev => ({ ...prev, ...updates }));
 
       const { region, bands, segment, velocityFactor, marginPct, units, wireLenM,
-              mode } = p;
+              mode, ununRatio } = p;
 
       // Map spans one full wavelength at the lowest selected band, which is the
       // longest wire worth considering for that band.
@@ -1510,16 +1548,18 @@
 
       const score = useMemo(
         () => (mode === 'impedance'
-          ? solveImpedance(region, bands, segment, velocityFactor, WIRE_RADIUS_M, maxLenM)
+          ? solveImpedance(region, bands, segment, velocityFactor, WIRE_RADIUS_M,
+                           ununRatio, maxLenM)
           : null),
-        [mode, region, bands, segment, velocityFactor, maxLenM]);
+        [mode, region, bands, segment, velocityFactor, ununRatio, maxLenM]);
 
       /** Modelled SWR for the length in hand, for the verdict line. */
       const scoreHere = useMemo(
         () => (mode === 'impedance' && wireLenM > 0 && solution.bands.length > 0
-          ? scoreLength(wireLenM, solution.bands, segment, velocityFactor, WIRE_RADIUS_M)
+          ? scoreLength(wireLenM, solution.bands, segment, velocityFactor,
+                        WIRE_RADIUS_M, ununRatio)
           : null),
-        [mode, wireLenM, solution, segment, velocityFactor]);
+        [mode, wireLenM, solution, segment, velocityFactor, ununRatio]);
 
       // Only searched when the asked-for margin leaves nothing.
       const fallback = useMemo(
@@ -1566,6 +1606,7 @@
         params.set(URL_KEYS.bands, bands.join(','));
         params.set(URL_KEYS.segment, segment);
         params.set(URL_KEYS.mode, mode);
+        params.set(URL_KEYS.ununRatio, String(ununRatio));
         params.set(URL_KEYS.velocityFactor, String(velocityFactor));
         params.set(URL_KEYS.marginPct, String(marginPct));
         params.set(URL_KEYS.units, units);
@@ -1673,10 +1714,28 @@
                 <div className="panel-header">Assumptions</div>
                 {mode === 'impedance' && (
                   <div className="control-hint" style={{ marginBottom: '10px' }}>
-                    Feed is a {UNUN_RATIO}:1 unun into {Z_SYSTEM_OHMS} ohms, conductor
-                    is #14 AWG. The model is calibrated to {QUARTER_WAVE_OHMS} ohms at
-                    a quarter wave; it is an envelope, not a prediction for your site.
+                    Conductor is #14 AWG into {Z_SYSTEM_OHMS} ohms. The model is
+                    calibrated to {HALF_WAVE_OHMS} ohms at a half wave. Height above
+                    ground is not modelled; it is implicit in that anchor. Treat this
+                    as an envelope, not a prediction for your site.
                   </div>
+                )}
+                {mode === 'impedance' && (
+                  <label className="control-label">
+                    Unun ratio:{' '}
+                    {UNUN_RATIOS.map(ratio => (
+                      <button key={ratio}
+                              className={`btn preset-btn ${ununRatio === ratio ? 'active' : ''}`}
+                              aria-pressed={ununRatio === ratio}
+                              onClick={() => set({ ununRatio: ratio })}>
+                        {ratio}:1
+                      </button>
+                    ))}
+                    <div className="control-hint">
+                      1:1 is a direct feed; 9:1 suits a random wire, 49:1 and 64:1 an
+                      end-fed half wave.
+                    </div>
+                  </label>
                 )}
                 {mode === 'classical' && (
                 <label className="control-label">
@@ -1738,7 +1797,7 @@
                   {mode === 'impedance' ? (
                     !scoreHere
                       ? 'Type a length, click the map, or pick one from the table below.'
-                      : `Typical SWR at the radio through the ${UNUN_RATIO}:1, `
+                      : `Typical SWR at the radio through the ${ununRatio}:1, `
                         + `geometric mean across the selected bands.  Worst sample is `
                         + `${scoreHere.worst.swr.toFixed(1)}:1 on ${scoreHere.worst.band.label} `
                         + `at ${(scoreHere.worst.freqHz / 1e6).toFixed(3)} MHz.`

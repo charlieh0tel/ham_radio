@@ -59,12 +59,20 @@ offers the local minima.  A worst-case score was tried first and
 discarded: the lowest band always sets it, so it collapses into "prefer
 the longest wire".
 
+The model is anchored on the end-fed half wave at 2450 ohms, the figure
+a 49:1 is wound for.  It was first anchored on the textbook 36 ohm
+quarter-wave monopole, which assumes a perfect ground plane and put the
+half wave near 5000 ohms, about twice what real antennas show; a 49:1
+then read 1.7-2.2:1 where reality is near flat.  Re-anchored, the half
+wave lands within 2 percent of target and a quarter wave falls at
+44-70 ohms.
+
 Still open:
 
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
       percentage.  Applies to the classical mode only.
-- [ ] Expose the unun ratio and conductor diameter, currently fixed at
-      9:1 and #14 AWG.
+- [ ] Expose conductor diameter, fixed at #14 AWG.  The unun ratio is
+      now selectable (1, 4, 9, 49, 64).
 
 Dropped: a separate odd-`lambda/4` keep-out.  Measured, it empties the
 solution space (HF-all returns nothing, the classic set drops to a
@@ -90,8 +98,20 @@ Results ship as constants and caveat text, never as code.
       they largely agree (expected), the runtime stays pure arithmetic.
       Material disagreement is the interesting result and should be
       chased before shipping either model.
-- [ ] Fit `alpha`: sweep NEC over wire lengths, diameters, and heights;
-      fit the analytic model; bake constants into the page.
+- [ ] **Next.** Fit the model properly: sweep NEC over the dimensionless
+      ratios `l/lambda`, `a/lambda` and `h/lambda` plus a ground model,
+      then fit `alpha` *and a series loss term* so both ends land at
+      once.  Today a single anchor fixes both: pinning one end forces
+      the other to about `Z0^2 / (2 R)`, so the model cannot be right
+      at a quarter wave and a half wave simultaneously.
+      Height is the specific prize.  There is no height parameter now;
+      it is implicit in the anchor.  Ground reflection moves R and X
+      with `h/lambda`, and at low heights ground loss damps the peaks
+      the model currently draws at full height, so a wire at 30 ft and
+      one at 60 ft are different antennas the page cannot tell apart.
+      Ship fitted coefficients, not code: numeric output is not covered
+      by the producing program's licence, which keeps GPLv3 nec2c out
+      of this MIT repo.
 - [ ] Bound the error across the parameter space.  That bound becomes
       the caveat on the plot, e.g. "within ~2x over 20-60 ft, 1-30 MHz,
       15-30 ft high".
@@ -106,7 +126,7 @@ as a short findings note.
 
 ## Open questions
 
-- Is the assumed feed a 9:1 unun into a tuner, or should the unun ratio
-  be a parameter?
 - Model the counterpoise / radial explicitly, or fold it into the
   calibration?
+- Should height become a user control once it is fitted, with a default
+  that matches the current anchor?
