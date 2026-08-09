@@ -363,79 +363,79 @@
         bands: [
           // 2200m and 630m were allocated in 2017; both are secondary and
           // power limited, but the half-wave lengths still apply.
-          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
-          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
-          { m: 160,  label: '160m',  full: [1800, 2000],   cw: [1800, 1840] },
-          { m: 80,   label: '80m',   full: [3500, 4000],   cw: [3500, 3600] },
+          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
+          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
+          { m: 160,  label: '160m',  full: [1.8e6, 2e6],         cw: [1.8e6, 1.84e6] },
+          { m: 80,   label: '80m',   full: [3.5e6, 4e6],         cw: [3.5e6, 3.6e6] },
           // Since 13 Feb 2026: the 5351.5-5366.5 kHz band at 9.15 W ERP, plus
           // four retained 2.8 kHz channels centered on 5332, 5348, 5373 and
           // 5405 kHz at 100 W ERP.  The span below covers all of it.
-          { m: 60,   label: '60m',   full: [5330.6, 5406.4], cw: [5330.6, 5406.4] },
-          { m: 40,   label: '40m',   full: [7000, 7300],   cw: [7000, 7125] },
-          { m: 30,   label: '30m',   full: [10100, 10150], cw: [10100, 10150] },
-          { m: 20,   label: '20m',   full: [14000, 14350], cw: [14000, 14150] },
-          { m: 17,   label: '17m',   full: [18068, 18168], cw: [18068, 18110] },
-          { m: 15,   label: '15m',   full: [21000, 21450], cw: [21000, 21200] },
-          { m: 12,   label: '12m',   full: [24890, 24990], cw: [24890, 24930] },
-          { m: 10,   label: '10m',   full: [28000, 29700], cw: [28000, 28300] },
-          { m: 6,    label: '6m',    full: [50000, 54000], cw: [50000, 50100] },
+          { m: 60,   label: '60m',   full: [5.3306e6, 5.4064e6], cw: [5.3306e6, 5.4064e6] },
+          { m: 40,   label: '40m',   full: [7e6, 7.3e6],         cw: [7e6, 7.125e6] },
+          { m: 30,   label: '30m',   full: [10.1e6, 10.15e6],    cw: [10.1e6, 10.15e6] },
+          { m: 20,   label: '20m',   full: [14e6, 14.35e6],      cw: [14e6, 14.15e6] },
+          { m: 17,   label: '17m',   full: [18.068e6, 18.168e6], cw: [18.068e6, 18.11e6] },
+          { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.2e6] },
+          { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.93e6] },
+          { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.3e6] },
+          { m: 6,    label: '6m',    full: [50e6, 54e6],         cw: [50e6, 50.1e6] },
         ],
       },
       r1: {
         label: 'IARU Region 1',
         note: 'Europe, Africa, Middle East, northern Asia. 6m upper edge varies by country.',
         bands: [
-          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
-          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
-          { m: 160, label: '160m', full: [1810, 2000],     cw: [1810, 1838] },
-          { m: 80,  label: '80m',  full: [3500, 3800],     cw: [3500, 3570] },
-          { m: 60,  label: '60m',  full: [5351.5, 5366.5], cw: [5351.5, 5354] },
-          { m: 40,  label: '40m',  full: [7000, 7200],     cw: [7000, 7040] },
-          { m: 30,  label: '30m',  full: [10100, 10150],   cw: [10100, 10130] },
-          { m: 20,  label: '20m',  full: [14000, 14350],   cw: [14000, 14070] },
-          { m: 17,  label: '17m',  full: [18068, 18168],   cw: [18068, 18095] },
-          { m: 15,  label: '15m',  full: [21000, 21450],   cw: [21000, 21070] },
-          { m: 12,  label: '12m',  full: [24890, 24990],   cw: [24890, 24915] },
-          { m: 10,  label: '10m',  full: [28000, 29700],   cw: [28000, 28070] },
-          { m: 6,   label: '6m',   full: [50000, 52000],   cw: [50000, 50100] },
+          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
+          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
+          { m: 160,  label: '160m',  full: [1.81e6, 2e6],        cw: [1.81e6, 1.838e6] },
+          { m: 80,   label: '80m',   full: [3.5e6, 3.8e6],       cw: [3.5e6, 3.57e6] },
+          { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.354e6] },
+          { m: 40,   label: '40m',   full: [7e6, 7.2e6],         cw: [7e6, 7.04e6] },
+          { m: 30,   label: '30m',   full: [10.1e6, 10.15e6],    cw: [10.1e6, 10.13e6] },
+          { m: 20,   label: '20m',   full: [14e6, 14.35e6],      cw: [14e6, 14.07e6] },
+          { m: 17,   label: '17m',   full: [18.068e6, 18.168e6], cw: [18.068e6, 18.095e6] },
+          { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.07e6] },
+          { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.915e6] },
+          { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.07e6] },
+          { m: 6,    label: '6m',    full: [50e6, 52e6],         cw: [50e6, 50.1e6] },
         ],
       },
       r2: {
         label: 'IARU Region 2',
         note: 'The Americas. National allocations differ; the US entry is more specific.',
         bands: [
-          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
-          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
-          { m: 160, label: '160m', full: [1800, 2000],     cw: [1800, 1840] },
-          { m: 80,  label: '80m',  full: [3500, 4000],     cw: [3500, 3580] },
-          { m: 60,  label: '60m',  full: [5351.5, 5366.5], cw: [5351.5, 5354] },
-          { m: 40,  label: '40m',  full: [7000, 7300],     cw: [7000, 7050] },
-          { m: 30,  label: '30m',  full: [10100, 10150],   cw: [10100, 10130] },
-          { m: 20,  label: '20m',  full: [14000, 14350],   cw: [14000, 14070] },
-          { m: 17,  label: '17m',  full: [18068, 18168],   cw: [18068, 18095] },
-          { m: 15,  label: '15m',  full: [21000, 21450],   cw: [21000, 21070] },
-          { m: 12,  label: '12m',  full: [24890, 24990],   cw: [24890, 24915] },
-          { m: 10,  label: '10m',  full: [28000, 29700],   cw: [28000, 28070] },
-          { m: 6,   label: '6m',   full: [50000, 54000],   cw: [50000, 50100] },
+          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
+          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
+          { m: 160,  label: '160m',  full: [1.8e6, 2e6],         cw: [1.8e6, 1.84e6] },
+          { m: 80,   label: '80m',   full: [3.5e6, 4e6],         cw: [3.5e6, 3.58e6] },
+          { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.354e6] },
+          { m: 40,   label: '40m',   full: [7e6, 7.3e6],         cw: [7e6, 7.05e6] },
+          { m: 30,   label: '30m',   full: [10.1e6, 10.15e6],    cw: [10.1e6, 10.13e6] },
+          { m: 20,   label: '20m',   full: [14e6, 14.35e6],      cw: [14e6, 14.07e6] },
+          { m: 17,   label: '17m',   full: [18.068e6, 18.168e6], cw: [18.068e6, 18.095e6] },
+          { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.07e6] },
+          { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.915e6] },
+          { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.07e6] },
+          { m: 6,    label: '6m',    full: [50e6, 54e6],         cw: [50e6, 50.1e6] },
         ],
       },
       r3: {
         label: 'IARU Region 3',
         note: 'Asia-Pacific. 80m and 40m upper edges vary widely by country.',
         bands: [
-          { m: 2200, label: '2200m', full: [135.7, 137.8], cw: [135.7, 137.8] },
-          { m: 630,  label: '630m',  full: [472, 479],     cw: [472, 479] },
-          { m: 160, label: '160m', full: [1800, 2000],     cw: [1800, 1840] },
-          { m: 80,  label: '80m',  full: [3500, 3900],     cw: [3500, 3540] },
-          { m: 60,  label: '60m',  full: [5351.5, 5366.5], cw: [5351.5, 5354] },
-          { m: 40,  label: '40m',  full: [7000, 7300],     cw: [7000, 7040] },
-          { m: 30,  label: '30m',  full: [10100, 10150],   cw: [10100, 10130] },
-          { m: 20,  label: '20m',  full: [14000, 14350],   cw: [14000, 14070] },
-          { m: 17,  label: '17m',  full: [18068, 18168],   cw: [18068, 18095] },
-          { m: 15,  label: '15m',  full: [21000, 21450],   cw: [21000, 21070] },
-          { m: 12,  label: '12m',  full: [24890, 24990],   cw: [24890, 24915] },
-          { m: 10,  label: '10m',  full: [28000, 29700],   cw: [28000, 28070] },
-          { m: 6,   label: '6m',   full: [50000, 54000],   cw: [50000, 50100] },
+          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
+          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
+          { m: 160,  label: '160m',  full: [1.8e6, 2e6],         cw: [1.8e6, 1.84e6] },
+          { m: 80,   label: '80m',   full: [3.5e6, 3.9e6],       cw: [3.5e6, 3.54e6] },
+          { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.354e6] },
+          { m: 40,   label: '40m',   full: [7e6, 7.3e6],         cw: [7e6, 7.04e6] },
+          { m: 30,   label: '30m',   full: [10.1e6, 10.15e6],    cw: [10.1e6, 10.13e6] },
+          { m: 20,   label: '20m',   full: [14e6, 14.35e6],      cw: [14e6, 14.07e6] },
+          { m: 17,   label: '17m',   full: [18.068e6, 18.168e6], cw: [18.068e6, 18.095e6] },
+          { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.07e6] },
+          { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.915e6] },
+          { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.07e6] },
+          { m: 6,    label: '6m',    full: [50e6, 54e6],         cw: [50e6, 50.1e6] },
         ],
       },
     });
@@ -446,17 +446,16 @@
      * a calculation; the checker still catches a length passed where a
      * frequency belongs only where the alias appears in a signature.
      *
-     * @typedef {number} Feet
-     * @typedef {number} KiloHertz
-     * @typedef {number} MegaHertz
+     * @typedef {number} Meters
+     * @typedef {number} Hertz
      */
 
     /**
      * @typedef {Object} Band
      * @property {number} m      band wavelength in meters, the key used elsewhere
      * @property {string} label
-     * @property {KiloHertz[]} full  whole-band edges, low first
-     * @property {KiloHertz[]} cw    CW / narrowband segment edges
+     * @property {Hertz[]} full  whole-band edges, low first
+     * @property {Hertz[]} cw    CW / narrowband segment edges
      *
      * @typedef {keyof typeof REGIONS} RegionKey
      * @typedef {keyof typeof SEGMENTS} SegmentKey
@@ -464,17 +463,17 @@
      *
      * A length interval to keep away from, and why.
      * @typedef {Object} Interval
-     * @property {Feet} lo
-     * @property {Feet} hi
+     * @property {Meters} lo
+     * @property {Meters} hi
      * @property {string} [label]
      * @property {string} [kind]
      *
      * A clear span, with the length to recommend inside it.
      * @typedef {Object} Span
-     * @property {Feet} lo
-     * @property {Feet} hi
-     * @property {Feet} pick
-     * @property {Feet} clearance
+     * @property {Meters} lo
+     * @property {Meters} hi
+     * @property {Meters} pick
+     * @property {Meters} clearance
      */
 
     /**
@@ -519,10 +518,15 @@
     const MIN_BAND_WIDTH = 0.5;
 
     /** Map length used when no band is selected and there is nothing to scale to. */
-    const EMPTY_MAP_LEN_FT = 100;
+    const EMPTY_MAP_LEN_M = 30;
 
-    /** Roundings tried for a recommended length, in feet, coarsest first. */
-    const PICK_STEPS_FT = Object.freeze([1, 0.5, 0.1, 0.01]);
+    /**
+     * Roundings tried for a recommended length, coarsest first, in whatever
+     * unit the user is reading.  Roundness is a property of the number on
+     * screen, not of the metre it is stored in: someone cutting wire to a tape
+     * marked in feet wants a round number of feet.
+     */
+    const PICK_STEPS = Object.freeze([1, 0.5, 0.1, 0.01]);
 
     /** Step of the clearance margin slider, percent. */
     const MARGIN_STEP_PCT = 0.5;
@@ -560,33 +564,34 @@
     });
 
     /**
-     * Renders a length in feet as a decimal in some unit.  One decimal place
+     * Renders a length as a decimal in some display unit.  One decimal place
      * normally, two when one would round the value somewhere it is not: a pick
      * of 75.96 ft shown as "76.0" names a length the page reports as one to
      * avoid, and a clearance of 0.04 ft shown as "0.0" reads as none at all.
      *
      * @param {string} abbrev
-     * @param {number} perFoot  display units per foot
-     * @returns {(lenFt: Feet) => string}
+     * @param {number} perMeter  display units per metre
+     * @returns {(lenM: Meters) => string}
      */
-    const decimalLength = (abbrev, perFoot) => (lenFt) => {
-      const value = lenFt * perFoot;
+    const decimalLength = (abbrev, perMeter) => (lenM) => {
+      const value = lenM * perMeter;
       const digits = Math.abs(Number(value.toFixed(1)) - value) < LEN_ROUNDING_SLOP ? 1 : 2;
       return `${value.toFixed(digits)} ${abbrev}`;
     };
 
     /**
-     * Renders a length in feet as feet and inches, for marking out wire with a
+     * Renders a length as feet and inches, for marking out wire with a
      * tape measure.  Inches keep a decimal place: rounding to a whole inch
      * would blur a length by up to 0.04 ft, which is more than the clearance
      * some spans have.
      *
-     * @param {Feet} lenFt
+     * @param {Meters} lenM
      * @returns {string}
      */
-    const feetAndInches = (lenFt) => {
+    const feetAndInches = (lenM) => {
       // Round before splitting, so 11.97 in becomes 1 ft 0.0 in, not 0 ft 12.0 in.
-      const totalInches = Number((lenFt * INCHES_PER_FT).toFixed(INCH_DIGITS));
+      const totalInches =
+        Number((lenM * FT_PER_M * INCHES_PER_FT).toFixed(INCH_DIGITS));
       const feet = Math.floor(totalInches / INCHES_PER_FT);
       const inches = totalInches - feet * INCHES_PER_FT;
       if (inches === 0) return `${feet} ft`;
@@ -598,18 +603,18 @@
      *   label:     button text
      *   abbrev:    suffix on the length input, which is always decimal
      *   axisLabel: unit of the map's tick numbers, which are always decimal
-     *   perFoot:   scale from feet, for the input, slider and map ticks
-     *   format:    renders a length in feet as text
+     *   perMeter:  scale from metres, for the input, slider and map ticks
+     *   format:    renders a length in metres as text
      * Feet and inches shares its scale with feet, differing only in format,
      * so the input and the map stay decimal while readouts carry inches.
      */
     const UNITS = Object.freeze({
-      ft: { label: 'feet', abbrev: 'ft', axisLabel: 'feet', perFoot: 1,
-            format: decimalLength('ft', 1) },
-      ftin: { label: 'ft + in', abbrev: 'ft', axisLabel: 'feet', perFoot: 1,
+      ft: { label: 'feet', abbrev: 'ft', axisLabel: 'feet', perMeter: FT_PER_M,
+            format: decimalLength('ft', FT_PER_M) },
+      ftin: { label: 'ft + in', abbrev: 'ft', axisLabel: 'feet', perMeter: FT_PER_M,
               format: feetAndInches },
-      m: { label: 'meters', abbrev: 'm', axisLabel: 'meters', perFoot: 1 / FT_PER_M,
-           format: decimalLength('m', 1 / FT_PER_M) },
+      m: { label: 'meters', abbrev: 'm', axisLabel: 'meters', perMeter: 1,
+           format: decimalLength('m', 1) },
     });
 
     const SEGMENTS = Object.freeze({
@@ -619,14 +624,21 @@
 
     const URL_KEYS = Object.freeze({
       region: 'region', bands: 'bands', segment: 'seg', velocityFactor: 'vf',
-      marginPct: 'margin', units: 'u', wireLenFt: 'len',
+      marginPct: 'margin', units: 'u', wireLenM: 'len_m',
     });
 
     /**
      * @type {Readonly<{region: RegionKey, bands: number[], segment: SegmentKey,
      *                 velocityFactor: number, marginPct: number, units: UnitKey,
-     *                 wireLenFt: Feet}>}
+     *                 wireLenM: Meters}>}
      */
+    /**
+     * Wire length used to be written in feet under ?len=.  New links carry
+     * metres under ?len_m=; the old key is still read so links shared before
+     * the internals moved to metres resolve to the same wire.
+     */
+    const LEGACY_LEN_FT_KEY = 'len';
+
     const DEFAULTS = Object.freeze({
       region: 'us',
       bands: [80, 40, 20, 15, 10],
@@ -634,7 +646,7 @@
       velocityFactor: DEFAULT_VELOCITY_FACTOR,
       marginPct: DEFAULT_MARGIN_PCT,
       units: 'ft',
-      wireLenFt: 0,
+      wireLenM: 0,
     });
 
     // ============================================================
@@ -642,26 +654,26 @@
     // ============================================================
 
     /**
-     * Half wavelength of a wire, in feet.
+     * Half wavelength of a wire, in metres.
      * lambda/2 = c / (2 f) scaled by the wire's velocity factor.  With
-     * vf = 0.95 this reduces to the familiar 468 / f(MHz) dipole formula.
+     * vf = 0.95 this is the familiar 468 / f(MHz) dipole formula in feet.
      *
-     * @param {MegaHertz} freqMHz
+     * @param {Hertz} freqHz
      * @param {number} velocityFactor
-     * @returns {Feet}
+     * @returns {Meters}
      */
-    const halfWaveFt = (freqMHz, velocityFactor) =>
-      (C_SPEED / (freqMHz * 1e6)) * FT_PER_M * velocityFactor / 2;
+    const halfWaveM = (freqHz, velocityFactor) =>
+      (C_SPEED / freqHz) * velocityFactor / 2;
 
     /**
-     * Band edges in MHz for the selected segment, low frequency first.
+     * Band edges for the selected segment, low frequency first.
      * @param {Band} band
      * @param {SegmentKey} segment
-     * @returns {[MegaHertz, MegaHertz]}
+     * @returns {[Hertz, Hertz]}
      */
-    const bandEdgesMHz = (band, segment) => {
-      const [loKHz, hiKHz] = band[SEGMENTS[segment].key];
-      return [loKHz * 1e-3, hiKHz * 1e-3];
+    const bandEdgesHz = (band, segment) => {
+      const [loHz, hiHz] = band[SEGMENTS[segment].key];
+      return [loHz, hiHz];
     };
 
     /**
@@ -684,17 +696,17 @@
      * @returns {Required<Interval>}
      */
     const resonanceInterval = (band, segment, velocityFactor, margin, n) => {
-      const [loMHz, hiMHz] = bandEdgesMHz(band, segment);
+      const [loHz, hiHz] = bandEdgesHz(band, segment);
       return {
-        lo: (n - margin) * halfWaveFt(hiMHz, velocityFactor),
-        hi: (n + margin) * halfWaveFt(loMHz, velocityFactor),
+        lo: (n - margin) * halfWaveM(hiHz, velocityFactor),
+        hi: (n + margin) * halfWaveM(loHz, velocityFactor),
         label: `${band.label} ${n} x λ/2`,
         kind: 'resonance',
       };
     };
 
     /**
-     * Every resonance interval of every selected band up to maxLenFt.  The
+     * Every resonance interval of every selected band up to maxLenM.  The
      * multiple runs as high as the map needs: a fixed cap would silently stop
      * covering the high bands, whose half wave can be hundreds of times
      * shorter than the map is long.
@@ -703,19 +715,19 @@
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
      * @param {number} marginPct
-     * @param {Feet} maxLenFt
+     * @param {Meters} maxLenM
      * @returns {Required<Interval>[]}
      */
-    const avoidIntervals = (bands, segment, velocityFactor, marginPct, maxLenFt) => {
+    const avoidIntervals = (bands, segment, velocityFactor, marginPct, maxLenM) => {
       const margin = marginPct / 100;
       const intervals = [];
       for (const band of bands) {
-        const shortest = halfWaveFt(bandEdgesMHz(band, segment)[1], velocityFactor);
+        const shortest = halfWaveM(bandEdgesHz(band, segment)[1], velocityFactor);
         if (!(shortest > 0)) continue;  // degenerate velocity factor
-        const highestMultiple = Math.ceil(maxLenFt / shortest) + 1;
+        const highestMultiple = Math.ceil(maxLenM / shortest) + 1;
         for (let n = 1; n <= highestMultiple; n++) {
           const interval = resonanceInterval(band, segment, velocityFactor, margin, n);
-          if (interval.lo > maxLenFt) break;
+          if (interval.lo > maxLenM) break;
           intervals.push(interval);
         }
       }
@@ -729,18 +741,18 @@
      * @param {Band[]} bands
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
-     * @returns {Feet}
+     * @returns {Meters}
      */
-    const tooShortFt = (bands, segment, velocityFactor) => {
+    const tooShortM = (bands, segment, velocityFactor) => {
       if (bands.length === 0) return 0;
-      const lowestMHz = Math.min(...bands.map(b => bandEdgesMHz(b, segment)[0]));
-      return halfWaveFt(lowestMHz, velocityFactor) / 2;
+      const lowestHz = Math.min(...bands.map(b => bandEdgesHz(b, segment)[0]));
+      return halfWaveM(lowestHz, velocityFactor) / 2;
     };
 
     /**
      * Merge overlapping or touching intervals; input need not be sorted.
      * @param {Interval[]} intervals
-     * @returns {{lo: Feet, hi: Feet}[]}
+     * @returns {{lo: Meters, hi: Meters}[]}
      */
     const mergeIntervals = (intervals) => {
       const sorted = [...intervals].sort((a, b) => a.lo - b.lo);
@@ -757,20 +769,20 @@
     };
 
     /**
-     * Complement of the merged avoid intervals within [0, maxLenFt].
-     * @param {{lo: Feet, hi: Feet}[]} merged
-     * @param {Feet} maxLenFt
-     * @returns {{lo: Feet, hi: Feet}[]}
+     * Complement of the merged avoid intervals within [0, maxLenM].
+     * @param {{lo: Meters, hi: Meters}[]} merged
+     * @param {Meters} maxLenM
+     * @returns {{lo: Meters, hi: Meters}[]}
      */
-    const usableIntervals = (merged, maxLenFt) => {
+    const usableIntervals = (merged, maxLenM) => {
       const usable = [];
       let cursor = 0;
       for (const gap of merged) {
-        if (gap.lo > cursor) usable.push({ lo: cursor, hi: Math.min(gap.lo, maxLenFt) });
+        if (gap.lo > cursor) usable.push({ lo: cursor, hi: Math.min(gap.lo, maxLenM) });
         cursor = Math.max(cursor, gap.hi);
-        if (cursor >= maxLenFt) break;
+        if (cursor >= maxLenM) break;
       }
-      if (cursor < maxLenFt) usable.push({ lo: cursor, hi: maxLenFt });
+      if (cursor < maxLenM) usable.push({ lo: cursor, hi: maxLenM });
       return usable.filter(u => u.hi > u.lo);
     };
 
@@ -780,63 +792,68 @@
      * the pick onto, or past, the edge of a span narrower than that precision,
      * recommending a length the page then reports as one to avoid.
      *
-     * @param {{lo: Feet, hi: Feet}} span
-     * @returns {Feet}
+     * @param {{lo: Meters, hi: Meters}} span
+     * @param {UnitKey} units  what the number will be read in
+     * @returns {Meters}
      */
-    const pickInSpan = (span) => {
+    const pickInSpan = (span, units) => {
       const center = (span.lo + span.hi) / 2;
-      for (const step of PICK_STEPS_FT) {
-        const rounded = Math.round(center / step) * step;
-        if (rounded > span.lo && rounded < span.hi) return Number(rounded.toFixed(2));
+      const centerDisplay = toDisplay(center, units);
+      for (const step of PICK_STEPS) {
+        const rounded = fromDisplay(
+          Number((Math.round(centerDisplay / step) * step).toFixed(2)), units);
+        if (rounded > span.lo && rounded < span.hi) return rounded;
       }
       return center;
     };
 
     /**
      * Everything the length map and tables need, derived from the current
-     * selection.  All lengths are in feet.
+     * selection.  All lengths are in metres.
      *
      * @param {RegionKey} region
      * @param {number[]} bandsM      selected bands, by wavelength in meters
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
      * @param {number} marginPct
-     * @param {Feet} maxLenFt
-     * @returns {{bands: Band[], avoid: Interval[], merged: {lo: Feet, hi: Feet}[],
-     *            usable: {lo: Feet, hi: Feet}[], suggestions: Span[], shortLimit: Feet}}
+     * @param {Meters} maxLenM
+     * @param {UnitKey} units
+     * @returns {{bands: Band[], avoid: Interval[], merged: {lo: Meters, hi: Meters}[],
+     *            usable: {lo: Meters, hi: Meters}[], suggestions: Span[], shortLimit: Meters}}
      */
-    const solve = (region, bandsM, segment, velocityFactor, marginPct, maxLenFt) => {
+    const solve = (region, bandsM, segment, velocityFactor, marginPct, maxLenM, units) => {
       const bands = bandsIn(region).filter(b => bandsM.includes(b.m));
-      const resonances = avoidIntervals(bands, segment, velocityFactor, marginPct, maxLenFt);
-      const shortLimit = tooShortFt(bands, segment, velocityFactor);
+      const resonances = avoidIntervals(bands, segment, velocityFactor, marginPct, maxLenM);
+      const shortLimit = tooShortM(bands, segment, velocityFactor);
       const shortZone = shortLimit > 0
         ? [{ lo: 0, hi: shortLimit, label: 'shorter than λ/4', kind: 'short' }]
         : [];
       const avoid = [...shortZone, ...resonances];
       const merged = mergeIntervals(avoid);
-      const usable = usableIntervals(merged, maxLenFt);
+      const usable = usableIntervals(merged, maxLenM);
       const suggestions = [...usable]
-        .map(u => ({ ...u, pick: pickInSpan(u), clearance: (u.hi - u.lo) / 2 }))
+        .map(u => ({ ...u, pick: pickInSpan(u, units), clearance: (u.hi - u.lo) / 2 }))
         .sort((a, b) => b.clearance - a.clearance)
         .slice(0, MAX_SUGGESTIONS);
       return { bands, avoid, merged, usable, suggestions, shortLimit };
     };
 
     /**
-     * Recommended length from the usable span nearest to lenFt, or null if
+     * Recommended length from the usable span nearest to lenM, or null if
      * none is left.  Taken from the middle of the span rather than its closest
      * edge, so the suggestion has the most clearance that span can offer.
      *
-     * @param {Feet} lenFt
-     * @param {{lo: Feet, hi: Feet}[]} usable
-     * @returns {?Feet}
+     * @param {Meters} lenM
+     * @param {{lo: Meters, hi: Meters}[]} usable
+     * @param {UnitKey} units
+     * @returns {?Meters}
      */
-    const nearestClearLength = (lenFt, usable) => {
-      /** @type {?Feet} */
+    const nearestClearLength = (lenM, usable, units) => {
+      /** @type {?Meters} */
       let best = null;
       for (const span of usable) {
-        const center = pickInSpan(span);
-        if (!best || Math.abs(center - lenFt) < Math.abs(best - lenFt)) best = center;
+        const center = pickInSpan(span, units);
+        if (!best || Math.abs(center - lenM) < Math.abs(best - lenM)) best = center;
       }
       return best;
     };
@@ -852,15 +869,16 @@
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
      * @param {number} askedPct
-     * @param {Feet} maxLenFt
-     * @returns {?{marginPct:number, lengthFt:Feet}} null if even a margin of
+     * @param {Meters} maxLenM
+     * @param {UnitKey} units
+     * @returns {?{marginPct:number, lengthM:Meters}} null if even a margin of
      *          zero leaves nothing, i.e. the bands cover every length outright.
      */
     const bestFeasibleMargin = (region, bandsM, segment, velocityFactor,
-                                askedPct, maxLenFt) => {
+                                askedPct, maxLenM, units) => {
       /** @param {number} pct */
       const spansAt = (pct) =>
-        solve(region, bandsM, segment, velocityFactor, pct, maxLenFt).suggestions;
+        solve(region, bandsM, segment, velocityFactor, pct, maxLenM, units).suggestions;
       if (spansAt(0).length === 0) return null;
 
       let feasible = 0;
@@ -872,7 +890,7 @@
       // Round down to the slider's step so the offer is one the user can set.
       const marginPct = Math.floor(feasible / MARGIN_STEP_PCT) * MARGIN_STEP_PCT;
       const best = spansAt(marginPct)[0];
-      return best ? { marginPct, lengthFt: best.pick } : null;
+      return best ? { marginPct, lengthM: best.pick } : null;
     };
 
     /**
@@ -880,23 +898,23 @@
      * against the precomputed map intervals, so that lengths past the end of
      * the map are still answered correctly.
      *
-     * Only the multiples that can bracket lenFt are examined: for band n,
-     * lenFt lies between the nth and (n+1)th resonance for n around
-     * lenFt / (half wave).
+     * Only the multiples that can bracket lenM are examined: for band n,
+     * lenM lies between the nth and (n+1)th resonance for n around
+     * lenM / (half wave).
      *
-     * @param {Feet} lenFt
+     * @param {Meters} lenM
      * @param {Band[]} bands
      * @param {SegmentKey} segment
      * @param {number} velocityFactor
      * @param {number} marginPct
-     * @param {Feet} shortLimit
-     * @returns {?({ok: true, hit: null, nearest: Required<Interval>, clearance: Feet}
+     * @param {Meters} shortLimit
+     * @returns {?({ok: true, hit: null, nearest: Required<Interval>, clearance: Meters}
      *            | {ok: false, hit: Required<Interval>, nearest: Required<Interval>,
-     *               clearance: Feet})}
+     *               clearance: Meters})}
      *          clearance is the distance in feet to the nearest zone edge.
      */
-    const judgeLength = (lenFt, bands, segment, velocityFactor, marginPct, shortLimit) => {
-      if (!(lenFt > 0)) return null;
+    const judgeLength = (lenM, bands, segment, velocityFactor, marginPct, shortLimit) => {
+      if (!(lenM > 0)) return null;
       const margin = marginPct / 100;
       /** @type {Required<Interval>[]} */
       const zones = [];
@@ -905,12 +923,12 @@
         zones.push({ lo: 0, hi: shortLimit, label: 'shorter than λ/4', kind: 'short' });
       }
       for (const band of bands) {
-        const [loMHz, hiMHz] = bandEdgesMHz(band, segment);
-        const shortest = halfWaveFt(hiMHz, velocityFactor);
-        const longest = halfWaveFt(loMHz, velocityFactor);
+        const [loHz, hiHz] = bandEdgesHz(band, segment);
+        const shortest = halfWaveM(hiHz, velocityFactor);
+        const longest = halfWaveM(loHz, velocityFactor);
         if (!(shortest > 0)) continue;  // degenerate velocity factor
-        const nLo = Math.max(1, Math.floor(lenFt / longest - margin));
-        const nHi = Math.ceil(lenFt / shortest + margin);
+        const nLo = Math.max(1, Math.floor(lenM / longest - margin));
+        const nHi = Math.ceil(lenM / shortest + margin);
         for (let n = nLo; n <= nHi; n++) {
           zones.push(resonanceInterval(band, segment, velocityFactor, margin, n));
         }
@@ -919,21 +937,21 @@
       // Nothing selected to judge against, so there is no verdict to give.
       if (zones.length === 0) return null;
 
-      const hit = zones.find(z => lenFt >= z.lo && lenFt <= z.hi) ?? null;
+      const hit = zones.find(z => lenM >= z.lo && lenM <= z.hi) ?? null;
 
       // Inside a zone, the only distance worth reporting is the way out of
       // that zone; taking a minimum over the others would quote a figure
       // belonging to a zone the message does not name.
       if (hit) {
         return { ok: false, hit, nearest: hit,
-                 clearance: Math.min(lenFt - hit.lo, hit.hi - lenFt) };
+                 clearance: Math.min(lenM - hit.lo, hit.hi - lenM) };
       }
 
       /** @type {?Required<Interval>} */
       let nearest = null;
       let clearance = Infinity;
       for (const zone of zones) {
-        const distance = Math.min(Math.abs(lenFt - zone.lo), Math.abs(lenFt - zone.hi));
+        const distance = Math.min(Math.abs(lenM - zone.lo), Math.abs(lenM - zone.hi));
         if (distance < clearance) {
           clearance = distance;
           nearest = zone;
@@ -949,24 +967,24 @@
     // Formatting
     // ============================================================
 
-    /** @param {Feet} lenFt @param {UnitKey} units @returns {number} */
-    const toDisplay = (lenFt, units) => lenFt * UNITS[units].perFoot;
+    /** @param {Meters} lenM @param {UnitKey} units @returns {number} */
+    const toDisplay = (lenM, units) => lenM * UNITS[units].perMeter;
 
-    /** @param {number} len  in display units @param {UnitKey} units @returns {Feet} */
-    const fromDisplay = (len, units) => len / UNITS[units].perFoot;
+    /** @param {number} len  in display units @param {UnitKey} units @returns {Meters} */
+    const fromDisplay = (len, units) => len / UNITS[units].perMeter;
 
-    /** @param {Feet} lenFt @param {UnitKey} units @returns {string} */
-    const fmtLen = (lenFt, units) => UNITS[units].format(lenFt);
+    /** @param {Meters} lenM @param {UnitKey} units @returns {string} */
+    const fmtLen = (lenM, units) => UNITS[units].format(lenM);
 
     /**
      * Band edges in kHz below 1 MHz, MHz above, so LF bands stay readable.
-     * @param {MegaHertz} loMHz
-     * @param {MegaHertz} hiMHz
+     * @param {Hertz} loHz
+     * @param {Hertz} hiHz
      * @returns {string}
      */
-    const fmtBandEdges = (loMHz, hiMHz) => hiMHz < 1
-      ? `${(loMHz * 1e3).toFixed(1)}-${(hiMHz * 1e3).toFixed(1)} kHz`
-      : `${loMHz.toFixed(3)}-${hiMHz.toFixed(3)}`;
+    const fmtBandEdges = (loHz, hiHz) => hiHz < 1e6
+      ? `${(loHz / 1e3).toFixed(1)}-${(hiHz / 1e3).toFixed(1)} kHz`
+      : `${(loHz / 1e6).toFixed(3)}-${(hiHz / 1e6).toFixed(3)}`;
 
     /** Unit note for anything printed by fmtBandEdges, which labels only kHz. */
     const BAND_EDGE_UNIT_HINT = 'Frequencies in MHz unless marked';
@@ -1017,6 +1035,18 @@
      */
     const entriesOf = (obj) => /** @type {any} */ (Object.entries(obj));
 
+    /**
+     * Wire length from either spelling, preferring the current one.
+     * @param {URLSearchParams} params
+     * @returns {Meters}
+     */
+    const readWireLenM = (params) => {
+      const meters = params.get(URL_KEYS.wireLenM);
+      if (meters !== null) return parseNum(meters, DEFAULTS.wireLenM);
+      const feet = params.get(LEGACY_LEN_FT_KEY);
+      return feet === null ? DEFAULTS.wireLenM : parseNum(feet, 0) / FT_PER_M;
+    };
+
     const getUrlParams = () => {
       const params = new URLSearchParams(window.location.search);
       const rawRegion = params.get(URL_KEYS.region);
@@ -1037,7 +1067,7 @@
         marginPct: clamp(parseNum(params.get(URL_KEYS.marginPct), DEFAULTS.marginPct),
                          MARGIN_PCT_RANGE),
         units: isKeyOf(UNITS, units) ? units : DEFAULTS.units,
-        wireLenFt: Math.max(0, parseNum(params.get(URL_KEYS.wireLenFt), DEFAULTS.wireLenFt)),
+        wireLenM: Math.max(0, readWireLenM(params)),
       };
     };
 
@@ -1047,16 +1077,16 @@
      */
     /**
      * @param {ReturnType<typeof getUrlParams>} state
-     * @param {?Feet} autoLenFt
+     * @param {?Meters} autoLenM
      * @returns {boolean}
      */
-    const isAtDefaults = (state, autoLenFt) =>
+    const isAtDefaults = (state, autoLenM) =>
       state.region === DEFAULTS.region &&
       state.segment === DEFAULTS.segment &&
       state.velocityFactor === DEFAULTS.velocityFactor &&
       state.marginPct === DEFAULTS.marginPct &&
       state.units === DEFAULTS.units &&
-      (state.wireLenFt === DEFAULTS.wireLenFt || state.wireLenFt === autoLenFt) &&
+      (state.wireLenM === DEFAULTS.wireLenM || state.wireLenM === autoLenM) &&
       state.bands.length === DEFAULTS.bands.length &&
       DEFAULTS.bands.every(m => state.bands.includes(m));
 
@@ -1066,49 +1096,49 @@
 
     /** Horizontal map of wire length: red where resonant, green where usable. */
     /**
-     * @param {{solution: ReturnType<typeof solve>, maxLenFt: Feet, units: UnitKey,
-     *          wireLenFt: Feet, onPick: (lenFt: Feet) => void}} props
+     * @param {{solution: ReturnType<typeof solve>, maxLenM: Meters, units: UnitKey,
+     *          wireLenM: Meters, onPick: (lenM: Meters) => void}} props
      */
-    function LengthMap({ solution, maxLenFt, units, wireLenFt, onPick }) {
-      const [hoverFt, setHoverFt] = useState(/** @type {?Feet} */ (null));
+    function LengthMap({ solution, maxLenM, units, wireLenM, onPick }) {
+      const [hoverM, setHoverM] = useState(/** @type {?Meters} */ (null));
 
       const plotWidth = MAP.width - MAP.left - MAP.right;
-      /** @param {Feet} lenFt @returns {number} SVG x */
-      const xOf = (lenFt) => MAP.left + (lenFt / maxLenFt) * plotWidth;
+      /** @param {Meters} lenM @returns {number} SVG x */
+      const xOf = (lenM) => MAP.left + (lenM / maxLenM) * plotWidth;
 
-      /** @param {number} x  SVG x @returns {Feet} */
-      const lenAt = (x) => ((x - MAP.left) / plotWidth) * maxLenFt;
+      /** @param {number} x  SVG x @returns {Meters} */
+      const lenAt = (x) => ((x - MAP.left) / plotWidth) * maxLenM;
 
-      const step = tickStep(toDisplay(maxLenFt, units));
+      const step = tickStep(toDisplay(maxLenM, units));
       const ticks = [];
-      for (let value = 0; value <= toDisplay(maxLenFt, units); value += step) {
+      for (let value = 0; value <= toDisplay(maxLenM, units); value += step) {
         ticks.push(value);
       }
 
       /**
        * Length under the pointer, clamped to the map.
        * @param {React.MouseEvent<SVGSVGElement>} event
-       * @returns {Feet}
+       * @returns {Meters}
        */
       const lenAtEvent = (event) => {
         const rect = event.currentTarget.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * MAP.width;
-        return Math.max(0, Math.min(maxLenFt, lenAt(x)));
+        return Math.max(0, Math.min(maxLenM, lenAt(x)));
       };
 
       /** @param {React.MouseEvent<SVGSVGElement>} event */
-      const handleMove = (event) => setHoverFt(lenAtEvent(event));
+      const handleMove = (event) => setHoverM(lenAtEvent(event));
 
-      const hoverHit = hoverFt === null
+      const hoverHit = hoverM === null
         ? null
-        : solution.avoid.find(a => hoverFt >= a.lo && hoverFt <= a.hi);
+        : solution.avoid.find(a => hoverM >= a.lo && hoverM <= a.hi);
 
       const barBottom = MAP.top + MAP.barHeight;
 
       return (
         <div className="map-container">
           <svg className="map-svg" viewBox={`0 0 ${MAP.width} ${MAP.height}`}
-               onMouseMove={handleMove} onMouseLeave={() => setHoverFt(null)}
+               onMouseMove={handleMove} onMouseLeave={() => setHoverM(null)}
                onClick={(event) => onPick(lenAtEvent(event))}>
             <defs>
               {/* Diagonal hatch marks the too-short zone without relying on hue. */}
@@ -1129,7 +1159,7 @@
             {solution.avoid.map((a, i) => (
               <rect key={`a${i}`} x={xOf(Math.max(0, a.lo))} y={MAP.top}
                     width={Math.max(MIN_BAND_WIDTH,
-                                    xOf(Math.min(a.hi, maxLenFt)) - xOf(Math.max(0, a.lo)))}
+                                    xOf(Math.min(a.hi, maxLenM)) - xOf(Math.max(0, a.lo)))}
                     height={MAP.barHeight}
                     fill={a.kind === 'short' ? 'url(#hatch-short)' : COLORS.avoid}
                     opacity={a.kind === 'short' ? 1 : 0.9} />
@@ -1153,19 +1183,19 @@
               wire length ({UNITS[units].axisLabel})
             </text>
             {/* Selected length marker */}
-            {wireLenFt > 0 && wireLenFt <= maxLenFt && (
-              <line x1={xOf(wireLenFt)} y1={MAP.top - 6} x2={xOf(wireLenFt)} y2={barBottom + 3}
+            {wireLenM > 0 && wireLenM <= maxLenM && (
+              <line x1={xOf(wireLenM)} y1={MAP.top - 6} x2={xOf(wireLenM)} y2={barBottom + 3}
                     stroke={COLORS.marker} strokeWidth="2" />
             )}
-            {hoverFt !== null && (
-              <line x1={xOf(hoverFt)} y1={MAP.top} x2={xOf(hoverFt)} y2={barBottom}
+            {hoverM !== null && (
+              <line x1={xOf(hoverM)} y1={MAP.top} x2={xOf(hoverM)} y2={barBottom}
                     stroke="#fff" strokeWidth="1" opacity="0.5" />
             )}
           </svg>
           <div className="map-readout">
-            {hoverFt === null
+            {hoverM === null
               ? 'Click the map to set the wire length.'
-              : `${fmtLen(hoverFt, units)} - ${hoverHit ? `avoid: ${hoverHit.label}` : 'usable'}`}
+              : `${fmtLen(hoverM, units)} - ${hoverHit ? `avoid: ${hoverHit.label}` : 'usable'}`}
           </div>
           <div className="map-legend">
             <span><span className="swatch" style={{ background: COLORS.avoid }}></span>
@@ -1187,55 +1217,58 @@
       /** @param {Partial<ReturnType<typeof getUrlParams>>} updates */
       const set = (updates) => setP(prev => ({ ...prev, ...updates }));
 
-      const { region, bands, segment, velocityFactor, marginPct, units, wireLenFt } = p;
+      const { region, bands, segment, velocityFactor, marginPct, units, wireLenM } = p;
 
       // Map spans one full wavelength at the lowest selected band, which is the
       // longest wire worth considering for that band.
-      const maxLenFt = useMemo(() => {
+      const maxLenM = useMemo(() => {
         const selected = bandsIn(region).filter(b => bands.includes(b.m));
-        if (selected.length === 0) return EMPTY_MAP_LEN_FT;
-        const lowestMHz = Math.min(...selected.map(b => bandEdgesMHz(b, segment)[0]));
-        return 2 * halfWaveFt(lowestMHz, velocityFactor);
+        if (selected.length === 0) return EMPTY_MAP_LEN_M;
+        const lowestHz = Math.min(...selected.map(b => bandEdgesHz(b, segment)[0]));
+        return 2 * halfWaveM(lowestHz, velocityFactor);
       }, [region, bands, segment, velocityFactor]);
 
+      // units is a dependency because a recommended length is rounded to a
+      // round number in whatever unit it will be read in.
       const solution = useMemo(
-        () => solve(region, bands, segment, velocityFactor, marginPct, maxLenFt),
-        [region, bands, segment, velocityFactor, marginPct, maxLenFt]);
+        () => solve(region, bands, segment, velocityFactor, marginPct, maxLenM, units),
+        [region, bands, segment, velocityFactor, marginPct, maxLenM, units]);
 
       // Only searched when the asked-for margin leaves nothing.
       const fallback = useMemo(
         () => (solution.suggestions.length > 0 || bands.length === 0
           ? null
-          : bestFeasibleMargin(region, bands, segment, velocityFactor, marginPct, maxLenFt)),
-        [solution, region, bands, segment, velocityFactor, marginPct, maxLenFt]);
+          : bestFeasibleMargin(region, bands, segment, velocityFactor, marginPct,
+                               maxLenM, units)),
+        [solution, region, bands, segment, velocityFactor, marginPct, maxLenM, units]);
 
       const clearLength = useMemo(
-        () => nearestClearLength(wireLenFt, solution.usable),
-        [wireLenFt, solution]);
+        () => nearestClearLength(wireLenM, solution.usable, units),
+        [wireLenM, solution, units]);
 
       const verdict = useMemo(
-        () => judgeLength(wireLenFt, solution.bands, segment, velocityFactor,
+        () => judgeLength(wireLenM, solution.bands, segment, velocityFactor,
                           marginPct, solution.shortLimit),
-        [wireLenFt, solution, segment, velocityFactor, marginPct]);
+        [wireLenM, solution, segment, velocityFactor, marginPct]);
 
       // Jump to the widest clear span whenever the inputs change, so the
       // answer always suits the current selection.  Typing a length or
       // picking one off the map leaves the solution alone, so those stick
       // until an input changes.  A length in the URL wins on first load.
-      const autoLenFt = useRef(/** @type {?Feet} */ (null));
+      const autoLenM = useRef(/** @type {?Meters} */ (null));
       const firstRun = useRef(true);
       useEffect(() => {
         const wasFirstRun = firstRun.current;
         firstRun.current = false;
-        if (wasFirstRun && wireLenFt > 0) return;
+        if (wasFirstRun && wireLenM > 0) return;
         const best = solution.suggestions[0];
         if (!best) return;
-        autoLenFt.current = best.pick;
-        set({ wireLenFt: autoLenFt.current });
+        autoLenM.current = best.pick;
+        set({ wireLenM: autoLenM.current });
       }, [solution]);
 
       useEffect(() => {
-        if (isAtDefaults(p, autoLenFt.current)) {
+        if (isAtDefaults(p, autoLenM.current)) {
           window.history.replaceState(null, '', window.location.pathname);
           return;
         }
@@ -1246,7 +1279,7 @@
         params.set(URL_KEYS.velocityFactor, String(velocityFactor));
         params.set(URL_KEYS.marginPct, String(marginPct));
         params.set(URL_KEYS.units, units);
-        if (wireLenFt > 0) params.set(URL_KEYS.wireLenFt, wireLenFt.toFixed(2));
+        if (wireLenM > 0) params.set(URL_KEYS.wireLenM, wireLenM.toFixed(3));
         window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
       }, [p]);
 
@@ -1264,8 +1297,9 @@
         bands: bands.filter(m => bandsIn(key).some(b => b.m === m)),
       });
 
-      /** @param {Feet} lenFt */
-      const setWireLen = (lenFt) => set({ wireLenFt: Math.round(lenFt * 100) / 100 });
+      /** @param {Meters} lenM */
+      const setWireLen = (lenM) => set({
+        wireLenM: fromDisplay(Number(toDisplay(lenM, units).toFixed(2)), units) });
 
       const noBands = bands.length === 0;
 
@@ -1315,7 +1349,7 @@
                 </div>
                 <div className="band-grid">
                   {bandsIn(region).map(band => {
-                    const [lo, hi] = bandEdgesMHz(band, segment);
+                    const [lo, hi] = bandEdgesHz(band, segment);
                     return (
                       <button key={band.m}
                               className={`btn band-btn ${bands.includes(band.m) ? 'active' : ''}`}
@@ -1377,7 +1411,7 @@
                 <div className="verdict-headline">
                   Wire length{' '}
                   <input className="num-input len-input" type="number" min="0" step="0.5"
-                         value={toDisplay(wireLenFt, units).toFixed(2)}
+                         value={toDisplay(wireLenM, units).toFixed(2)}
                          onChange={(e) => setWireLen(fromDisplay(Number(e.target.value), units))} />
                   {' '}{UNITS[units].abbrev}
                   {verdict && (verdict.ok ? ': usable' : ': avoid')}
@@ -1392,7 +1426,7 @@
                       : `Falls in ${verdict.hit.label} `
                         + `(${fmtLen(verdict.hit.lo, units)} to ${fmtLen(verdict.hit.hi, units)}); `
                         + `${fmtLen(verdict.clearance, units)} from the near edge.`}
-                  {wireLenFt > maxLenFt
+                  {wireLenM > maxLenM
                     && ' Longer than one wavelength on the lowest band selected.'}
                   {verdict && !verdict.ok && clearLength !== null && (
                     <>
@@ -1410,8 +1444,8 @@
                   Select at least one band.
                 </div></div>
               ) : (
-                <LengthMap solution={solution} maxLenFt={maxLenFt} units={units}
-                           wireLenFt={wireLenFt} onPick={setWireLen} />
+                <LengthMap solution={solution} maxLenM={maxLenM} units={units}
+                           wireLenM={wireLenM} onPick={setWireLen} />
               )}
 
               {!noBands && (
@@ -1425,8 +1459,8 @@
                             {' '}The most any length can manage is {fallback.marginPct}%.{' '}
                             <button className="btn link-btn"
                                     onClick={() => set({ marginPct: fallback.marginPct,
-                                                         wireLenFt: fallback.lengthFt })}>
-                              Use {fallback.marginPct}% at {fmtLen(fallback.lengthFt, units)}
+                                                         wireLenM: fallback.lengthM })}>
+                              Use {fallback.marginPct}% at {fmtLen(fallback.lengthM, units)}
                             </button>
                           </>
                         : ' These bands cover every length between them; drop one.'}
@@ -1464,14 +1498,14 @@
                     </thead>
                     <tbody>
                       {solution.bands.map(band => {
-                        const [lo, hi] = bandEdgesMHz(band, segment);
+                        const [lo, hi] = bandEdgesHz(band, segment);
                         return (
                           <tr key={band.m}>
                             <td>{band.label}</td>
                             <td>{fmtBandEdges(lo, hi)}</td>
                             <td>
-                              {fmtLen(halfWaveFt(hi, velocityFactor), units)} -{' '}
-                              {fmtLen(halfWaveFt(lo, velocityFactor), units)}
+                              {fmtLen(halfWaveM(hi, velocityFactor), units)} -{' '}
+                              {fmtLen(halfWaveM(lo, velocityFactor), units)}
                             </td>
                           </tr>
                         );

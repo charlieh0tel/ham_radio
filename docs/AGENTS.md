@@ -99,6 +99,10 @@ The `docs/` directory is served by GitHub Pages from the `master` branch. Pushin
 - **Respect the single-file architecture**: Do not split into multiple files unless the user requests it. The single-file design is intentional for GitHub Pages simplicity.
 - **External dependencies are loaded from CDN** (React, ReactDOM, Babel, mathjs, fmin).
 - **Browser compatibility**: The app uses modern JS features transpiled by Babel. Ensure nothing relies on bleeding-edge APIs without checking browser support.
-- **URL parameters**: The app may encode state in URL params. Ensure changes preserve backward-compatible URL parsing.
+- **URL parameters**: The app may encode state in URL params. Ensure changes preserve backward-compatible URL parsing. When a parameter's unit changes, give the new unit a new key and keep reading the old one: `random-wire.html` writes `?len_m=` in metres and still accepts the older `?len=` in feet.
+- **Units**: Calculate in SI internally (metres, hertz). Feet, feet and
+  inches, and metres are display units, applied at the edges only. The
+  exception is roundness: a recommended length is rounded in whatever
+  unit the user is reading, so the picker takes the display unit.
 - **Accessibility**: Maintain readable contrast ratios in the dark theme. Ensure interactive controls are keyboard-accessible.
 - **Stay in this directory.**
