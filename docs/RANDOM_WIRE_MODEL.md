@@ -398,10 +398,21 @@ not be read as any.
 The bound the caveat text should carry.  Taken over 96 groups, each
 fitted across 159 lengths and 7 return lengths.
 
-**For `h/lambda >= 0.05`: `|Z|` within x1.35 worst case, x1.28 at the
-90th percentile, x1.22 median; phase within 17 degrees at the 90th
-percentile.**  That covers 81 of the 96 groups and every soil, the
-worst soil being `good` at x1.35.
+Two numbers, and the second is the one the page may claim.  Fitting
+coefficients independently for every frequency, height and soil gives
+x1.35 worst case for `h/lambda >= 0.05`.  The page cannot do that: it
+carries a small table and interpolates.  Measured with the tabulated
+coefficients over the whole sweep, that costs almost nothing.
+
+**Tabulated, for `h/lambda >= 0.05`: `|Z|` within x1.40 worst case,
+x1.35 at the 90th percentile, x1.27 median.**  That covers 81 of the 96
+groups and every soil.
+
+| | per-group fit | tabulated, as shipped |
+|---|---|---|
+| median | x1.22 | x1.27 |
+| 90th percentile | x1.28 | x1.35 |
+| worst | x1.35 | x1.40 |
 
 What `h/lambda >= 0.05` means in practice, since the user sets height in
 feet and not wavelengths:
@@ -413,8 +424,8 @@ feet and not wavelengths:
 | 40 m | 7 ft |
 | 20 m and up | 4 ft or less |
 
-**Below `h/lambda = 0.05` the bound degrades to x2.3.**  In practice
-that is 160 m and 80 m with a low wire.  It is not a region to refuse to
+**Below `h/lambda = 0.05` the bound degrades to x2.9 tabulated, x2.3
+per-group.**  In practice that is 160 m and 80 m with a low wire.  It is not a region to refuse to
 answer in, but it is one where the number on screen should be visibly
 hedged.
 
