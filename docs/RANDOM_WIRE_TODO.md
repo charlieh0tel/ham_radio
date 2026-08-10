@@ -185,11 +185,30 @@ Remaining:
       height, return path and soil already entered.  Different from the
       objection to runtime NEC, which was about sweeping every candidate:
       this is bounded work on a geometry the user has described, and it
-      checks the installation rather than the envelope.  **Settle the
-      licence first**: shipping wasm nec2c from `docs/` distributes GPL
-      object code from an MIT repo and plausibly makes the page GPLv3.
-      Either that page carries its own GPL notice and source offer, or
-      the engine must be permissively licensed.
+      checks the installation rather than the envelope.
+
+      `nec2c-wasm` and `nec2c-deck` now exist on npm (0.1.0, both
+      GPL-3.0-or-later, both ours).  They split the licence question
+      rather than answering it:
+
+      - `nec2c-deck` builds decks and parses output, no solver and no
+        dependencies.  It is our own code with no nec2c in it, so it can
+        be relicensed at will; MIT would let the page use it freely.
+      - `nec2c-wasm` is nec2c 1.3.1 compiled, so it carries Kyriazis's
+        GPL and cannot be relicensed by us.  Serving it from `docs/` is
+        distribution, and it makes the page a combined work.
+
+      That is workable rather than blocking.  Per-file licensing is
+      ordinary: one page goes GPLv3 with a header notice while the repo
+      stays MIT, and because the page is a single file already public on
+      GitHub, alongside `nec2c-js`, the corresponding-source obligation
+      is satisfied by what is already published.  Decide deliberately
+      and write the notice; do not let it happen by importing.
+
+      Size is the other constraint: `nec2c-wasm` unpacks to 1.1 MB
+      against a page that is currently one file of about 100 KB, so it
+      has to load on demand rather than inline, which also keeps the
+      classical mode free of it.
 - [x] Say something when a published length scores badly.  Done: the
       impedance mode now carries a "Published lengths, scored" panel
       running the standard table through the model at the user's own
