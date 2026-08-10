@@ -31,11 +31,15 @@ would be false precision, and the page's caveat text exists to say so.
 
 ## Conventions
 
-- Calculate in SI internally: metres and hertz.  Feet, feet and inches,
-  and metres are display units applied at the edges.
-- Where the physics is scale invariant, parameterise by the
-  dimensionless ratios `l/lambda`, `a/lambda`, `h/lambda`.
-- Name the unit in the type, not only the identifier.
+Where the physics is scale invariant, parameterise by the dimensionless
+ratios `l/lambda`, `a/lambda` and `h/lambda` rather than by absolute
+size.  A wire is electrically the same antenna at 40 ft on 40 m as at
+20 ft on 20 m, and the fitted coefficients should say so once instead of
+twice.
+
+Not everything here is scale invariant, which is why the sweep keeps
+frequency as a real axis: soil enters through its complex permittivity,
+`eps - j*sigma/(omega*eps0)`, which depends on frequency.
 
 ## The runtime model
 
@@ -142,10 +146,8 @@ sweep scripts stay out of the repo.
    segmentation predicts.
 2. Sweep the grid.  Antenna length is swept in wavelengths; height and
    return length are held in metres so every grid point is an
-   installation someone could build.  Frequency stays a real axis
-   because the soil's complex permittivity,
-   `eps - j*sigma/(omega*eps0)`, is frequency dependent, so the problem
-   is not fully scale invariant even though the geometry is.
+   installation someone could build.  Frequency is a real axis, for the
+   reason under Conventions above.
 3. Decide the fit form against the data before fitting to it.
 4. Fit `alpha`, `beta` and a series loss term together, so both ends of
    the model land at once rather than one being forced by the other.
