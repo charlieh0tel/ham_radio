@@ -567,3 +567,21 @@ test('the worst-band gate is what separates the published lengths', () => {
   assert.ok(without > withEighty,
     `dropping 80 m should help: ${withEighty} -> ${without}`);
 });
+
+test('every offered band lies inside the fitted frequency range', () => {
+  // The impedance mode quotes an accuracy figure that only means anything
+  // where the sweep has evidence.  Rather than warning at runtime about bands
+  // outside it, the band tables are held inside it here: adding 6 m or 630 m
+  // back means extending the sweep first, and this test is what says so.
+  for (const region of Object.keys(m.REGIONS)) {
+    for (const band of m.bandsIn(region)) {
+      for (const segment of Object.keys(m.SEGMENTS)) {
+        const [lo, hi] = m.bandEdgesHz(band, segment);
+        assert.ok(lo >= m.MODEL_FIT_RANGE_HZ.min,
+          `${region} ${band.label} ${segment} starts at ${lo} Hz, below the fit`);
+        assert.ok(hi <= m.MODEL_FIT_RANGE_HZ.max,
+          `${region} ${band.label} ${segment} ends at ${hi} Hz, above the fit`);
+      }
+    }
+  }
+});

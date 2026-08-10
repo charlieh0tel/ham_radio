@@ -332,9 +332,6 @@
     .verdict-detail { font-size: 11px; color: #aaa; line-height: 1.6; }
 
     /* Verdict column of the published-lengths table. */
-    /* Caveat that needs to be read rather than skimmed. */
-    .control-hint.warn { color: #d99a6c; }
-
     .score-ok { color: #009e73; }
     .score-poor { color: #d55e00; }
 
@@ -462,7 +459,6 @@
           { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.2e6] },
           { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.93e6] },
           { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.3e6] },
-          { m: 6,    label: '6m',    full: [50e6, 54e6],         cw: [50e6, 50.1e6] },
         ],
       },
       r1: {
@@ -479,7 +475,6 @@
           { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.07e6] },
           { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.915e6] },
           { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.07e6] },
-          { m: 6,    label: '6m',    full: [50e6, 52e6],         cw: [50e6, 50.1e6] },
         ],
       },
       r2: {
@@ -496,7 +491,6 @@
           { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.07e6] },
           { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.915e6] },
           { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.07e6] },
-          { m: 6,    label: '6m',    full: [50e6, 54e6],         cw: [50e6, 50.1e6] },
         ],
       },
       r3: {
@@ -513,7 +507,6 @@
           { m: 15,   label: '15m',   full: [21e6, 21.45e6],      cw: [21e6, 21.07e6] },
           { m: 12,   label: '12m',   full: [24.89e6, 24.99e6],   cw: [24.89e6, 24.915e6] },
           { m: 10,   label: '10m',   full: [28e6, 29.7e6],       cw: [28e6, 28.07e6] },
-          { m: 6,    label: '6m',    full: [50e6, 54e6],         cw: [50e6, 50.1e6] },
         ],
       },
     });
@@ -707,15 +700,17 @@
     const MODEL_VF_A = 1.0;
 
     /**
-     * Frequencies the impedance model was fitted over.  Bands outside this are
-     * still offered -- the classical rule is band-independent arithmetic and
-     * works anywhere -- but the impedance mode is extrapolating there and says
-     * so.  Soil is the reason: its loss tangent changes character across HF,
-     * and the fit has only ever seen 1.9 to 28.85 MHz.
+     * Frequencies the impedance model was fitted over, and therefore the only
+     * bands the page offers.  Soil is the reason: its loss tangent changes
+     * character across the spectrum and the sweep has only seen 1.9 to
+     * 28.85 MHz.
      *
-     * 2200 m and 630 m are not offered at all.  At 137 kHz the ground is a
-     * near-conductor rather than a lossy dielectric, which is a different
-     * problem, and no wire this page recommends is a sensible antenna there.
+     * 2200 m, 630 m and 6 m used to be listed and are not any more.  At
+     * 137 kHz the ground is a near-conductor rather than a lossy dielectric,
+     * and at 50 MHz the fit has no evidence at all, so the impedance mode was
+     * extrapolating in both directions while quoting an accuracy that did not
+     * cover it.  A test holds every band in every region inside this range,
+     * so adding one back means extending the sweep first.
      */
     const MODEL_FIT_RANGE_HZ = Object.freeze({ min: 1.8e6, max: 30e6 });
 
