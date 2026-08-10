@@ -601,6 +601,19 @@ published tables of any return length tried, median gap 3.5 ft against
 but it is worth knowing before moving it, and a typical user really does
 just have their coax run.
 
+It is not an artifact of the near-ground trouble described below,
+either.  Located directly in NEC rather than through the fit, the 40 m
+resonance peak sits at 69.5 ft, implying a velocity factor of 1.010,
+against the 65.3 ft that 0.95 predicts.  Raising the return path from
+5 cm to 2 m moves that peak by three inches, 69.5 to 69.8 ft, so the
+regime where implementations part company has no bearing on where the
+resonance is.  `|Z|` at 71 ft reads 3900 to 4800 ohms across the same
+range.
+
+That the peak is measured slightly *above* unity is worth noting: the
+model's `vf_a` was capped at 1.0, so it places the resonance marginally
+short of where NEC puts it, and is if anything generous to 71 ft.
+
 The rejection has since survived every parameter that could have caused
 it.  71 ft scores 6.2 to 10.1 across heights from 15 to 60 ft and all
 three soils, and 5.6 to 7.5 across return runs from 10 to 130 ft.  84 ft
