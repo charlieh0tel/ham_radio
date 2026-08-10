@@ -429,15 +429,34 @@ per-group.**  In practice that is 160 m and 80 m with a low wire.  It is not a r
 answer in, but it is one where the number on screen should be visibly
 hedged.
 
-**The bound is conditional on #14 AWG.**  The sweep never varied
-conductor gauge: `a/lambda` was one of the three ratios the plan named
-and it was the one that got dropped, so every point ran at #14.  The
-model still responds to diameter, because Schelkunoff's `Z0` takes the
-radius and that dependence is logarithmic, about 5 percent in `Z0`
-between #14 and #18.  But `ka`, `kr`, both alphas and `vf_r` were all
-fitted at one gauge, and whether they hold at another is untested.  That
-is why diameter is not a control yet: exposing one would let the user
-move a parameter the coefficients have no evidence for.
+**The bound survives conductor gauge.**  The main sweep ran entirely at
+#14, so `a/lambda` was the one planned axis never executed and the
+coefficients had seen a single diameter.  `gauge_sweep.py` and
+`gauge_check.py` close that: 22896 further solves over #12, #14, #18 and
+#22, a factor of 3.2 in diameter.
+
+Agreement, which is the question the page cares about -- the shipped
+#14 table used unchanged against each gauge:
+
+| gauge | radius mm | median | 90th | worst |
+|---|---|---|---|---|
+| 12 | 1.026 | x1.27 | x1.34 | x1.41 |
+| 14 | 0.814 | x1.26 | x1.33 | x1.39 |
+| 18 | 0.512 | x1.26 | x1.34 | x1.40 |
+| 22 | 0.322 | x1.27 | x1.36 | x1.44 |
+
+Off-gauge is indistinguishable from #14's own x1.39.  Dependence
+explains why: refitting per gauge moves the coefficients only slightly
+and monotonically -- `alpha_a` 0.105 to 0.096 across the whole range,
+`ka` 0.764 to 0.787, `alpha_r` 0.604 to 0.505, `kr` 0.726 to 0.748 --
+because Schelkunoff's `Z0` already carries the dominant `log(radius)`
+term, leaving the fitted scales little to absorb.
+
+`vf_a` fits to 1.0000 at every gauge, which also disposes of the idea
+that wire thickness was behind it.
+
+Tested at medium soil on a reduced grid, three heights by three return
+lengths, since one axis was the question rather than the whole surface.
 
 Two hypotheses were tried against that low region and both failed, which
 is worth recording so they are not tried again:

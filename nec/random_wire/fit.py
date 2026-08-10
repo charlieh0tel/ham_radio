@@ -60,34 +60,38 @@ def schelkunoff_z0(length_m, radius_m=WIRE_RADIUS_M):
     return 60.0 * (np.log(2.0 * length_m / radius_m) - 1.0)
 
 
-def model_zin(params, length_m, total_return_m, wavelength_m):
+def model_zin(params, length_m, total_return_m, wavelength_m, radius_m=WIRE_RADIUS_M):
     """Zin for the two-line model at the given lengths."""
     alpha_a_lam, vf_a, ka, alpha_r_lam, vf_r, kr = params
     alpha_a = alpha_a_lam / wavelength_m
     alpha_r = alpha_r_lam / wavelength_m
     beta_a = 2.0 * np.pi / (wavelength_m * vf_a)
     beta_r = 2.0 * np.pi / (wavelength_m * vf_r)
-    za = (ka * schelkunoff_z0(length_m)) / np.tanh((alpha_a + 1j * beta_a) * length_m)
-    zr = (kr * schelkunoff_z0(total_return_m)) / np.tanh(
+    za = (ka * schelkunoff_z0(length_m, radius_m)) / np.tanh(
+        (alpha_a + 1j * beta_a) * length_m
+    )
+    zr = (kr * schelkunoff_z0(total_return_m, radius_m)) / np.tanh(
         (alpha_r + 1j * beta_r) * total_return_m
     )
     return za + zr
 
 
-def _residual(params, length_m, total_return_m, wavelength_m, z_nec):
+def _residual(
+    params, length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIUS_M
+):
     """Complex log residual, flattened to the real vector least_squares wants."""
-    z = model_zin(params, length_m, total_return_m, wavelength_m)
+    z = model_zin(params, length_m, total_return_m, wavelength_m, radius_m)
     r = np.log(z) - np.log(z_nec)
     return np.concatenate([r.real, r.imag])
 
 
-def fit_group(length_m, total_return_m, wavelength_m, z_nec):
+def fit_group(length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIUS_M):
     """Fit one (frequency, height, soil) group."""
     out = least_squares(
         _residual,
         INITIAL,
         bounds=BOUNDS,
-        args=(length_m, total_return_m, wavelength_m, z_nec),
+        args=(length_m, total_return_m, wavelength_m, z_nec, radius_m),
         max_nfev=4000,
     )
     # RMS of the log-magnitude residual, reported as a factor: exp(rms) is

@@ -1,4 +1,5 @@
 .venv/
 sweep.npz
+gauge_sweep.npz
 uv.lock
 __pycache__/
