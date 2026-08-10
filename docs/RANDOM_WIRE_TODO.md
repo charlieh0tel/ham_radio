@@ -170,6 +170,19 @@ there.
 
 Remaining:
 
+- [ ] Decide the default return length.  25 ft is what a typical user's
+      coax run is, and it gives the best agreement with the published
+      tables of any value tried, but the ARRL specifies a quarter wave
+      at the lowest band, about 66 ft on 80 m, and most published
+      lengths do score better with a longer return.  Consider saying so
+      in the page rather than moving the default: a long counterpoise
+      flattens the score curve, so length choice matters less, which is
+      more useful than any single length.
+- [ ] Have coefficients.py patch random-wire.html between marker
+      comments instead of printing a block to paste.  The constants were
+      hand-copied once and needed a separate script to verify; the
+      generator should write them.  Do it when the constants are next
+      regenerated.
 - [ ] Tabulate against return height and offer it as a control.  Swept
       and shown absorbable: the return line's own alpha, velocity factor
       and Z0 scale take it up while the antenna line's parameters do not

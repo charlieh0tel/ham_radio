@@ -564,6 +564,27 @@ criticism, which is a reason to hold it more loosely, not less: it rests
 on one sweep with an unswept return height worth up to 4.6x and
 segmentation unconverged at 13 percent.
 
+The 25 ft return default was the obvious suspect for the 71 ft verdict,
+and it is not the cause.  Scored across return runs from 10 to 130 ft at
+the default height, 71 ft reads 7.4, 6.6, 7.5, 6.5, 5.9 and 5.6: bad at
+every one of them, and worst nowhere near the default.  The verdict is
+robust to the parameter most likely to have produced it.
+
+Two things did come out of that check.  Most published lengths improve
+with a longer return -- 29 ft goes 4.5 to 2.4, 41 ft goes 3.7 to 2.0,
+107 ft goes 3.8 to 2.4 -- which supports the ARRL's quarter-wave
+counterpoise advice against this page's 25 ft default.  And with a long
+return the whole curve flattens: at 130 ft every offered length scores
+between 2.1 and 2.3, where at 25 ft they spread 2.0 to 3.6.  **Get the
+counterpoise right and the wire length matters less**, which is arguably
+the more useful advice than any particular length.
+
+Against changing the default: 25 ft gives the best agreement with the
+published tables of any return length tried, median gap 3.5 ft against
+5.1 to 9.5 elsewhere.  That looks like coincidence rather than a reason,
+but it is worth knowing before moving it, and a typical user really does
+just have their coax run.
+
 **119 ft fails the other way.**  At vf 1.00 it is *more* clear of the
 80 m half wave than at 0.95, 9.3 percent against 4.5, yet NEC still
 gives SWR 13.6 there.  It is not near a half wave; it is carrying large
