@@ -170,6 +170,15 @@ there.
 
 Remaining:
 
+- [ ] Optional on-demand NEC run once a length is chosen, against the
+      height, return path and soil already entered.  Different from the
+      objection to runtime NEC, which was about sweeping every candidate:
+      this is bounded work on a geometry the user has described, and it
+      checks the installation rather than the envelope.  **Settle the
+      licence first**: shipping wasm nec2c from `docs/` distributes GPL
+      object code from an MIT repo and plausibly makes the page GPLv3.
+      Either that page carries its own GPL notice and source offer, or
+      the engine must be permissively licensed.
 - [ ] Decide the default return length.  25 ft is what a typical user's
       coax run is, and it gives the best agreement with the published
       tables of any value tried, but the ARRL specifies a quarter wave

@@ -137,13 +137,29 @@ co-vary monotonically across the three standard soils.
 
 ## Where the constants come from
 
-NEC, offline, once.  It does not belong at runtime: it models the
-environmental unknowns only if told what they are, and a web
-calculator's user cannot supply them.  Assumed values yield a precise
-answer to a question nobody asked -- the error bar does not shrink, it
-hides behind more decimals.  Cost is real too: wasm NEC in a single-file
-Pages document, sweeping every candidate length by band by frequency
-step.
+NEC, offline, once.  It does not belong in the *scoring loop*: it models
+the environmental unknowns only if told what they are, and assumed
+values yield a precise answer to a question nobody asked -- the error
+bar does not shrink, it hides behind more decimals.  The cost is real
+too, sweeping every candidate length by band by frequency step in a
+single-file Pages document.
+
+That objection does not reach a different idea: one NEC run on demand,
+after the user has chosen a length, against the height, return path and
+soil they have already entered.  That is bounded work on a geometry the
+user has described, and it checks the installation rather than the
+envelope, which is exactly where this model is weakest.  Worth doing.
+
+The obstacle there is licensing, and it is the reverse of the case in
+`nec/random_wire/README.md`.  Those scripts are fine because they import
+PyNEC and never ship it.  A wasm nec2c inside `docs/` would be
+*distributing* GPL object code from an MIT repo, which obliges a
+corresponding source offer under GPL and plausibly makes the page a
+combined work covered by GPLv3 rather than MIT.  Loading it from a
+separate file does not clearly escape that; it is the classic unsettled
+boundary.  Decide the licence before building: either the NEC-enabled
+page is explicitly GPLv3 with its own notice, or the engine has to be
+permissively licensed.
 
 So NEC is a calibration and validation instrument.  **What reaches the
 page is constants and caveat text, never code.**
