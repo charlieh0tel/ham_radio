@@ -665,7 +665,14 @@
     /** Keeps a perfectly reflecting load from producing an infinite SWR. */
     const MAX_GAMMA = 0.999999;
 
-    /** Default conductor: #14 AWG. */
+    /**
+     * Default conductor: #14 AWG.  Not a control yet, but stated as an
+     * assumption because the answer depends on it.  The fitted coefficients
+     * were all obtained at this gauge and hold from #12 to #22; see
+     * docs/RANDOM_WIRE_MODEL.md.
+     */
+    const WIRE_GAUGE_LABEL = '#14 AWG';
+    const WIRE_GAUGE_RANGE_LABEL = '#12 to #22';
     const WIRE_DIAMETER_M = 1.628e-3;
     const WIRE_RADIUS_M = WIRE_DIAMETER_M / 2;
 
@@ -1941,11 +1948,12 @@
               </div>
 
               <div className="panel">
-                <div className="panel-header">Assumptions</div>
+                <div className="panel-header">
+                  {mode === 'impedance' ? 'Your installation' : 'Rule parameters'}
+                </div>
                 {mode === 'impedance' && (
                   <div className="control-hint" style={{ marginBottom: '10px' }}>
-                    Conductor is #14 AWG into {Z_SYSTEM_OHMS} ohms; the fit holds
-                    from #12 to #22. Coefficients are
+                    Coefficients are
                     fitted against NEC: |Z| lands within about
                     {' '}{MODEL_BOUND_FACTOR}x once the wire is
                     {' '}{MODEL_BOUND_H_OVER_LAM} wavelengths up, which is 26 ft on
@@ -1957,6 +1965,16 @@
                     current on the feedline is not modelled either, and with a poor
                     return path the feedpoint impedance is not a single number at
                     all. Treat this as an envelope, not a prediction for your site.
+                  </div>
+                )}
+                {mode === 'impedance' && (
+                  <div className="control-label">
+                    Wire gauge: <span className="control-value">
+                      {WIRE_GAUGE_LABEL}</span>
+                    <div className="control-hint">
+                      Not adjustable yet. The fit holds from {WIRE_GAUGE_RANGE_LABEL},
+                      into {Z_SYSTEM_OHMS} ohms at the radio.
+                    </div>
                   </div>
                 )}
                 {mode === 'impedance' && (
