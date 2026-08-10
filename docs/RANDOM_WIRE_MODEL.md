@@ -917,11 +917,51 @@ a bound against that implementation.  A second implementation of the
 same published method differs by more than the low-`h/lambda` corner the
 page already hedges.
 
-Which is right is not a question this repository can answer.  Sommerfeld
-integrals are evaluated numerically, implementations differ in their
-interpolation, and neither is a reference for the other.  The honest
-reading is that the ground contribution carries an implementation
-uncertainty comparable to the model error already quoted.
+### Neither is better; the geometry is the problem
+
+The two are independent translations of Burke and Poggio's original
+NEC-2 FORTRAN -- nec2c is Kyriazis's C, nec2++ is Molteno's C++ -- so
+neither is a reference for the other and "which is right" has no answer
+here.  But the disagreement is not uniform, and where it lives says what
+is actually wrong.
+
+Sweeping the return path's height at 7.15 MHz over good ground:
+
+| return height | h/lambda | nec2++ | nec2c | gap |
+|---|---|---|---|---|
+| 0.01 m | 0.00024 | 1582 | 3135 | **98 %** |
+| 0.05 m | 0.00119 | 1490 | 2090 | **40 %** |
+| 0.15 m | 0.00358 | 1344 | 1515 | 13 % |
+| 0.50 m | 0.01192 | 1048 | 1065 | 1.7 % |
+| 1.00 m | 0.02385 | 827 | 822 | 0.6 % |
+| 5.00 m | 0.11925 | 213 | 207 | 2.9 % |
+
+They agree to within about 3 percent everywhere except within roughly
+0.01 wavelengths of the interface, where they diverge without limit.
+That is the regime where the Sommerfeld integrand is most awkward to
+evaluate, so two implementations differing there is what one should
+expect, and it is not evidence against either.
+
+It is evidence about this model.  `RETURN_HEIGHT_M` is 5 cm, chosen to
+represent a feedline lying on the soil, which puts the return wire at
+0.001 wavelengths on 40 m -- squarely in the band where NEC-2 stops
+being reproducible between implementations.  So the coefficients are
+fitted in the one place NEC-2 is least trustworthy, and the ground
+contribution there carries an implementation uncertainty larger than the
+x1.5 the page quotes.
+
+That also puts a asterisk on an earlier finding.  Return height was
+measured as the most influential unmodelled term, 4.6x from 5 cm to 2 m.
+Part of that steepness is real and part is numerical: nec2++ moves 6
+percent between 1 cm and 5 cm where nec2c moves 33 percent, so the
+near-ground slope is itself implementation-dependent.  The finding that
+elevated returns are a different antenna stands; the size of the effect
+close to the ground does not, to better than a factor of two.
+
+The physical case a random wire user actually has -- coax lying on the
+ground -- is the case NEC-2 handles least reliably.  There is no fix for
+that inside this approach, and it should be said out loud rather than
+buried in a tolerance.
 
 The consequence for the browser check is concrete.  Shipping it against
 nec2c while the coefficients are fitted to nec2++ would show the user

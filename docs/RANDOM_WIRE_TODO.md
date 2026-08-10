@@ -240,18 +240,31 @@ Remaining:
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
 
-- [ ] **Decide which NEC-2 the model belongs to.**  Running the fixture
-      against nec2c 0.1.1 failed 26 of 30 cases, worst 65.7 percent, and
-      the cause is not the deck.  In free space the two agree to five
-      figures; over ground they differ by up to a third, converged.  The
-      whole disagreement is the Sommerfeld-Norton implementation, and
-      every shipped coefficient is fitted to nec2++'s.  Two ways out:
-      refit offline against nec2c so both ends share a solver, which
-      costs the sweeps again but makes the browser check consistent by
-      construction; or keep the fit and have the button report the
-      spread as a known implementation difference.  The first is
-      cleaner, the second is cheaper and arguably more honest, since
-      neither implementation is a reference for the other.
+- [ ] **Decide what to do about the near-ground return.**  Running the
+      fixture against nec2c failed 26 of 30 cases, and chasing it found
+      something worse than a solver preference.  nec2c and nec2++ are
+      independent translations of the same FORTRAN; they agree within 3
+      percent everywhere except within about 0.01 wavelengths of the
+      ground, where they diverge without limit -- 40 percent at the 5 cm
+      return this model assumes, 98 percent at 1 cm.  Neither is wrong;
+      the Sommerfeld integrand is simply hard there.
+
+      So the coefficients are fitted where NEC-2 is least reproducible,
+      and the case a real user has, coax on the soil, is the case NEC-2
+      handles worst.  Options, none clean:
+
+      - keep 5 cm and state the implementation spread as a second error
+        bar beside the x1.5, which is honest and leaves the number
+        unreliable where it matters most
+      - refit with the return at 0.5 m, where the two agree to 1.7
+        percent, and accept that it models a slightly elevated
+        counterpoise rather than a feedline on the ground
+      - fit against both solvers and ship the envelope of the two, which
+        doubles the sweep cost and widens the quoted bound honestly
+
+      Refitting against nec2c alone is not one of the options: it would
+      pick a winner on no grounds and would move the answer most exactly
+      where it is least justified.
 - [x] Say something when a published length scores badly.  Done: the
       impedance mode now carries a "Published lengths, scored" panel
       running the standard table through the model at the user's own
