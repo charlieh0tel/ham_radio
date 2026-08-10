@@ -86,7 +86,19 @@ def _residual(
 
 
 def fit_group(length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIUS_M):
-    """Fit one (frequency, height, soil) group."""
+    """Fit one (frequency, height, soil) group.
+
+    Points with a non-positive resistance are dropped first.  A passive
+    antenna cannot have one, so they are NEC failing rather than reporting:
+    they cluster entirely at 160 m with the wire a couple of metres up over
+    poor ground, where the structure is a hundredth of a wavelength above a
+    lossy half-space and the Sommerfeld solution stops converging.  Fitting
+    them pulls the coefficients toward numbers no antenna produces.
+    """
+    keep = z_nec.real > 0
+    length_m = length_m[keep]
+    total_return_m = total_return_m[keep]
+    z_nec = z_nec[keep]
     out = least_squares(
         _residual,
         INITIAL,

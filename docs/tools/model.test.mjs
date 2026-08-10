@@ -360,3 +360,46 @@ test('feet and inches never shows twelve inches', () => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// The page against the fit it came from
+// ---------------------------------------------------------------------------
+
+test('inlined coefficients match the fitted table they were generated from', async () => {
+  // The page must stay self-contained, so its coefficients are inlined rather
+  // than imported.  nec/random_wire/coefficients.json is the original, and
+  // this is what stops the two drifting: regenerate with
+  // `uv run coefficients.py --write` and both move together.
+  const { readFile } = await import('node:fs/promises');
+  const url = new URL('../../nec/random_wire/coefficients.json', import.meta.url);
+  const data = JSON.parse(await readFile(url, 'utf8'));
+
+  assert.deepEqual([...m.MODEL_H_NODES], data.nodes_h_over_lambda,
+    'node positions agree');
+  close(m.MODEL_VF_A, data.vf_a, 1e-12, 'antenna velocity factor');
+  assert.deepEqual(Object.keys(m.MODEL_COEFFS).sort(),
+    Object.keys(data.soils).sort(), 'the same soils');
+  for (const [soil, coeffs] of Object.entries(data.soils)) {
+    for (const [name, values] of Object.entries(coeffs)) {
+      assert.deepEqual([...m.MODEL_COEFFS[soil][name]], values,
+        `${soil}.${name} matches the fit`);
+    }
+  }
+});
+
+test('the fitted coefficients are physically plausible', () => {
+  // Loss cannot be negative, a velocity factor above one is a wave outrunning
+  // light, and a Z0 scale far from unity means the line form has stopped
+  // describing a wire.  A bad sweep point reaching the fit shows up here.
+  for (const [soil, coeffs] of Object.entries(m.MODEL_COEFFS)) {
+    for (const alpha of [...coeffs.alphaA, ...coeffs.alphaR]) {
+      assert.ok(alpha > 0 && alpha < 5, `${soil}: alpha ${alpha} in range`);
+    }
+    for (const vf of coeffs.vfR) {
+      assert.ok(vf > 0.3 && vf <= 1.0001, `${soil}: vf_r ${vf} at or below unity`);
+    }
+    for (const k of [...coeffs.kA, ...coeffs.kR]) {
+      assert.ok(k > 0.2 && k < 2, `${soil}: Z0 scale ${k} near unity`);
+    }
+  }
+});
