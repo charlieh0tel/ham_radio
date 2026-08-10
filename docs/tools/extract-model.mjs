@@ -30,7 +30,7 @@ const EXPORTS = [
   'MODEL_H_NODES', 'MODEL_COEFFS', 'MODEL_VF_A', 'WIRE_RADIUS_M',
   'DEFAULT_VELOCITY_FACTOR', 'DEFAULT_HEIGHT_M', 'DEFAULT_RETURN_M',
   'DEFAULT_SOIL', 'DEFAULT_UNUN_RATIO', 'UNUN_RATIOS', 'Z_SYSTEM_OHMS',
-  'PUBLISHED_FT', 'SWR_GOOD',
+  'PUBLISHED_FT', 'SWR_GOOD', 'SWR_WORST_OK', 'isGoodScore',
   'HEIGHT_RANGE_M', 'RETURN_RANGE_M',
   // length math
   'halfWaveM', 'bandsIn', 'bandEdgesHz', 'resonanceInterval', 'avoidIntervals',

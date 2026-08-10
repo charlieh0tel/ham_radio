@@ -741,11 +741,28 @@
     const SWR_PLOT_MAX = 20;
 
     /**
-     * Typical SWR a length has to beat to be called good.  A wide-range tuner
-     * will work well below this; past it the feedline loss and the tuner both
-     * start to matter.
+     * Thresholds a length has to beat to be called good.  A wide-range tuner
+     * will work well below SWR_GOOD; past it the feedline loss and the tuner
+     * both start to matter.
+     *
+     * Two gates, not one.  The score is a geometric mean across the selected
+     * bands, and a mean under 5 routinely hides a single band at 20:1 or
+     * worse: every length in the published table passed on the mean alone
+     * while none passed on its worst band.  A verdict drawn from the mean by
+     * itself says "good on average", which is not what a user reads it as.
      */
     const SWR_GOOD = 5;
+    const SWR_WORST_OK = 10;
+
+    /**
+     * Whether a scored length is worth calling good: acceptable on average
+     * and not disastrous on any one band.
+     *
+     * @param {?{swr: number, worst: {swr: number}}} scored
+     * @returns {boolean}
+     */
+    const isGoodScore = (scored) =>
+      scored !== null && scored.swr <= SWR_GOOD && scored.worst.swr <= SWR_WORST_OK;
 
     /** Narrowest a map band may be drawn, SVG units, so hairlines stay visible. */
     const MIN_BAND_WIDTH = 0.5;
@@ -1847,7 +1864,7 @@
             const lenM = fromDisplay(ft, 'ft');
             const scored = scoreLength(lenM, solution.bands, segment, site,
                                        WIRE_RADIUS_M, ununRatio);
-            return { ft, lenM, swr: scored ? scored.swr : null };
+            return { ft, lenM, scored };
           })
           : []),
         [mode, solution, segment, site, ununRatio]);
@@ -2185,7 +2202,7 @@
 
             <div className="column column-wide">
               <div className={`verdict ${mode === 'impedance'
-                ? (scoreHere ? (scoreHere.swr <= SWR_GOOD ? 'good' : 'bad') : '')
+                ? (scoreHere ? (isGoodScore(scoreHere) ? 'good' : 'bad') : '')
                 : verdict ? (verdict.ok ? 'good' : 'bad') : ''}`}>
                 <div className="verdict-headline">
                   Wire length{' '}
@@ -2314,21 +2331,25 @@
                     a half wave using a velocity factor of 0.95 and this model,
                     fitted against NEC, uses 1.0 &mdash; about 5% longer, which
                     moves what counts as clear of a resonance. Click one to try
-                    it.
+                    it. A length is called ok only if it is acceptable on average
+                    <em>and</em> on its worst band; several of these are fine on
+                    average and unusable on one.
                   </div>
                   <table>
                     <thead>
-                      <tr><th>Length</th><th>SWR</th><th>Verdict</th></tr>
+                      <tr><th>Length</th><th>Average</th><th>Worst band</th>
+                          <th>Verdict</th></tr>
                     </thead>
                     <tbody>
-                      {publishedScores.map(({ ft, lenM, swr }) => (
+                      {publishedScores.map(({ ft, lenM, scored }) => (
                         <tr key={ft} className="pick"
                             onClick={() => setWireLen(lenM)}>
                           <td className="best-length">{fmtLen(lenM, units)}</td>
-                          <td>{swr === null ? '-' : `${swr.toFixed(1)}:1`}</td>
-                          <td className={swr !== null && swr <= SWR_GOOD
-                            ? 'score-ok' : 'score-poor'}>
-                            {swr === null ? '' : (swr <= SWR_GOOD ? 'ok' : 'poor')}
+                          <td>{scored === null ? '-' : `${scored.swr.toFixed(1)}:1`}</td>
+                          <td>{scored === null ? '-'
+                            : `${scored.worst.swr.toFixed(1)}:1 ${scored.worst.band.label}`}</td>
+                          <td className={isGoodScore(scored) ? 'score-ok' : 'score-poor'}>
+                            {scored === null ? '' : (isGoodScore(scored) ? 'ok' : 'poor')}
                           </td>
                         </tr>
                       ))}
