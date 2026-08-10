@@ -102,18 +102,20 @@ Still open:
 ### Controls, decided
 
 The model gains parameters the user can actually measure, and loses one
-they cannot.
+they cannot.  All four shipped in the page; the velocity factor survives
+in the classical mode only, where it is part of that method's checkable
+arithmetic rather than a model parameter.
 
-- [ ] **Height** becomes a user control.  It is the number people know.
-- [ ] **Return-path length** becomes a user control: the coax run for a
+- [x] **Height** becomes a user control.  It is the number people know.
+- [x] **Return-path length** becomes a user control: the coax run for a
       shield-as-counterpoise install, or the wire length for a thrown-out
       counterpoise.  NEC finding 4 promoted this from a correction to a
       first-class parameter.  Default 25 ft.
-- [ ] **Soil type** becomes a user control, the three standard soils.
+- [x] **Soil type** becomes a user control, the three standard soils.
       Finding 6 is the caveat that rides with it: "better" ground does
       not mean a better match, it means a sharper resonance, so the
       labelling must not imply an ordering the physics does not have.
-- [ ] **Velocity factor stops being a control.**  It is installation
+- [x] **Velocity factor stops being a control.**  It is installation
       dependent, users do not know it, and it is not an independent
       physical quantity: it is the emergent consequence of diameter,
       height, return path, insulation and sag.  It survives as a derived
