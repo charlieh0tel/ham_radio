@@ -449,7 +449,11 @@
           // Since 13 Feb 2026: the 5351.5-5366.5 kHz band at 9.15 W ERP, plus
           // four retained 2.8 kHz channels centered on 5332, 5348, 5373 and
           // 5405 kHz at 100 W ERP.  The span below covers all of it.
-          { m: 60,   label: '60m',   full: [5.3306e6, 5.4064e6], cw: [5.3306e6, 5.4064e6] },
+          // US 60 m is one 15 kHz band plus four discrete channels.  Only the
+          // band is modelled: sampling across the whole 5.3306-5.4064 MHz
+          // envelope would put most samples on spectrum nobody may transmit
+          // on, and would widen the classical keep-out zones to match.
+          { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.3665e6] },
           { m: 40,   label: '40m',   full: [7e6, 7.3e6],         cw: [7e6, 7.125e6] },
           { m: 30,   label: '30m',   full: [10.1e6, 10.15e6],    cw: [10.1e6, 10.15e6] },
           { m: 20,   label: '20m',   full: [14e6, 14.35e6],      cw: [14e6, 14.15e6] },
