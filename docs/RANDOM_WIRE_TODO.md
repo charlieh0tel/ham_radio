@@ -221,8 +221,9 @@ Remaining:
       - have the page emit its own cards and use `nec2c-deck` only for
         `parseOutput`, which the package explicitly supports
 
-      The first is better: the gap is real for anyone modelling a wire
-      over earth, not just this page.  In progress.
+      **Done in nec2c-deck 0.1.1**, which takes `{epsR, sigmaSm}` and
+      emits `GN 2`.  Verified against the fixture, and it uncovered a
+      deeper problem: see below.
 
       Ready for it: `nec/random_wire/reference_cases.json`, six
       installations with the feedpoint impedance PyNEC gives them across
@@ -238,6 +239,19 @@ Remaining:
       span 329 to 3953 ohms and include the same length over poor and
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
+
+- [ ] **Decide which NEC-2 the model belongs to.**  Running the fixture
+      against nec2c 0.1.1 failed 26 of 30 cases, worst 65.7 percent, and
+      the cause is not the deck.  In free space the two agree to five
+      figures; over ground they differ by up to a third, converged.  The
+      whole disagreement is the Sommerfeld-Norton implementation, and
+      every shipped coefficient is fitted to nec2++'s.  Two ways out:
+      refit offline against nec2c so both ends share a solver, which
+      costs the sweeps again but makes the browser check consistent by
+      construction; or keep the fit and have the button report the
+      spread as a known implementation difference.  The first is
+      cleaner, the second is cheaper and arguably more honest, since
+      neither implementation is a reference for the other.
 - [x] Say something when a published length scores badly.  Done: the
       impedance mode now carries a "Published lengths, scored" panel
       running the standard table through the model at the user's own

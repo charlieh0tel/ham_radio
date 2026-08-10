@@ -884,6 +884,53 @@ possible and would be honest, but the honest answer over much of the
 range is that no length qualifies.  That is the same saturation as
 above, arriving from the other direction.
 
+## The two NEC-2s do not agree over ground
+
+Before building the browser check, its solver was put against the PyNEC
+references in `nec/random_wire/reference_cases.json`.  It failed: 26 of
+30 cases outside the 2 percent tolerance, worst 65.7 percent.  The
+fixture existed for exactly this, and the cause took some finding.
+
+Ruled out in turn.  The extended thin-wire kernel, which `buildDeck`
+emits and the Python side did not: no effect, and none expected, since
+these segments are thousands of radii long.  The `GE` ground-plane flag,
+`-1` against `1`: no effect, since no wire touches the ground.
+Segmentation: both converge, and they converge to different numbers --
+PyNEC near 1400 ohms, nec2c near 1860, on the same deck at 160 segments
+per wavelength.
+
+The isolating test settles it.  A plain centre-fed dipole in free space,
+no ground solver involved:
+
+| | 14.2 MHz | 7.15 MHz |
+|---|---|---|
+| PyNEC | 79.09 + j45.15 | 78.48 + j44.87 |
+| nec2c | 79.09 + j45.12 | 78.48 + j44.85 |
+
+Five significant figures.  The two are the same code in free space and
+disagree by up to a third once a real ground is present, so **the
+difference is entirely in the Sommerfeld-Norton implementation**.
+
+That is worth stating plainly: every coefficient in this model is fitted
+to *nec2++'s* ground, not to NEC-2 in the abstract, and the x1.5 bound is
+a bound against that implementation.  A second implementation of the
+same published method differs by more than the low-`h/lambda` corner the
+page already hedges.
+
+Which is right is not a question this repository can answer.  Sommerfeld
+integrals are evaluated numerically, implementations differ in their
+interpolation, and neither is a reference for the other.  The honest
+reading is that the ground contribution carries an implementation
+uncertainty comparable to the model error already quoted.
+
+The consequence for the browser check is concrete.  Shipping it against
+nec2c while the coefficients are fitted to nec2++ would show the user
+two numbers that disagree for a reason invisible to them, which is the
+same failure as the `GN 1` deck, one layer deeper.  Either the offline
+fit moves to nec2c so both ends share a solver, or the button reports
+the difference as a known implementation spread rather than as an error
+in the model.
+
 ## References
 
 Sources for the published length tables this page is measured against,
