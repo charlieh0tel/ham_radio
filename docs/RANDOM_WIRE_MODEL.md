@@ -601,6 +601,19 @@ published tables of any return length tried, median gap 3.5 ft against
 but it is worth knowing before moving it, and a typical user really does
 just have their coax run.
 
+The rejection has since survived every parameter that could have caused
+it.  71 ft scores 6.2 to 10.1 across heights from 15 to 60 ft and all
+three soils, and 5.6 to 7.5 across return runs from 10 to 130 ft.  84 ft
+over the same ground runs 2.4 to 6.2.  There is no corner of the
+parameter space where 71 ft comes good.
+
+That makes it the page's biggest problem of trust rather than of
+accuracy.  71 ft is the best known random wire length there is; a user
+who finds it missing from the suggestions will conclude the tool is
+broken long before concluding the tables are wrong.  Silently omitting
+it is the worst of the options available, and the page should say what
+it thinks and why.
+
 **119 ft fails the other way.**  At vf 1.00 it is *more* clear of the
 80 m half wave than at 0.95, 9.3 percent against 4.5, yet NEC still
 gives SWR 13.6 there.  It is not near a half wave; it is carrying large
@@ -830,6 +843,46 @@ impedance mode still ranks them, because a continuous cost can say
 
 That is now pinned by a test, so the saturation cannot quietly become a
 solution space again.
+
+## What the classical margin is worth, in ohms
+
+`marginPct` defaults to 8 and has never been justified against anything.
+Now that the two modes agree about where the bad lengths are, the model
+can price it.  At the page's defaults, over the 80/40/20/15/10 set:
+
+| margin | axis left usable | worst \|Z\| still reachable |
+|---|---|---|
+| 0 % | 54.2 % | 10482 |
+| 4 % | 37.1 % | 4459 |
+| 8 % | 23.0 % | 2782 |
+| 12 % | 9.5 % | 2107 |
+| 15 % | 3.9 % | 1843 |
+
+Read the other way, which is the way a user can actually state, since
+nobody knows what percentage they want but everybody knows what their
+tuner will reach:
+
+| hold \|Z\| under | margin needed | axis left usable |
+|---|---|---|
+| 600 | unreachable | -- |
+| 1000 | unreachable | -- |
+| 1500 | 18 % | 0.6 % |
+| 2500 | 10 % | 15.5 % |
+| 4000 | 5 % | 33.0 % |
+
+Two things follow.  The default of 8 percent is defensible: it buys
+about 2800 ohms, which a wide-range tuner will reach through a 9:1, and
+it leaves nearly a quarter of the axis.  It is a reasonable place to
+have landed by feel.
+
+But the range it can express is narrow.  Below about 1800 ohms the
+margin stops being a usable control: 1500 ohms costs 18 percent and
+leaves 0.6 percent of the axis, and 1000 ohms cannot be had at any
+margin because the resonances are wide enough that no length escapes
+every one of them.  So deriving `marginPct` from a user-set `|Z|max` is
+possible and would be honest, but the honest answer over much of the
+range is that no length qualifies.  That is the same saturation as
+above, arriving from the other direction.
 
 ## References
 

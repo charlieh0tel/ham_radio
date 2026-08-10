@@ -92,7 +92,18 @@ Still open:
       every classical recommendation and breaks agreement with tables the
       user can look up, so this is a judgement call, not a bug fix.
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
-      percentage.  Applies to the classical mode only.
+      percentage.  Applies to the classical mode only.  Measured now, and
+      the finding cuts both ways: 8 percent buys about 2800 ohms and
+      leaves 23 percent of the axis, which is a defensible default to
+      have reached by feel, but the control cannot express much below
+      1800 ohms.  1500 ohms costs an 18 percent margin and leaves 0.6
+      percent of the axis; 1000 ohms is unreachable at any margin.  So
+      the feature is buildable and would be honest, and over much of its
+      range the honest answer is that nothing qualifies.
+- [x] Validate the keep-out widths: confirm `marginPct` values match the
+      impedance excursions assumed.  Done, see the margin section of
+      `RANDOM_WIRE_MODEL.md`.  The default holds up; current behaviour
+      does not need to change.
 - [ ] Expose conductor diameter, fixed at #14 AWG.  No longer blocked on
       evidence: gauge has been swept over #12 to #22 and the shipped #14
       table predicts every one of them within x1.44, against x1.39 for
@@ -179,6 +190,14 @@ Remaining:
       object code from an MIT repo and plausibly makes the page GPLv3.
       Either that page carries its own GPL notice and source offer, or
       the engine must be permissively licensed.
+- [ ] Say something when a published length scores badly.  The impedance
+      mode rejects 71 ft at every height, soil and return length tried,
+      for the traceable reason that the tables place the 40 m half wave
+      at vf 0.95 and the fit puts it at 1.00, leaving 3.2 percent
+      clearance rather than 8.7.  A user who knows the tables will read
+      the omission as a broken tool.  Naming the conflict and its cause
+      turns that into information; staying silent spends the page's
+      credibility on a disagreement it can actually explain.
 - [ ] Decide the default return length.  25 ft is what a typical user's
       coax run is, and it gives the best agreement with the published
       tables of any value tried, but the ARRL specifies a quarter wave
@@ -209,9 +228,7 @@ Remaining:
 - [ ] Exercise the page in a browser beyond the ribbon: the impedance
       mode's height, return-length and soil controls have never been
       driven, and a passing type check is not a rendering test.
-- [ ] Validate the keep-out widths: confirm `marginPct` values match the
-      impedance excursions assumed.  This one could change current
-      behavior.
+
 - [x] Confirm the odd-`lambda/4` case is as bad as theory says before
       building UI around it.  It is not: finding 2 measures 133-3500
       ohms there, and the low-Z case the keep-out was meant to catch
