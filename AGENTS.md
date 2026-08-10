@@ -48,6 +48,10 @@
 - Comment non-obvious RF and math formulas, and cite their sources.
 - Verify math against known references.  Watch sign conventions and
   unit conversions (degrees/radians, MHz/Hz).
+- Calculate in SI internally.  Convert at the edges: read input and
+  format output in whatever unit the user wants, but keep one coherent
+  system in between.  Name the unit in the type, not only in the
+  identifier.
 - No trailing whitespace.
 - Do not add dependencies without discussion.
 - Run a type check (if appropripate), a syntax check and a style check
