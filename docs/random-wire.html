@@ -650,7 +650,14 @@
      * run from an outdoor feedpoint back to the shack.
      */
     const DEFAULT_HEIGHT_M = 9.144;   // 30 ft
-    const DEFAULT_RETURN_M = 7.62;    // 25 ft
+    /**
+     * Return path: the whole conductor from the feedpoint back to the
+     * station, the vertical drop included.  The drop is part of the
+     * resonator, so counting it here keeps the number the user types and the
+     * number the model resonates the same thing.  Default is a 25 ft coax run
+     * from a 30 ft feedpoint, near enough 55 ft of conductor.
+     */
+    const DEFAULT_RETURN_M = 16.76;  // 55 ft: a 25 ft run off a 30 ft drop
     const HEIGHT_RANGE_M = Object.freeze({ min: 1, max: 30 });
     const RETURN_RANGE_M = Object.freeze({ min: 1, max: 60 });
     const HEIGHT_STEP_M = 0.25;
@@ -1370,7 +1377,8 @@
       const wavelengthM = C_SPEED / freqHz;
       const coeffs = MODEL_COEFFS[site.soil];
       const hOverLam = site.heightM / wavelengthM;
-      const returnM = site.heightM + site.returnM;
+      // site.returnM already includes the drop; see DEFAULT_RETURN_M.
+      const returnM = site.returnM;
       const za = lineZ(lenM, wavelengthM, radiusM,
                        interpCoeff(coeffs.alphaA, hOverLam), MODEL_VF_A,
                        interpCoeff(coeffs.kA, hOverLam));
@@ -1807,9 +1815,18 @@
       const { region, bands, segment, velocityFactor, marginPct, units, wireLenM,
               mode, ununRatio, heightM, returnM, soil } = p;
 
-      /** @type {Site} */
-      const site = useMemo(() => ({ heightM, returnM, soil }),
-                           [heightM, returnM, soil]);
+      /**
+       * The return conductor cannot be shorter than the drop it starts with,
+       * so a return below the wire height is not a geometry that exists.
+       * Clamped rather than rejected: the height slider can be dragged above
+       * a previously chosen return, and silently modelling a negative run
+       * would be worse than quietly holding the floor.
+       *
+       * @type {Site}
+       */
+      const site = useMemo(
+        () => ({ heightM, returnM: Math.max(returnM, heightM), soil }),
+        [heightM, returnM, soil]);
 
       /**
        * The velocity factor whatever is on screen should be drawn against.
@@ -2102,7 +2119,7 @@
                 {mode === 'impedance' && (
                   <label className="control-label">
                     Return path: <span className="control-value">
-                      {fmtLen(returnM, units)}</span>
+                      {fmtLen(Math.max(returnM, heightM), units)}</span>
                     <input className="control-slider" type="range"
                            min={RETURN_RANGE_M.min} max={RETURN_RANGE_M.max}
                            step={RETURN_STEP_M}
@@ -2112,8 +2129,9 @@
                                             RETURN_RANGE_M) })} />
                     <div className="preset-row">
                       <button className="btn preset-btn"
-                              onClick={() => set({ returnM: DEFAULT_RETURN_M })}>
-                        25 ft coax
+                              onClick={() => set({
+                                returnM: heightM + fromDisplay(25, 'ft') })}>
+                        25 ft coax + drop
                       </button>
                       {quarterWaveReturnM !== null && (
                         <button className="btn preset-btn"
@@ -2123,12 +2141,13 @@
                       )}
                     </div>
                     <div className="control-hint">
-                      Coax run back to the shack, or the counterpoise wire you throw
-                      out. It resonates in its own right: when the drop plus this run
-                      nears a half wave it sets the feedpoint and wire length stops
-                      helping. A quarter wave at your lowest band is the ARRL's
-                      counterpoise figure, and a long one flattens the curve: get it
-                      right and the wire length matters less.
+                      The whole return conductor, from the feedpoint down and back
+                      to the station &mdash; so the vertical drop counts, and this
+                      cannot be shorter than the wire height. It resonates in its
+                      own right: near a half wave it sets the feedpoint and wire
+                      length stops helping. A quarter wave at your lowest band is
+                      the ARRL's counterpoise figure, and a long one flattens the
+                      curve: get it right and the wire length matters less.
                     </div>
                   </label>
                 )}
