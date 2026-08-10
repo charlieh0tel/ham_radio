@@ -429,6 +429,16 @@ per-group.**  In practice that is 160 m and 80 m with a low wire.  It is not a r
 answer in, but it is one where the number on screen should be visibly
 hedged.
 
+**The bound is conditional on #14 AWG.**  The sweep never varied
+conductor gauge: `a/lambda` was one of the three ratios the plan named
+and it was the one that got dropped, so every point ran at #14.  The
+model still responds to diameter, because Schelkunoff's `Z0` takes the
+radius and that dependence is logarithmic, about 5 percent in `Z0`
+between #14 and #18.  But `ka`, `kr`, both alphas and `vf_r` were all
+fitted at one gauge, and whether they hold at another is untested.  That
+is why diameter is not a control yet: exposing one would let the user
+move a parameter the coefficients have no evidence for.
+
 Two hypotheses were tried against that low region and both failed, which
 is worth recording so they are not tried again:
 

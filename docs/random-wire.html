@@ -527,16 +527,87 @@
     const DEFAULT_UNUN_RATIO = 9;
 
     /**
-     * Feedpoint resistance of an end-fed half wave, the anchor the impedance
-     * model is calibrated to.  Published figures cluster near 2400-2500 ohms,
-     * which is what a 49:1 transformer is wound for (2450/49 = 50).
+     * Soils the model is fitted for, the three standard NEC cases.
      *
-     * The half wave is the better of the two anchors available.  Pinning the
-     * textbook 36 ohm quarter-wave monopole instead assumes a perfect ground
-     * plane, and since one anchor fixes the other, that put the half wave near
-     * 5000 ohms, about twice what real antennas show.
+     * Deliberately not labelled poor/average/good as if that were a quality
+     * axis.  Better ground does not give a better match: it gives a sharper
+     * resonance, so deeper minima and higher peaks.  Permittivity shifts the
+     * effective electrical length while conductivity damps, and the two do
+     * not move together across these three.
      */
-    const HALF_WAVE_OHMS = 2450;
+    const SOILS = Object.freeze({
+      poor: { label: 'Sandy, rocky' },
+      average: { label: 'Medium soil' },
+      good: { label: 'Damp, marshy' },
+    });
+    /** @typedef {keyof typeof SOILS} SoilKey */
+    const DEFAULT_SOIL = 'average';
+
+    /**
+     * Height and return-path length, in metres, with the ranges the fit
+     * covers.  25 ft of return is the default because that is a typical coax
+     * run from an outdoor feedpoint back to the shack.
+     */
+    const DEFAULT_HEIGHT_M = 9.144;   // 30 ft
+    const DEFAULT_RETURN_M = 7.62;    // 25 ft
+    const HEIGHT_RANGE_M = Object.freeze({ min: 1, max: 30 });
+    const RETURN_RANGE_M = Object.freeze({ min: 1, max: 60 });
+    const HEIGHT_STEP_M = 0.25;
+    const RETURN_STEP_M = 0.25;
+
+    /**
+     * Fitted coefficients for the two-line model, from
+     * nec/random_wire/coefficients.py.  See docs/RANDOM_WIRE_MODEL.md.
+     *
+     * Tabulated against h/lambda, which is what they move with, at nodes
+     * spanning 2 m on 160 m to 25 m on 10 m, and interpolated in log10.
+     * alpha is nepers per wavelength, so one number serves every band.
+     *
+     * Data table: for each soil, five arrays parallel to MODEL_H_NODES.
+     * alphaA and kA describe the antenna line, alphaR, vfR and kR the
+     * return path; kA and kR scale each line's Schelkunoff Z0, which reads
+     * high once ground is present.
+     */
+    const MODEL_H_NODES = Object.freeze([0.012, 0.03, 0.06, 0.12, 0.25, 0.5, 1, 2.5]);
+    const MODEL_COEFFS = Object.freeze({
+      poor: Object.freeze({
+        alphaA: [0.1518, 0.1514, 0.1254, 0.1151, 0.1085, 0.1037, 0.1027, 0.1027],
+        kA: [1.3604, 0.7932, 0.7932, 0.7932, 0.7868, 0.6810, 0.6793, 0.6774],
+        alphaR: [2.0336, 0.8667, 0.7584, 0.6898, 0.6473, 0.5796, 0.4703, 0.3619],
+        vfR: [1.0000, 0.8766, 0.8766, 0.8848, 0.9090, 0.9439, 0.9599, 0.9849],
+        kR: [0.9392, 0.7905, 0.7905, 0.8112, 0.8198, 0.7859, 0.7411, 0.6237],
+      }),
+      average: Object.freeze({
+        alphaA: [0.4617, 0.1239, 0.1036, 0.0994, 0.1037, 0.1042, 0.1047, 0.1047],
+        kA: [0.6412, 0.8001, 0.8139, 0.8240, 0.8176, 0.6896, 0.6798, 0.6737],
+        alphaR: [0.1891, 0.3655, 0.6548, 0.6744, 0.6548, 0.6152, 0.4947, 0.3814],
+        vfR: [0.8670, 0.8951, 0.9120, 0.9234, 0.9302, 0.9595, 0.9730, 0.9784],
+        kR: [0.5945, 0.6266, 0.6862, 0.7485, 0.8373, 0.8009, 0.6600, 0.5636],
+      }),
+      good: Object.freeze({
+        alphaA: [0.0719, 0.0712, 0.0712, 0.0775, 0.0954, 0.0995, 0.1027, 0.1027],
+        kA: [0.7623, 0.8051, 0.8284, 0.8302, 0.8284, 0.6866, 0.6787, 0.6729],
+        alphaR: [0.0802, 0.1607, 0.2619, 0.2999, 0.3687, 0.3687, 0.3063, 0.2924],
+        vfR: [0.9294, 0.9294, 0.9320, 0.9373, 0.9484, 0.9603, 0.9717, 0.9766],
+        kR: [0.5617, 0.6266, 0.6715, 0.7245, 0.8873, 0.8348, 0.6164, 0.5491],
+      }),
+    });
+
+    /**
+     * Velocity factor of the antenna line.  Not a control and not tabulated:
+     * it fitted to 1.000 in every bin of the sweep.  The shortening that a
+     * 0.95 used to stand for is the return path in series plus Z0 varying
+     * with length, both of which the model now carries explicitly.
+     */
+    const MODEL_VF_A = 1.0;
+
+    /**
+     * Height in wavelengths above which the fitted error bound holds, and the
+     * bound either side of it.  Quoted in the caveat text.
+     */
+    const MODEL_BOUND_H_OVER_LAM = 0.05;
+    const MODEL_BOUND_FACTOR = 1.4;
+    const MODEL_BOUND_FACTOR_LOW = 2.9;
 
     /** Keeps a perfectly reflecting load from producing an infinite SWR. */
     const MAX_GAMMA = 0.999999;
@@ -692,12 +763,23 @@
     const URL_KEYS = Object.freeze({
       region: 'region', bands: 'bands', segment: 'seg', velocityFactor: 'vf',
       marginPct: 'margin', units: 'u', wireLenM: 'len_m', mode: 'mode',
-      ununRatio: 'unun',
+      ununRatio: 'unun', heightM: 'h_m', returnM: 'ret_m', soil: 'soil',
     });
+
+    /**
+     * The installation the impedance model is asked about: how high the wire
+     * is, how long the return path is, and what it is over.
+     *
+     * @typedef {Object} Site
+     * @property {Meters} heightM  height of the horizontal wire
+     * @property {Meters} returnM  return run, not counting the drop
+     * @property {SoilKey} soil
+     */
 
     /**
      * @type {Readonly<{region: RegionKey, bands: number[], segment: SegmentKey,
      *                 velocityFactor: number, marginPct: number, units: UnitKey,
+     *                 heightM: Meters, returnM: Meters, soil: SoilKey,
      *                 wireLenM: Meters, mode: ModeKey, ununRatio: number}>}
      */
     /**
@@ -717,6 +799,9 @@
       marginPct: DEFAULT_MARGIN_PCT,
       units: 'ft',
       wireLenM: 0,
+      heightM: DEFAULT_HEIGHT_M,
+      returnM: DEFAULT_RETURN_M,
+      soil: DEFAULT_SOIL,
     });
 
     // ============================================================
@@ -1081,41 +1166,83 @@
     const wireZ0 = (lenM, radiusM) => 60 * (Math.log(2 * lenM / radiusM) - 1);
 
     /**
-     * Feedpoint impedance of an end-fed wire, open at the far end, from the
-     * transmission-line approximation Zin = Z0 coth(gamma l), with
-     * gamma = alpha + j beta.
+     * One fitted coefficient at a given height in wavelengths, interpolated
+     * linearly in log10(h/lambda) between the table nodes and held flat
+     * outside them.
      *
-     * Radiation is folded into alpha rather than modelled.  alpha comes from
-     * the half-wave anchor: at l = lambda/2 the argument is alpha l + j pi, and
-     * coth of that is coth(alpha l), about 1 / (alpha l) while alpha l is
-     * small, so Zin there is Z0 / (alpha l).  Writing alpha against a
-     * quarter-wave length makes alpha l twice as large at a half wave, hence
-     * the factor of two below.
+     * @param {number[]} values  parallel to MODEL_H_NODES
+     * @param {number} hOverLam
+     * @returns {number}
+     */
+    const interpCoeff = (values, hOverLam) => {
+      const nodes = MODEL_H_NODES;
+      const last = nodes.length - 1;
+      if (hOverLam <= nodes[0]) return values[0];
+      if (hOverLam >= nodes[last]) return values[last];
+      const x = Math.log10(hOverLam);
+      let i = 0;
+      while (i < last && Math.log10(nodes[i + 1]) < x) i++;
+      const lo = Math.log10(nodes[i]);
+      const hi = Math.log10(nodes[i + 1]);
+      const t = (x - lo) / (hi - lo);
+      return values[i] + t * (values[i + 1] - values[i]);
+    };
+
+    /**
+     * One transmission line, open at the far end: Z = k Z0 coth(gamma l),
+     * with alpha given in nepers per wavelength.
      *
-     * The two ends are not independent: fixing one fixes the other at about
-     * Z0^2 / (2 R).  With the half wave pinned at HALF_WAVE_OHMS, a quarter
-     * wave lands near 70-120 ohms, which is what a real end-fed with a modest
-     * counterpoise shows, rather than the 36 ohms of an ideal ground plane.
+     * @param {Meters} lenM
+     * @param {Meters} wavelengthM
+     * @param {Meters} radiusM
+     * @param {number} alphaPerLambda
+     * @param {number} velocityFactor
+     * @param {number} z0Scale
+     * @returns {Complex} ohms
+     */
+    const lineZ = (lenM, wavelengthM, radiusM, alphaPerLambda, velocityFactor,
+                   z0Scale) => {
+      const z0 = z0Scale * wireZ0(lenM, radiusM);
+      const alpha = alphaPerLambda / wavelengthM;
+      const beta = 2 * Math.PI / (wavelengthM * velocityFactor);
+      return cMul(cpx(z0, 0), cCoth(cpx(alpha * lenM, beta * lenM)));
+    };
+
+    /**
+     * Feedpoint impedance of an end-fed wire, as the antenna line and the
+     * return path in series:
      *
-     * Height above ground and ground quality are not parameters.  Both are
-     * implicit in the anchor, which is why this is an envelope rather than a
-     * prediction: ground reflection moves R and X with h/lambda, and at low
-     * heights ground loss damps the peaks this model draws at full height.
+     *     Zin = Za(l) + Zr(h + ret)
+     *
+     * The return path is part of the antenna, not a passive reference.  It
+     * radiates, and it resonates on its own with a half-wavelength period in
+     * (drop + run); when that nears a half wave it sets the feedpoint outright
+     * and the antenna length stops mattering.  A 25 ft coax run is a half wave
+     * on 20 m, so that is the common case rather than the exotic one.
+     *
+     * Coefficients are fitted against NEC; see docs/RANDOM_WIRE_MODEL.md for
+     * the sweep, the decomposition it rests on, and the error bound.  This is
+     * an envelope, not a prediction of a particular installation.
      *
      * @param {Meters} lenM
      * @param {Hertz} freqHz
-     * @param {number} velocityFactor
+     * @param {Site} site
      * @param {Meters} radiusM
      * @returns {Complex} ohms
      */
-    const endFedZin = (lenM, freqHz, velocityFactor, radiusM) => {
-      const z0 = wireZ0(lenM, radiusM);
-      const wavelengthM = 2 * halfWaveM(freqHz, velocityFactor);
-      // Quarter-wave resistance implied by the half-wave anchor.
-      const quarterOhms = z0 * z0 / (2 * HALF_WAVE_OHMS);
-      const alpha = Math.atanh(quarterOhms / z0) / (wavelengthM / 4);
-      const beta = 2 * Math.PI / wavelengthM;
-      return cMul(cpx(z0, 0), cCoth(cpx(alpha * lenM, beta * lenM)));
+    const endFedZin = (lenM, freqHz, site, radiusM) => {
+      const wavelengthM = C_SPEED / freqHz;
+      const coeffs = MODEL_COEFFS[site.soil];
+      const hOverLam = site.heightM / wavelengthM;
+      const returnM = site.heightM + site.returnM;
+      const za = lineZ(lenM, wavelengthM, radiusM,
+                       interpCoeff(coeffs.alphaA, hOverLam), MODEL_VF_A,
+                       interpCoeff(coeffs.kA, hOverLam));
+      const zr = lineZ(returnM, wavelengthM, radiusM,
+                       interpCoeff(coeffs.alphaR, hOverLam),
+                       interpCoeff(coeffs.vfR, hOverLam),
+                       interpCoeff(coeffs.kR, hOverLam));
+      return cAdd(za, zr);
     };
 
     /**
@@ -1143,12 +1270,12 @@
      * @param {Meters} lenM
      * @param {Band[]} bands
      * @param {SegmentKey} segment
-     * @param {number} velocityFactor
+     * @param {Site} site
      * @param {Meters} radiusM
      * @param {number} ununRatio
      * @returns {?{swr: number, worst: {swr: number, band: Band, freqHz: Hertz}}}
      */
-    const scoreLength = (lenM, bands, segment, velocityFactor, radiusM, ununRatio) => {
+    const scoreLength = (lenM, bands, segment, site, radiusM, ununRatio) => {
       let logSum = 0;
       let count = 0;
       /** @type {?{swr: number, band: Band, freqHz: Hertz}} */
@@ -1157,7 +1284,7 @@
         const [loHz, hiHz] = bandEdgesHz(band, segment);
         for (let i = 0; i < SWR_SAMPLES_PER_BAND; i++) {
           const freqHz = loHz + (hiHz - loHz) * i / (SWR_SAMPLES_PER_BAND - 1);
-          const swr = swrAtRadio(endFedZin(lenM, freqHz, velocityFactor, radiusM),
+          const swr = swrAtRadio(endFedZin(lenM, freqHz, site, radiusM),
                                  ununRatio);
           logSum += Math.log(swr);
           count++;
@@ -1183,17 +1310,19 @@
      * @param {RegionKey} region
      * @param {number[]} bandsM
      * @param {SegmentKey} segment
-     * @param {number} velocityFactor
+     * @param {Site} site
      * @param {Meters} radiusM
      * @param {number} ununRatio
      * @param {Meters} maxLenM
      * @returns {{bands: Band[], curve: ScorePoint[], suggestions: ScorePoint[],
      *            shortLimit: Meters}}
      */
-    const solveImpedance = (region, bandsM, segment, velocityFactor, radiusM,
+    const solveImpedance = (region, bandsM, segment, site, radiusM,
                             ununRatio, maxLenM) => {
       const bands = bandsIn(region).filter(b => bandsM.includes(b.m));
-      const shortLimit = tooShortM(bands, segment, velocityFactor);
+      // The impedance mode does not take a velocity factor; the fitted model
+      // carries its own, so the short limit uses the same one.
+      const shortLimit = tooShortM(bands, segment, MODEL_VF_A);
       if (bands.length === 0) return { bands, curve: [], suggestions: [], shortLimit };
 
       const step = maxLenM / (SCORE_SAMPLES - 1);
@@ -1201,7 +1330,7 @@
       const curve = [];
       for (let i = 0; i < SCORE_SAMPLES; i++) {
         const lenM = Math.max(step, i * step);
-        const scored = scoreLength(lenM, bands, segment, velocityFactor, radiusM,
+        const scored = scoreLength(lenM, bands, segment, site, radiusM,
                                    ununRatio);
         if (scored) curve.push({ lenM, swr: scored.swr, worst: scored.worst });
       }
@@ -1311,6 +1440,7 @@
       const units = params.get(URL_KEYS.units);
       const mode = params.get(URL_KEYS.mode);
       const ununRatio = parseNum(params.get(URL_KEYS.ununRatio), DEFAULTS.ununRatio);
+      const soil = params.get(URL_KEYS.soil);
       return {
         region,
         bands,
@@ -1325,6 +1455,11 @@
                          MARGIN_PCT_RANGE),
         units: isKeyOf(UNITS, units) ? units : DEFAULTS.units,
         wireLenM: Math.max(0, readWireLenM(params)),
+        heightM: clamp(parseNum(params.get(URL_KEYS.heightM), DEFAULTS.heightM),
+                       HEIGHT_RANGE_M),
+        returnM: clamp(parseNum(params.get(URL_KEYS.returnM), DEFAULTS.returnM),
+                       RETURN_RANGE_M),
+        soil: isKeyOf(SOILS, soil) ? soil : DEFAULTS.soil,
       };
     };
 
@@ -1345,6 +1480,9 @@
       state.velocityFactor === DEFAULTS.velocityFactor &&
       state.marginPct === DEFAULTS.marginPct &&
       state.units === DEFAULTS.units &&
+      state.heightM === DEFAULTS.heightM &&
+      state.returnM === DEFAULTS.returnM &&
+      state.soil === DEFAULTS.soil &&
       (state.wireLenM === DEFAULTS.wireLenM || state.wireLenM === autoLenM) &&
       state.bands.length === DEFAULTS.bands.length &&
       DEFAULTS.bands.every(m => state.bands.includes(m));
@@ -1529,7 +1667,11 @@
       const set = (updates) => setP(prev => ({ ...prev, ...updates }));
 
       const { region, bands, segment, velocityFactor, marginPct, units, wireLenM,
-              mode, ununRatio } = p;
+              mode, ununRatio, heightM, returnM, soil } = p;
+
+      /** @type {Site} */
+      const site = useMemo(() => ({ heightM, returnM, soil }),
+                           [heightM, returnM, soil]);
 
       // Map spans one full wavelength at the lowest selected band, which is the
       // longest wire worth considering for that band.
@@ -1548,18 +1690,18 @@
 
       const score = useMemo(
         () => (mode === 'impedance'
-          ? solveImpedance(region, bands, segment, velocityFactor, WIRE_RADIUS_M,
+          ? solveImpedance(region, bands, segment, site, WIRE_RADIUS_M,
                            ununRatio, maxLenM)
           : null),
-        [mode, region, bands, segment, velocityFactor, ununRatio, maxLenM]);
+        [mode, region, bands, segment, site, ununRatio, maxLenM]);
 
       /** Modelled SWR for the length in hand, for the verdict line. */
       const scoreHere = useMemo(
         () => (mode === 'impedance' && wireLenM > 0 && solution.bands.length > 0
-          ? scoreLength(wireLenM, solution.bands, segment, velocityFactor,
+          ? scoreLength(wireLenM, solution.bands, segment, site,
                         WIRE_RADIUS_M, ununRatio)
           : null),
-        [mode, wireLenM, solution, segment, velocityFactor, ununRatio]);
+        [mode, wireLenM, solution, segment, site, ununRatio]);
 
       // Only searched when the asked-for margin leaves nothing.
       const fallback = useMemo(
@@ -1608,6 +1750,9 @@
         params.set(URL_KEYS.mode, mode);
         params.set(URL_KEYS.ununRatio, String(ununRatio));
         params.set(URL_KEYS.velocityFactor, String(velocityFactor));
+        params.set(URL_KEYS.heightM, String(heightM));
+        params.set(URL_KEYS.returnM, String(returnM));
+        params.set(URL_KEYS.soil, soil);
         params.set(URL_KEYS.marginPct, String(marginPct));
         params.set(URL_KEYS.units, units);
         if (wireLenM > 0) params.set(URL_KEYS.wireLenM, wireLenM.toFixed(3));
@@ -1714,11 +1859,70 @@
                 <div className="panel-header">Assumptions</div>
                 {mode === 'impedance' && (
                   <div className="control-hint" style={{ marginBottom: '10px' }}>
-                    Conductor is #14 AWG into {Z_SYSTEM_OHMS} ohms. The model is
-                    calibrated to {HALF_WAVE_OHMS} ohms at a half wave. Height above
-                    ground is not modelled; it is implicit in that anchor. Treat this
-                    as an envelope, not a prediction for your site.
+                    Conductor is #14 AWG into {Z_SYSTEM_OHMS} ohms. Coefficients are
+                    fitted against NEC: |Z| lands within about
+                    {' '}{MODEL_BOUND_FACTOR}x once the wire is
+                    {' '}{MODEL_BOUND_H_OVER_LAM} wavelengths up, which is 26 ft on
+                    160 m, 13 ft on 80 m and 7 ft on 40 m. Lower than that it slips
+                    to about {MODEL_BOUND_FACTOR_LOW}x. Common-mode current on the
+                    feedline is not modelled, and with a poor return path the
+                    feedpoint impedance is not a single number at all. Treat this as
+                    an envelope, not a prediction for your site.
                   </div>
+                )}
+                {mode === 'impedance' && (
+                  <label className="control-label">
+                    Wire height: <span className="control-value">
+                      {fmtLen(heightM, units)}</span>
+                    <input className="control-slider" type="range"
+                           min={HEIGHT_RANGE_M.min} max={HEIGHT_RANGE_M.max}
+                           step={HEIGHT_STEP_M}
+                           value={heightM}
+                           onChange={(e) => set({
+                             heightM: clamp(Number(e.target.value),
+                                            HEIGHT_RANGE_M) })} />
+                    <div className="control-hint">
+                      Height of the horizontal run. It matters most when the wire is
+                      low in wavelengths, which on 160 m and 80 m means most
+                      installations.
+                    </div>
+                  </label>
+                )}
+                {mode === 'impedance' && (
+                  <label className="control-label">
+                    Return path: <span className="control-value">
+                      {fmtLen(returnM, units)}</span>
+                    <input className="control-slider" type="range"
+                           min={RETURN_RANGE_M.min} max={RETURN_RANGE_M.max}
+                           step={RETURN_STEP_M}
+                           value={returnM}
+                           onChange={(e) => set({
+                             returnM: clamp(Number(e.target.value),
+                                            RETURN_RANGE_M) })} />
+                    <div className="control-hint">
+                      Coax run back to the shack, or the counterpoise wire you throw
+                      out. It resonates in its own right: when the drop plus this run
+                      nears a half wave it sets the feedpoint and wire length stops
+                      helping.
+                    </div>
+                  </label>
+                )}
+                {mode === 'impedance' && (
+                  <label className="control-label">
+                    Ground:{' '}
+                    {entriesOf(SOILS).map(([key, def]) => (
+                      <button key={key}
+                              className={`btn preset-btn ${soil === key ? 'active' : ''}`}
+                              aria-pressed={soil === key}
+                              onClick={() => set({ soil: key })}>
+                        {def.label}
+                      </button>
+                    ))}
+                    <div className="control-hint">
+                      Not a quality scale. Damp ground does not give a better match,
+                      it gives a sharper resonance: deeper dips and higher peaks.
+                    </div>
+                  </label>
                 )}
                 {mode === 'impedance' && (
                   <label className="control-label">
@@ -1752,6 +1956,7 @@
                   </div>
                 </label>
                 )}
+                {mode === 'classical' && (
                 <label className="control-label">
                   Wire velocity factor:{' '}
                   <input className="num-input" type="number" step="0.01"
@@ -1761,9 +1966,13 @@
                            velocityFactor: clamp(Number(e.target.value),
                                                  VELOCITY_FACTOR_RANGE) })} />
                   <div className="control-hint">
-                    0.95 gives the classic λ/2 = 468 / f(MHz) feet.
+                    0.95 gives the classic λ/2 = 468 / f(MHz) feet. The impedance
+                    mode does not ask: fitted against NEC the wire runs at 1.0, and
+                    the shortening this stands for is the return path and Z0, which
+                    that model carries directly.
                   </div>
                 </label>
+                )}
                 <label className="control-label">
                   Units:{' '}
                   {entriesOf(UNITS).map(([key, def]) => (

@@ -80,8 +80,12 @@ Still open:
 
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
       percentage.  Applies to the classical mode only.
-- [ ] Expose conductor diameter, fixed at #14 AWG.  The unun ratio is
-      now selectable (1, 4, 9, 49, 64).
+- [ ] Expose conductor diameter, fixed at #14 AWG.  Blocked on evidence,
+      not on UI: the sweep never varied gauge, so `a/lambda` is the one
+      planned axis that was never run and the fitted coefficients have
+      seen exactly one diameter.  Sweep it before offering the control,
+      or the user gets a knob the model cannot justify.  The unun ratio
+      is now selectable (1, 4, 9, 49, 64).
 
 ### Controls, decided
 
