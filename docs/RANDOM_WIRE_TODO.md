@@ -168,6 +168,15 @@ there.
 
 Remaining:
 
+- [ ] Tabulate against return height and offer it as a control.  Swept
+      and shown absorbable: the return line's own alpha, velocity factor
+      and Z0 scale take it up while the antenna line's parameters do not
+      move at all.  Needs a full height by return-height by soil sweep,
+      since the return-height run held soil at medium.  Until then the
+      shipped bound holds only to about 15 cm of return height.
+- [ ] Exercise the page in a browser beyond the ribbon: the impedance
+      mode's height, return-length and soil controls have never been
+      driven, and a passing type check is not a rendering test.
 - [ ] Validate the keep-out widths: confirm `marginPct` values match the
       impedance excursions assumed.  This one could change current
       behavior.

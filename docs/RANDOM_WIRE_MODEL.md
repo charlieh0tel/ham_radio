@@ -596,9 +596,6 @@ the return is the term the low-height error already lives in.
 **The wire is horizontal.**  No slope, no inverted L, no sag, though a
 sloper is at least as common as a flat top for a random wire.
 
-**The page has not been opened in a browser.**  The type check passes,
-which is not the same as the controls rendering or the sliders working.
-
 **The classical mode still defaults to vf 0.95.**  The impedance mode's
 71 ft result says that figure places the resonances about 5 percent too
 short, so the two modes now disagree about which lengths are safe, and
@@ -639,9 +636,107 @@ general.  An elevated counterpoise, elevated radials, or a feedline on
 standoffs is a different antenna, and the fitted coefficients say
 nothing about it.
 
-This is the strongest argument yet that the model is an envelope: the
-single most influential thing about a random wire installation is
-something the page does not ask about and could not fit from this sweep.
+### Swept, and the model can absorb it
+
+53424 further solves over seven return heights from 0.01 to 3 m,
+`return_height_sweep.py`.  The degenerate case where the return sits at
+the antenna's own height is skipped: it leaves no vertical drop, and it
+is the only thing that failed.
+
+Agreement first.  The shipped table, fitted at a 5 cm return, holds only
+while the return stays near the ground:
+
+| return height m | median | 90th | worst |
+|---|---|---|---|
+| 0.01 | x1.31 | x1.42 | x1.43 |
+| 0.05 | x1.25 | x1.33 | x1.37 |
+| 0.15 | x1.31 | x1.40 | x1.44 |
+| 0.50 | x1.44 | x1.89 | x2.15 |
+| 1.00 | x1.57 | x2.02 | x2.19 |
+| 2.00 | x1.69 | x2.71 | **x4.15** |
+| 3.00 | x1.86 | x2.21 | x2.85 |
+
+So the x1.5 bound survives to about 15 cm and breaks past that, which
+puts a number on "assumed to lie on the ground".
+
+Dependence is the good news.  Refitted per return height the model
+reaches x1.16 to x1.38, so it can describe every one of these, and the
+parameters move exactly where the two-line decomposition says they
+should:
+
+| return height m | `alpha_a` | `ka` | `alpha_r` | `vf_r` | `kr` |
+|---|---|---|---|---|---|
+| 0.01 | 0.109 | 0.784 | 0.959 | 0.874 | 0.710 |
+| 0.05 | 0.107 | 0.782 | 0.570 | 0.944 | 0.810 |
+| 0.15 | 0.105 | 0.780 | 0.383 | 0.964 | 0.797 |
+| 0.50 | 0.103 | 0.788 | 0.271 | 0.985 | 0.834 |
+| 1.00 | 0.101 | 0.807 | 0.308 | 1.000 | 0.877 |
+| 2.00 | 0.104 | 0.746 | 0.296 | 0.988 | 0.922 |
+| 3.00 | 0.105 | 0.771 | 0.159 | 1.000 | 0.796 |
+
+The antenna line does not notice: `alpha_a` stays near 0.10, `ka` near
+0.78, `vf_a` exactly 1.0000 throughout.  Everything happens in the
+return line, where lifting the wire off lossy ground drops `alpha_r`
+sixfold and pulls `vf_r` up to unity as the ground stops loading it.
+That is the decomposition earning its keep: a change to one conductor
+shows up in that conductor's parameters and nowhere else.
+
+So return height is not an unmodelled term after all.  It is another
+axis to tabulate against, and once tabulated the page can offer it as a
+control.  The work needed is a full sweep over height by return height
+by soil rather than the two partial ones now in hand, since this one
+held soil at medium.
+
+## References
+
+Sources for the published length tables this page is measured against,
+and for the literature check on 71 ft.
+
+- Jack Clarke VE3EED (SK), *The "Best" Random Wire Antenna Lengths*.
+  The origin of the widely copied good/bad length tables.
+  https://ve3ips.wordpress.com/2021/11/02/the-best-random-wire-antenna-lengthsrandom-wire-lengths-you-should-and-should-not-use-jack-ve3eed-sk/
+  Mirrors: https://www.hamuniverse.com/randomwireantennalengths.html and
+  https://ve7sar.blogspot.com/2019/01/the-best-random-wire-antenna-lengths.html
+  The one documented correction to it is James KB5YN pointing out that
+  220 ft was listed good while being the tenth half-wave multiple on
+  15 m; VE3EED recomputed out to 500 ft in response.
+
+- Mike Markowski AB3AP, *Random Wire Antenna Lengths*.
+  https://udel.edu/~mm/ham/randomWire/
+  The keep-out calculation this page's classical mode implements, and
+  the origin of the C and Matlab versions in `random_wire/`.
+
+- J.C. Sprott, *Optimal Length of Random Wire Antenna*, University of
+  Wisconsin-Madison technote.
+  https://sprott.physics.wisc.edu/technote/randwire.htm
+  Independent run of the same avoid-the-resonances search, arriving at
+  74 ft excluding 160 m and 143 ft for all bands.  Treats the feedline
+  as part of the electrical length and handles velocity factor
+  explicitly.
+
+- *Random Wire Antennas -- A Challenge to Common Knowledge*, Ham Radio
+  Outside the Box, 2024.
+  https://hamradiooutsidethebox.ca/2024/09/04/random-wire-antennas-a-challenge-to-common-knowledge/
+  Measures an 84 ft wire at 21-307 ohms and challenges the 450 ohm and
+  9:1 convention rather than the lengths.
+
+- ARRL, *Random Wires*.
+  http://www.arrl.org/random-wires
+  The ARRL's own guidance offers **no** recommended lengths at all, only
+  that a shorter wire reaches fewer bands.  It does specify the
+  counterpoise: a quarter wave at the lowest frequency in use, which is
+  about 66 ft on 80 m and 130 ft on 160 m.  This page defaults the
+  return path to 25 ft, far short of that, and the sweep shows return
+  length matters a great deal -- worth revisiting.
+
+- S.A. Schelkunoff, *Theory of Antennas of Arbitrary Size and Shape*,
+  Proc. IRE 29(9), 1941.  Source of the average characteristic
+  impedance `Z0 = 60 (ln(2l/a) - 1)` used for both lines.
+
+Not searched: QST, QEX and the ARRL Antenna Compendium, which is where a
+serious treatment of end-fed feedpoint impedance would more likely sit,
+and where a real refutation of 71 ft would most likely be found.  The
+literature check above covers amateur web sources only.
 
 ## What the model deliberately does not do
 
