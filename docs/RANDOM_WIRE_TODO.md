@@ -198,12 +198,14 @@ Remaining:
       the error still reaches x1.60 median at a 2 m return, and a 2D
       table measured x4.30 worst above 15 cm against x1.44 below it.
       The return stays assumed to lie on the ground.
-- [ ] Add a coupling term between the two lines, which is what an
-      elevated counterpoise actually needs.  H1 was measured with the
-      return on the ground, where the image cancels most of the coupling;
-      lifted a metre or two the return radiates and `Za + Zr` stops being
-      the whole story.  Same mutual coupling the finding 7 residual tail
-      pointed at.
+- [x] Add a coupling term between the two lines.  Tried and not kept: a
+      mutual term scaling `sqrt(Za Zr)` with an exponential decay in
+      separation buys 9 percent at a 2 m return and nothing elsewhere,
+      with its two parameters either railed or zero.  A scalar mutual
+      term is too weak; an elevated return is a second radiator with its
+      own current distribution and wants a coupled two-port, which is a
+      different model rather than a term on this one.  Not worth doing
+      unless elevated counterpoises become the point of the page.
 - [ ] Exercise the page in a browser beyond the ribbon: the impedance
       mode's height, return-length and soil controls have never been
       driven, and a passing type check is not a rendering test.

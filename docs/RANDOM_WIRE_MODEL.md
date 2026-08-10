@@ -764,9 +764,45 @@ which is the same mutual coupling the finding 7 residual tail pointed
 at.
 
 So the return stays assumed to lie on the ground, and that assumption
-keeps its caveat rather than becoming a control.  Modelling an elevated
-counterpoise needs a coupling term between the lines, not another axis
-on the table.
+keeps its caveat rather than becoming a control.
+
+### The coupling term, tried and not kept
+
+If the additive form is what breaks, the obvious repair is a mutual
+term, `Zin = Za + Zr + 2 Zm`.  For two conductors carrying comparable
+current the mutual impedance scales as the geometric mean of the two
+self impedances, so
+
+    Zm = km * exp(-(h - rh) / (kd * lambda)) * sqrt(Za * Zr)
+
+with the separation in wavelengths.  That has the limits the physics
+demands -- full coupling as the conductors approach, none as they
+separate -- and the five-parameter form is nested inside it at
+`km = 0`, so the comparison is fair.
+
+Fitted, it buys almost nothing:
+
+| return height m | without | with |
+|---|---|---|
+| 0.01 | x1.20 | x1.20 |
+| 0.15 | x1.20 | x1.20 |
+| 0.50 | x1.24 | x1.23 |
+| 1.00 | x1.34 | x1.34 |
+| 2.00 | x1.60 | x1.46 |
+
+Nine percent at the one place it exists to help, nothing anywhere else,
+and the 90th percentile at a 2 m return barely moves, x2.20 to x2.18.
+The fit is also unhealthy: `kd` runs to its upper bound of 20
+wavelengths in some groups and `km` to its bound of 2 in others, while
+sitting at zero in 14 percent.  A parameter that is either absent or
+railed is not measuring anything.
+
+Two parameters for that is a bad trade, so it is not kept.  The reading
+is that a scalar mutual term is too weak a description: at a metre or
+two of separation the return is not a lumped neighbour of the antenna
+but a second radiator with its own current distribution, which wants a
+genuinely coupled two-port rather than one number scaling
+`sqrt(Za Zr)`.  That is a different model, not a term on this one.
 
 ## References
 
