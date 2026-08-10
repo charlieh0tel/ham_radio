@@ -198,17 +198,31 @@ Remaining:
         GPL and cannot be relicensed by us.  Serving it from `docs/` is
         distribution, and it makes the page a combined work.
 
-      That is workable rather than blocking.  Per-file licensing is
-      ordinary: one page goes GPLv3 with a header notice while the repo
-      stays MIT, and because the page is a single file already public on
-      GitHub, alongside `nec2c-js`, the corresponding-source obligation
-      is satisfied by what is already published.  Decide deliberately
-      and write the notice; do not let it happen by importing.
+      **Decided and done**: `docs/random-wire.html` is now
+      GPL-3.0-or-later, with the notice in its header and the exception
+      recorded in `LICENSE`.  The rest of the repository stays MIT.  The
+      wasm loads from a CDN on click, as React and Babel already do, so
+      the classical mode never fetches it.  `nec2c-wasm/inline` is the
+      entry point to use, 361 KB in one file, which avoids serving a
+      separate `.wasm` from Pages.
 
-      Size is the other constraint: `nec2c-wasm` unpacks to 1.1 MB
-      against a page that is currently one file of about 100 KB, so it
-      has to load on demand rather than inline, which also keeps the
-      classical mode free of it.
+      **Blocked on a solver gap.**  `nec2c-deck`'s `buildDeck` takes
+      `ground: boolean` and emits `GN 1`, a perfect ground plane.  This
+      model is fitted against `GN 2`, the Sommerfeld solution, with real
+      soil constants, and ground loss is what dominates at the low
+      heights the page warns about.  A button built on `GN 1` would
+      compare the model against a different problem and disagree for
+      reasons the user cannot see, which is worse than no button.
+
+      Two ways out, both small:
+
+      - add ground constants to `nec2c-deck`, an optional `{eps, sigma}`
+        that emits `GN 2` instead of `GN 1`; it is our package
+      - have the page emit its own cards and use `nec2c-deck` only for
+        `parseOutput`, which the package explicitly supports
+
+      The first is better: the gap is real for anyone modelling a wire
+      over earth, not just this page.
 - [x] Say something when a published length scores badly.  Done: the
       impedance mode now carries a "Published lengths, scored" panel
       running the standard table through the model at the user's own

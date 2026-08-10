@@ -1,3 +1,12 @@
+Except where a file says otherwise, this repository is under the MIT
+licence below.
+
+One file is not: docs/random-wire.html is GPL-3.0-or-later, because it
+loads nec2c-wasm to check a length against NEC and nec2c carries Neoklis
+Kyriazis's GPL.  Its own header carries the notice.  Nothing else in the
+repository links against it, and nec/random_wire/ stays MIT because it
+imports PyNEC as a dependency rather than shipping it.
+
 The MIT License (MIT)
 
 Copyright (c) 2016 Christopher Hoover <ch@murgatroid.com>
