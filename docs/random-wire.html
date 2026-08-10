@@ -1733,14 +1733,25 @@
       const site = useMemo(() => ({ heightM, returnM, soil }),
                            [heightM, returnM, soil]);
 
+      /**
+       * The velocity factor whatever is on screen should be drawn against.
+       *
+       * The classical mode's keep-out zones are arithmetic on the user's own
+       * velocity factor, so they follow it.  The impedance mode does not use
+       * that number at all: its coefficients were fitted with the antenna
+       * line at MODEL_VF_A, so half waves drawn at anything else would sit
+       * beside peaks the model puts somewhere else.
+       */
+      const displayVf = mode === 'impedance' ? MODEL_VF_A : velocityFactor;
+
       // Map spans one full wavelength at the lowest selected band, which is the
       // longest wire worth considering for that band.
       const maxLenM = useMemo(() => {
         const selected = bandsIn(region).filter(b => bands.includes(b.m));
         if (selected.length === 0) return EMPTY_MAP_LEN_M;
         const lowestHz = Math.min(...selected.map(b => bandEdgesHz(b, segment)[0]));
-        return 2 * halfWaveM(lowestHz, velocityFactor);
-      }, [region, bands, segment, velocityFactor]);
+        return 2 * halfWaveM(lowestHz, displayVf);
+      }, [region, bands, segment, displayVf]);
 
       /**
        * A quarter wave at the lowest selected band, which is the counterpoise
@@ -2239,8 +2250,8 @@
                             <td>{band.label}</td>
                             <td>{fmtBandEdges(lo, hi)}</td>
                             <td>
-                              {fmtLen(halfWaveM(hi, velocityFactor), units)} -{' '}
-                              {fmtLen(halfWaveM(lo, velocityFactor), units)}
+                              {fmtLen(halfWaveM(hi, displayVf), units)} -{' '}
+                              {fmtLen(halfWaveM(lo, displayVf), units)}
                             </td>
                           </tr>
                         );
