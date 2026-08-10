@@ -132,11 +132,22 @@ hides behind more decimals.  Cost is real too: wasm NEC in a single-file
 Pages document, sweeping every candidate length by band by frequency
 step.
 
-So NEC is a calibration and validation instrument.  **Results ship as
-constants and caveat text, never as code.**  That is also the licence
-boundary: PyNEC and nec2c are GPL, this repo is MIT, and a program's
-numeric output is not covered by the producing program's licence.  The
-sweep scripts stay out of the repo.
+So NEC is a calibration and validation instrument.  **What reaches the
+page is constants and caveat text, never code.**
+
+The modeller itself lives in `nec/random_wire/`.  An earlier draft of
+this note had it staying outside the repo on licence grounds, which
+confused two separate things.  PyNEC is GPL-3.0-only and is a declared
+PyPI dependency, not vendored; MIT is GPL-compatible, so MIT scripts
+that import it are fine to distribute, and nothing here copies PyNEC or
+nec2c source.  Separately, and still true, a program's numeric output is
+not covered by the producing program's licence, so the fitted constants
+carry no obligation into the page.
+
+Keeping it in the repo is the point rather than a concession.  The
+page's claim to be defensible rests on constants with stated assumptions
+and a bounded error; constants whose producing code has been discarded
+cannot be checked by anyone.
 
 ### Method
 
@@ -181,12 +192,11 @@ that backwards.
 
 ## What NEC measured
 
-First results, 2026-08-09.  Instrument as above: PyNEC, `uv`-managed
-scratch scripts kept out of the repo.  Driver validated against textbook
-cases before anything else -- quarter-wave monopole over perfect ground
-reads 39.5+j22.7 against ~36+j21, free-space half-wave dipole 79.1+j45.2
-against ~73+j42, both overshooting in the direction thin-wire
-segmentation predicts.
+First results, 2026-08-09.  Instrument as above, in `nec/random_wire/`.
+Driver validated against textbook cases before anything else -- a
+quarter-wave monopole over perfect ground reads 39.5+j22.7 against
+~36+j21, a free-space half-wave dipole 79.1+j45.2 against ~73+j42, both
+overshooting in the direction thin-wire segmentation predicts.
 
 All figures at 14.2 MHz, #14 AWG.
 

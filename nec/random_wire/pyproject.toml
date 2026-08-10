@@ -1,0 +1,13 @@
+[project]
+name = "random-wire-nec"
+version = "0.1.0"
+description = "Offline NEC modelling behind the random-wire.html impedance model."
+requires-python = ">=3.11"
+dependencies = [
+    "pynec>=2.3.4",
+    "numpy>=2.0",
+    "scipy>=1.14",
+]
+
+[tool.ruff]
+line-length = 88

@@ -163,8 +163,7 @@ Remaining:
       mostly does not occur once a real return path exists.  Do not
       build UI around it.
 
-Tooling: scratch script, Python + PyNEC, `uv`-managed, results committed
-as a short findings note.
+Tooling: `nec/random_wire/`, Python + PyNEC, `uv`-managed.
 
 ## Open questions
 
