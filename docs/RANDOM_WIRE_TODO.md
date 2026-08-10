@@ -1,5 +1,8 @@
 # random-wire.html TODO
 
+Task status and open decisions.  The modelling approach, the parameter
+split, and what NEC measured are in `RANDOM_WIRE_MODEL.md`.
+
 ## Impedance-based length selection
 
 Today the tool picks lengths by avoiding `n * lambda/2` with a fixed
@@ -14,7 +17,8 @@ Potential gains:
   by worst-case `|Zin|` (or post-unun SWR) across the selected bands.
 - Catches the low-Z case.  Odd `lambda/4` gives ~35 ohm, which is ~4 ohm
   after a 9:1 unun.  The current model only avoids high-Z and is blind
-  to this.
+  to this.  *Superseded:* NEC finding 2 measures 133-3500 ohm there, so
+  the low-Z case is largely an artifact of ignoring the return path.
 - Physically motivated zone widths.  The right margin scales with wire
   diameter and effective Q; a fixed percentage cannot express that.
 - Better visual.  A predicted `|Z|` / SWR-vs-frequency trace for the
@@ -67,12 +71,42 @@ then read 1.7-2.2:1 where reality is near flat.  Re-anchored, the half
 wave lands within 2 percent of target and a quarter wave falls at
 44-70 ohms.
 
+The half-wave end of that has since been confirmed against NEC; the
+quarter-wave end has not survived it.  See the NEC findings below: a
+quarter-wave antenna wire has no characteristic impedance to anchor to,
+because the resonator includes the drop and the return path.
+
 Still open:
 
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
       percentage.  Applies to the classical mode only.
 - [ ] Expose conductor diameter, fixed at #14 AWG.  The unun ratio is
       now selectable (1, 4, 9, 49, 64).
+
+### Controls, decided
+
+The model gains parameters the user can actually measure, and loses one
+they cannot.
+
+- [ ] **Height** becomes a user control.  It is the number people know.
+- [ ] **Return-path length** becomes a user control: the coax run for a
+      shield-as-counterpoise install, or the wire length for a thrown-out
+      counterpoise.  NEC finding 4 promoted this from a correction to a
+      first-class parameter.  Default 25 ft.
+- [ ] **Soil type** becomes a user control, the three standard soils.
+      Finding 6 is the caveat that rides with it: "better" ground does
+      not mean a better match, it means a sharper resonance, so the
+      labelling must not imply an ordering the physics does not have.
+- [ ] **Velocity factor stops being a control.**  It is installation
+      dependent, users do not know it, and it is not an independent
+      physical quantity: it is the emergent consequence of diameter,
+      height, return path, insulation and sag.  It survives as a derived
+      value the fit produces, optionally displayed.  Keep reading `?vf=`
+      as an override so existing links resolve, per the `len`/`len_m`
+      precedent.
+
+Once height and diameter are explicit, leaving `vf` settable would let
+the user set the same physical effect twice and double-count it.
 
 Dropped: a separate odd-`lambda/4` keep-out.  Measured, it empties the
 solution space (HF-all returns nothing, the classic set drops to a
@@ -93,40 +127,54 @@ candidate length x band x frequency step.
 Use it instead as a one-time calibration and validation instrument.
 Results ship as constants and caveat text, never as code.
 
-- [ ] Decide-first experiment: run the impedance-optimal search offline
-      and diff its recommended lengths against the current table.  If
-      they largely agree (expected), the runtime stays pure arithmetic.
-      Material disagreement is the interesting result and should be
-      chased before shipping either model.
+- [x] Decide-first experiment.  Done, and the disagreement is material.
+      Findings below.
 - [ ] **Next.** Fit the model properly: sweep NEC over the dimensionless
-      ratios `l/lambda`, `a/lambda` and `h/lambda` plus a ground model,
-      then fit `alpha` *and a series loss term* so both ends land at
-      once.  Today a single anchor fixes both: pinning one end forces
-      the other to about `Z0^2 / (2 R)`, so the model cannot be right
-      at a quarter wave and a half wave simultaneously.
-      Height is the specific prize.  There is no height parameter now;
-      it is implicit in the anchor.  Ground reflection moves R and X
-      with `h/lambda`, and at low heights ground loss damps the peaks
-      the model currently draws at full height, so a wire at 30 ft and
-      one at 60 ft are different antennas the page cannot tell apart.
+      ratios `l/lambda`, `a/lambda` and `h/lambda`, the return-path
+      length, and a ground model, then fit `alpha`, a series loss term
+      *and* `beta` so both ends land at once.  Today a single anchor
+      fixes both: pinning one end forces the other to about
+      `Z0^2 / (2 R)`, so the model cannot be right at a quarter wave and
+      a half wave simultaneously.  `beta` joins the fit because measured
+      reactance at the half wave is nowhere near zero (finding 3).
+      The return path gets a dedicated resonance term rather than a
+      correction folded into `alpha`: finding 4 shows it setting the
+      feedpoint outright when (drop + run) nears a half wave, which a
+      smooth coefficient surface cannot represent.
       Ship fitted coefficients, not code: numeric output is not covered
       by the producing program's licence, which keeps GPLv3 nec2c out
       of this MIT repo.
 - [ ] Bound the error across the parameter space.  That bound becomes
       the caveat on the plot, e.g. "within ~2x over 20-60 ft, 1-30 MHz,
       15-30 ft high".
+
+Measured results are in `RANDOM_WIRE_MODEL.md`, under "What NEC
+measured".  The findings referenced by number above and below live
+there.
+
+Remaining:
+
 - [ ] Validate the keep-out widths: confirm `marginPct` values match the
       impedance excursions assumed.  This one could change current
       behavior.
-- [ ] Confirm the odd-`lambda/4` case is as bad as theory says before
-      building UI around it.
+- [x] Confirm the odd-`lambda/4` case is as bad as theory says before
+      building UI around it.  It is not: finding 2 measures 133-3500
+      ohms there, and the low-Z case the keep-out was meant to catch
+      mostly does not occur once a real return path exists.  Do not
+      build UI around it.
 
 Tooling: scratch script, Python + PyNEC, `uv`-managed, results committed
 as a short findings note.
 
 ## Open questions
 
-- Model the counterpoise / radial explicitly, or fold it into the
-  calibration?
-- Should height become a user control once it is fitted, with a default
-  that matches the current anchor?
+- Counterpoise is now an explicit axis rather than a calibration
+  constant (finding 4 forced this), but the two real cases differ:
+  a thrown-out wire is well defined, while the coax shield carries
+  common-mode current that makes "the feedpoint impedance" not a single
+  well-defined number at all.  How much of that caveat reaches the user?
+- How should the soil control be labelled so it does not imply that
+  "good" ground gives a better match?  Finding 6 says it does not.
+- Does the fitted `alpha`/`beta` surface interpolate cleanly over
+  `h/lambda` once the return resonance is pulled out into its own term,
+  or does it still need a spline?
