@@ -565,11 +565,6 @@ radius, so the gauge sweep moved them together.  A real coax shield is
 nearer 8 mm than 0.8 mm, a factor of ten the sweep never explored, and
 the return is the term the low-height error already lives in.
 
-**The return runs 5 cm above ground, always.**  `RETURN_HEIGHT_M` was
-picked to avoid shorting the source against the ground plane and never
-varied.  Real coax lies on the soil, or is buried, or is strung; a
-counterpoise may be well elevated.
-
 **The wire is horizontal.**  No slope, no inverted L, no sag, though a
 sloper is at least as common as a flat top for a random wire.
 
@@ -583,6 +578,42 @@ the classical one agrees with the published tables partly by sharing
 their assumption.  Changing its default would move every classical
 recommendation and break agreement with tables the user can look up, so
 it is a decision rather than a fix.
+
+## The return path's geometry, measured
+
+Two things about the return were fixed for the whole sweep and are
+choices rather than measurements.  `geometry_check.py` puts numbers on
+both, at the page's default site.
+
+**Bearing barely matters.**  A counterpoise wire often runs out along
+the antenna; a feedline acting as counterpoise usually heads away, at
+anything from in line to square.  Across 0 to 180 degrees the feedpoint
+moves 1.20x on 80 m and 1.07x or less on every other band.  The return
+lies close to lossy ground, whose image largely cancels its coupling to
+the elevated wire, so which way it points is nearly irrelevant.  All the
+arrangements are real and the model does not need to choose between
+them.
+
+**Height matters more than anything else in the model.**  Raising the
+return from 5 cm to 1-2 m moves the feedpoint by up to 4.6x on 20 m,
+2.6x on 10 m, 2.3x on 15 m -- far outside the x1.5 bound, and larger
+than height, soil or gauge.
+
+| 84 ft, return height m | 0.01 | 0.05 | 0.25 | 1.0 | 2.0 |
+|---|---|---|---|---|---|
+| 20 m SWR | 1.7 | 1.3 | 2.4 | 4.1 | 6.2 |
+| 10 m SWR | 3.3 | 3.0 | 2.6 | 3.8 | 6.6 |
+
+The sweep's 5 cm stands for a feedline or counterpoise **lying on the
+soil**, and 0.01 m gives nearly the same answer, so the assumption is
+safe for that install -- which is the common one.  It is not safe in
+general.  An elevated counterpoise, elevated radials, or a feedline on
+standoffs is a different antenna, and the fitted coefficients say
+nothing about it.
+
+This is the strongest argument yet that the model is an envelope: the
+single most influential thing about a random wire installation is
+something the page does not ask about and could not fit from this sweep.
 
 ## What the model deliberately does not do
 

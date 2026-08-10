@@ -1870,10 +1870,13 @@
                     {' '}{MODEL_BOUND_FACTOR}x once the wire is
                     {' '}{MODEL_BOUND_H_OVER_LAM} wavelengths up, which is 26 ft on
                     160 m, 13 ft on 80 m and 7 ft on 40 m. Lower than that it slips
-                    to about {MODEL_BOUND_FACTOR_LOW}x. Common-mode current on the
-                    feedline is not modelled, and with a poor return path the
-                    feedpoint impedance is not a single number at all. Treat this as
-                    an envelope, not a prediction for your site.
+                    to about {MODEL_BOUND_FACTOR_LOW}x. The return path is assumed
+                    to lie on the ground: raise it a metre or two and the feedpoint
+                    moves several times over, more than anything else here changes
+                    it, so elevated radials are outside this model. Common-mode
+                    current on the feedline is not modelled either, and with a poor
+                    return path the feedpoint impedance is not a single number at
+                    all. Treat this as an envelope, not a prediction for your site.
                   </div>
                 )}
                 {mode === 'impedance' && (

@@ -40,9 +40,28 @@ GROUNDS = {
 SEGMENTS_PER_WAVELENGTH = 20
 MIN_SEGMENTS = 9
 
-#: The return path is run just off the ground rather than at z = 0.  Bonding
-#: it to ground would short the source; real coax lies on or above the soil.
+#: How high the return path lies, metres.  Not at z = 0 because bonding it to
+#: ground would short the source.
+#:
+#: This stands for a feedline or counterpoise lying on the soil, which is the
+#: common case, and 0.01 m gives nearly the same answer, so the choice is safe
+#: for that install.  It is not a small assumption in general: per
+#: geometry_check.py, raising the return to 1-2 m moves the feedpoint by up to
+#: 4.6x on 20 m, far outside the quoted bound.  An elevated counterpoise or a
+#: feedline on standoffs is a different antenna and this model does not cover
+#: it.
 RETURN_HEIGHT_M = 0.05
+
+#: Which way the return runs from the feedpoint, along the antenna (+1) or
+#: away from it (-1).
+#:
+#: Both are real.  A counterpoise wire often gets laid out along the antenna,
+#: while a feedline acting as counterpoise usually heads away, at anything
+#: from in line to square.  geometry_check.py measures what the choice is
+#: worth and the answer is little: 1.20x on 80 m and 1.07x or less elsewhere,
+#: because the return lies close to lossy ground whose image largely cancels
+#: its coupling to the elevated wire.
+RETURN_DIRECTION = 1
 
 
 def _segments(length_m, wavelength_m):
@@ -97,14 +116,15 @@ def end_fed_zin(
         1,
         1,
     )
-    # Tag 3: the return run, laid back under the antenna wire.
+    # Tag 3: the return run.  RETURN_DIRECTION decides whether it lies under
+    # the antenna or heads away from it; see the constant.
     geo.wire(
         3,
         _segments(return_len_m, wavelength_m),
         0.0,
         0.0,
         RETURN_HEIGHT_M,
-        return_len_m,
+        RETURN_DIRECTION * return_len_m,
         0.0,
         RETURN_HEIGHT_M,
         radius_m,
