@@ -332,6 +332,9 @@
     .verdict-detail { font-size: 11px; color: #aaa; line-height: 1.6; }
 
     /* Verdict column of the published-lengths table. */
+    /* Caveat that needs to be read rather than skimmed. */
+    .control-hint.warn { color: #d99a6c; }
+
     .score-ok { color: #009e73; }
     .score-poor { color: #d55e00; }
 
@@ -442,8 +445,6 @@
         bands: [
           // 2200m and 630m were allocated in 2017; both are secondary and
           // power limited, but the half-wave lengths still apply.
-          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
-          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
           { m: 160,  label: '160m',  full: [1.8e6, 2e6],         cw: [1.8e6, 1.84e6] },
           { m: 80,   label: '80m',   full: [3.5e6, 4e6],         cw: [3.5e6, 3.6e6] },
           // Since 13 Feb 2026: the 5351.5-5366.5 kHz band at 9.15 W ERP, plus
@@ -468,8 +469,6 @@
         label: 'IARU Region 1',
         note: 'Europe, Africa, Middle East, northern Asia. 6m upper edge varies by country.',
         bands: [
-          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
-          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
           { m: 160,  label: '160m',  full: [1.81e6, 2e6],        cw: [1.81e6, 1.838e6] },
           { m: 80,   label: '80m',   full: [3.5e6, 3.8e6],       cw: [3.5e6, 3.57e6] },
           { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.354e6] },
@@ -487,8 +486,6 @@
         label: 'IARU Region 2',
         note: 'The Americas. National allocations differ; the US entry is more specific.',
         bands: [
-          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
-          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
           { m: 160,  label: '160m',  full: [1.8e6, 2e6],         cw: [1.8e6, 1.84e6] },
           { m: 80,   label: '80m',   full: [3.5e6, 4e6],         cw: [3.5e6, 3.58e6] },
           { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.354e6] },
@@ -506,8 +503,6 @@
         label: 'IARU Region 3',
         note: 'Asia-Pacific. 80m and 40m upper edges vary widely by country.',
         bands: [
-          { m: 2200, label: '2200m', full: [135.7e3, 137.8e3],   cw: [135.7e3, 137.8e3] },
-          { m: 630,  label: '630m',  full: [472e3, 479e3],       cw: [472e3, 479e3] },
           { m: 160,  label: '160m',  full: [1.8e6, 2e6],         cw: [1.8e6, 1.84e6] },
           { m: 80,   label: '80m',   full: [3.5e6, 3.9e6],       cw: [3.5e6, 3.54e6] },
           { m: 60,   label: '60m',   full: [5.3515e6, 5.3665e6], cw: [5.3515e6, 5.354e6] },
@@ -710,6 +705,19 @@
      * with length, both of which the model now carries explicitly.
      */
     const MODEL_VF_A = 1.0;
+
+    /**
+     * Frequencies the impedance model was fitted over.  Bands outside this are
+     * still offered -- the classical rule is band-independent arithmetic and
+     * works anywhere -- but the impedance mode is extrapolating there and says
+     * so.  Soil is the reason: its loss tangent changes character across HF,
+     * and the fit has only ever seen 1.9 to 28.85 MHz.
+     *
+     * 2200 m and 630 m are not offered at all.  At 137 kHz the ground is a
+     * near-conductor rather than a lossy dielectric, which is a different
+     * problem, and no wire this page recommends is a sensible antenna there.
+     */
+    const MODEL_FIT_RANGE_HZ = Object.freeze({ min: 1.8e6, max: 30e6 });
 
     /**
      * Height in wavelengths above which the fitted error bound holds, and the
