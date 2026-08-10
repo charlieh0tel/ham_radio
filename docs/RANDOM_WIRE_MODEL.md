@@ -718,11 +718,55 @@ sixfold and pulls `vf_r` up to unity as the ground stops loading it.
 That is the decomposition earning its keep: a change to one conductor
 shows up in that conductor's parameters and nowhere else.
 
-So return height is not an unmodelled term after all.  It is another
-axis to tabulate against, and once tabulated the page can offer it as a
-control.  The work needed is a full sweep over height by return height
-by soil rather than the two partial ones now in hand, since this one
-held soil at medium.
+That suggested return height was an axis to tabulate rather than a
+caveat to carry.  The full sweep says otherwise, and the reason is worth
+recording.
+
+### Why it stays a caveat
+
+228960 solves over soil by frequency by antenna height by return height
+by return length, `unified_sweep.py`, then fitted per group.
+
+First, the axis to index on is **return height in metres**, not
+`rh/lambda`.  That breaks the dimensionless-ratio convention and does so
+for a reason: the return lies over a lossy half-space, and the image sits
+about a skin depth down, which is an absolute length.  In these soils
+that is 0.5 to 11.5 m across HF, the same order as the return heights
+themselves, so absolute height is what the return line feels.  The
+fitted parameters agree, moving monotonically against metres while
+`rh/lambda` barely separates them.
+
+Second, and decisively, **the model form fails before the table does**.
+Giving every group its own best-fit coefficients -- the most the two-line
+form can possibly do -- the error grows with return height:
+
+| return height m | median | 90th | worst |
+|---|---|---|---|
+| 0.01 | x1.20 | x1.31 | x2.20 |
+| 0.05 | x1.20 | x1.32 | x2.10 |
+| 0.15 | x1.20 | x1.31 | x2.09 |
+| 0.50 | x1.24 | x1.31 | x2.02 |
+| 1.00 | x1.34 | x1.43 | x2.00 |
+| 2.00 | **x1.60** | **x2.20** | x2.42 |
+
+A 2D table over `h/lambda` and return height was built and measured
+anyway, 480 numbers against the present 120.  Below 15 cm it matches
+what ships, median x1.27 and worst x1.44.  Above it, median x1.36 and
+worst x4.30 -- worse than the low-`h/lambda` corner the page already
+hedges.  Tabulating cannot beat the form it tabulates.
+
+The physical reading is that the additive decomposition is what breaks.
+H1 was measured at a return lying on the ground, where the image
+cancels most of the coupling between the two conductors.  Lift the
+return a metre or two and it becomes a radiator in its own right,
+coupled to the antenna, and `Za + Zr` stops being the whole story --
+which is the same mutual coupling the finding 7 residual tail pointed
+at.
+
+So the return stays assumed to lie on the ground, and that assumption
+keeps its caveat rather than becoming a control.  Modelling an elevated
+counterpoise needs a coupling term between the lines, not another axis
+on the table.
 
 ## References
 

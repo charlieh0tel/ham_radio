@@ -192,12 +192,18 @@ Remaining:
       hand-copied once and needed a separate script to verify; the
       generator should write them.  Do it when the constants are next
       regenerated.
-- [ ] Tabulate against return height and offer it as a control.  Swept
-      and shown absorbable: the return line's own alpha, velocity factor
-      and Z0 scale take it up while the antenna line's parameters do not
-      move at all.  Needs a full height by return-height by soil sweep,
-      since the return-height run held soil at medium.  Until then the
-      shipped bound holds only to about 15 cm of return height.
+- [x] Tabulate against return height and offer it as a control.  Done
+      and answered no.  The full sweep shows the two-line *form* failing
+      before the table does: given each group its own best coefficients
+      the error still reaches x1.60 median at a 2 m return, and a 2D
+      table measured x4.30 worst above 15 cm against x1.44 below it.
+      The return stays assumed to lie on the ground.
+- [ ] Add a coupling term between the two lines, which is what an
+      elevated counterpoise actually needs.  H1 was measured with the
+      return on the ground, where the image cancels most of the coupling;
+      lifted a metre or two the return radiates and `Za + Zr` stops being
+      the whole story.  Same mutual coupling the finding 7 residual tail
+      pointed at.
 - [ ] Exercise the page in a browser beyond the ribbon: the impedance
       mode's height, return-length and soil controls have never been
       driven, and a passing type check is not a rendering test.
