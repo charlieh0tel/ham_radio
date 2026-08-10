@@ -1958,23 +1958,42 @@
                           marginPct, solution.shortLimit),
         [wireLenM, solution, segment, velocityFactor, marginPct]);
 
-      // Jump to the widest clear span whenever the inputs change, so the
-      // answer always suits the current selection.  Typing a length or
-      // picking one off the map leaves the solution alone, so those stick
-      // until an input changes.  A length in the URL wins on first load.
+      // Jump to the best length whenever the inputs change, so the answer
+      // always suits the current selection.  Typing a length or picking one
+      // off the map leaves the solution alone, so those stick until an input
+      // changes.  A length in the URL wins on first load.
+      //
+      // The dependencies are the physical inputs rather than the derived
+      // solution and score.  Those two are rebuilt when `units` changes, since
+      // a recommendation is rounded in the unit it will be read in, and
+      // depending on them meant switching feet to metres silently replaced a
+      // length the user had typed or clicked.  Nothing physical changes when
+      // the unit does.
       const autoLenM = useRef(/** @type {?Meters} */ (null));
       const firstRun = useRef(true);
+      const bestLenM = mode === 'impedance'
+        ? (score ? score.suggestions[0]?.lenM : undefined)
+        : solution.suggestions[0]?.pick;
       useEffect(() => {
         const wasFirstRun = firstRun.current;
         firstRun.current = false;
         if (wasFirstRun && wireLenM > 0) return;
-        const best = mode === 'impedance'
-          ? (score ? score.suggestions[0]?.lenM : undefined)
-          : solution.suggestions[0]?.pick;
-        if (best === undefined) return;
-        autoLenM.current = best;
-        set({ wireLenM: best });
-      }, [solution, score, mode]);
+        if (bestLenM === undefined) return;
+        autoLenM.current = bestLenM;
+        set({ wireLenM: bestLenM });
+      }, [region, bands, segment, mode, site, ununRatio, velocityFactor,
+          marginPct]);
+
+      // A length the page chose is still the page's to re-round when the unit
+      // changes, so a pick stays a round number in whatever is on screen.  A
+      // length the user chose is left exactly as they set it.
+      useEffect(() => {
+        if (bestLenM === undefined) return;
+        if (autoLenM.current === null || wireLenM !== autoLenM.current) return;
+        if (bestLenM === wireLenM) return;
+        autoLenM.current = bestLenM;
+        set({ wireLenM: bestLenM });
+      }, [units]);
 
       useEffect(() => {
         if (isAtDefaults(p, autoLenM.current)) {
