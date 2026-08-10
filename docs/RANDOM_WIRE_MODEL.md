@@ -536,6 +536,34 @@ is a parameter of the antenna line inside a two-line model, not a
 directly measured wave speed -- but NEC confirms the behaviour it
 predicts at 71 ft without reference to the fit.
 
+Checked for a published refutation of 71 ft, and there is none.  The
+only documented criticism of the source list is James KB5YN catching
+that VE3EED's original table called 220 ft good when it is the tenth
+half-wave multiple on 15 m; VE3EED accepted it and recomputed out to
+500 ft.  That is an arithmetic slip inside the method, not a challenge
+to it.
+
+The nearest independent corroboration is J.C. Sprott's technote, which
+runs the same avoid-the-resonances search from scratch and arrives at
+74 ft excluding 160 m, never mentioning 71.  That is 4 percent off the
+staple in the same direction as this model, and 74 ft is what this
+page's classical mode already picks for that band set.  Sprott also
+treats the feedline as part of the electrical length, which is finding 4
+in print years earlier, and handles velocity factor explicitly, which is
+the parameter the 71 ft result turns on.
+
+Cutting the other way, Ham Radio Outside the Box measured an 84 ft wire
+at 21-307 ohms across the bands, challenging the 450 ohm and 9:1
+convention rather than the lengths.  Those figures are lower than this
+model or NEC gives and sit against finding 2, though a commenter
+attributed them to the 3 ft coax jumper used, and the piece reports no
+height, counterpoise or modelling.
+
+So the 71 ft result here is novel rather than a restatement of known
+criticism, which is a reason to hold it more loosely, not less: it rests
+on one sweep with an unswept return height worth up to 4.6x and
+segmentation unconverged at 13 percent.
+
 **119 ft fails the other way.**  At vf 1.00 it is *more* clear of the
 80 m half wave than at 0.95, 9.3 percent against 4.5, yet NEC still
 gives SWR 13.6 there.  It is not near a half wave; it is carrying large
