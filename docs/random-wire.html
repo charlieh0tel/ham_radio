@@ -2287,7 +2287,8 @@
                     your site. Where it disagrees, it is because those tables place
                     a half wave using a velocity factor of 0.95 and this model,
                     fitted against NEC, uses 1.0 &mdash; about 5% longer, which
-                    moves what counts as clear of a resonance.
+                    moves what counts as clear of a resonance. Click one to try
+                    it.
                   </div>
                   <table>
                     <thead>
@@ -2295,8 +2296,9 @@
                     </thead>
                     <tbody>
                       {publishedScores.map(({ ft, lenM, swr }) => (
-                        <tr key={ft}>
-                          <td>{fmtLen(lenM, units)}</td>
+                        <tr key={ft} className="pick"
+                            onClick={() => setWireLen(lenM)}>
+                          <td className="best-length">{fmtLen(lenM, units)}</td>
                           <td>{swr === null ? '-' : `${swr.toFixed(1)}:1`}</td>
                           <td className={swr !== null && swr <= SWR_GOOD
                             ? 'score-ok' : 'score-poor'}>
