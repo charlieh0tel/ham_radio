@@ -78,6 +78,14 @@ because the resonator includes the drop and the return path.
 
 Still open:
 
+- [ ] Decide what the classical mode's default velocity factor should be.
+      It ships 0.95, which is what the published tables assume, but the
+      fitted model runs the antenna line at 1.00 and NEC backs it: 71 ft
+      is 8.7 percent clear of the 40 m half wave at 0.95 and only 3.2
+      percent clear at 1.00, and NEC rates it accordingly.  The two modes
+      now disagree about a staple length.  Changing the default moves
+      every classical recommendation and breaks agreement with tables the
+      user can look up, so this is a judgement call, not a bug fix.
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
       percentage.  Applies to the classical mode only.
 - [ ] Expose conductor diameter, fixed at #14 AWG.  No longer blocked on

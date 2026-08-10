@@ -536,9 +536,9 @@
      * not move together across these three.
      */
     const SOILS = Object.freeze({
-      poor: { label: 'Sandy, rocky' },
-      average: { label: 'Medium soil' },
-      good: { label: 'Damp, marshy' },
+      poor: { label: 'Sandy' },
+      average: { label: 'Medium' },
+      good: { label: 'Damp' },
     });
     /** @typedef {keyof typeof SOILS} SoilKey */
     const DEFAULT_SOIL = 'average';
@@ -1925,8 +1925,9 @@
                       </button>
                     ))}
                     <div className="control-hint">
-                      Not a quality scale. Damp ground does not give a better match,
-                      it gives a sharper resonance: deeper dips and higher peaks.
+                      Sandy or rocky, medium soil, damp or marshy. Not a quality
+                      scale: damp ground does not give a better match, it gives a
+                      sharper resonance, so deeper dips and higher peaks.
                     </div>
                   </label>
                 )}

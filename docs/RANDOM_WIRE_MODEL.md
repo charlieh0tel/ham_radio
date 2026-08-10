@@ -492,6 +492,60 @@ predict.  x1.22 median is comfortably inside the severalfold spread that
 height, counterpoise and common-mode current impose on a real
 installation.
 
+## What it does to the recommendations
+
+Swapping the model moved the picks a long way, which is the change worth
+checking hardest since recommending lengths is the whole job.  At the
+page's defaults -- 30 ft up, 25 ft of return, medium soil, 9:1, the
+80/40/20/15/10 band set:
+
+| old model | new model |
+|---|---|
+| 180.0 ft (SWR 1.59) | 80.5 ft (2.02) |
+| 169.1 ft (1.61) | 151.2 ft (2.38) |
+| 116.3 ft (2.00) | 180.1 ft (2.93) |
+| 99.9 ft (2.09) | 195.2 ft (2.99) |
+| 89.9 ft (2.22) | 110.4 ft (3.56) |
+| 78.1 ft (2.28) | 126.5 ft (4.19) |
+
+Agreement with the published tables improved: the median gap from a pick
+to a published length falls from 6.5 ft to 5.5 ft, and picks landing
+within 5 ft go from 1 in 6 to 3 in 6.  The new model is also uniformly
+less optimistic, best score 2.02 against 1.59, which is what adding a
+lossy return path should do.
+
+But it rates two staples badly -- 71 ft at 6.56 where the old model said
+2.72, and 119 ft at 4.44 against 2.03 -- so both were checked against
+NEC directly rather than trusted.  **NEC agrees with the model**, and
+the two lengths fail for entirely different reasons.
+
+**71 ft is a velocity-factor casualty.**  NEC gives it SWR 10.9 on 40 m
+and 5.6 on 20 m at the default site.  A published table dodges
+`n * lambda/2` computed at vf 0.95, which puts the 40 m half wave at
+65.3 ft and leaves 71 ft 8.7 percent clear.  The fitted antenna line
+runs at 1.00, putting it at 68.8 ft and leaving 71 ft 3.2 percent clear;
+on 20 m the second half wave moves from 15.4 percent clear to 4.6.  So
+71 ft sits on the shoulder of a resonance on two bands at once, and the
+published tables miss it because they assume a wire slower than the one
+NEC models.
+
+That generalises uncomfortably: if the effective velocity factor is
+nearer 1.00 than 0.95, the published lengths are systematically placed
+against resonances about 5 percent too short.  Stated carefully, `vf_a`
+is a parameter of the antenna line inside a two-line model, not a
+directly measured wave speed -- but NEC confirms the behaviour it
+predicts at 71 ft without reference to the fit.
+
+**119 ft fails the other way.**  At vf 1.00 it is *more* clear of the
+80 m half wave than at 0.95, 9.3 percent against 4.5, yet NEC still
+gives SWR 13.6 there.  It is not near a half wave; it is carrying large
+reactance, which a keep-out on `n * lambda/2` cannot see by
+construction.  This is the "continuous cost instead of a binary
+keep-out" gain, appearing in a real case.
+
+84 ft checks out on both counts -- NEC 7.7 / 2.0 / 1.3 / 1.5 / 3.0 --
+and the new model's best pick of 80.5 ft sits beside it.
+
 ## Known unchecked
 
 Things the numbers above rest on that were never tested, kept here so
@@ -522,11 +576,13 @@ sloper is at least as common as a flat top for a random wire.
 **The page has not been opened in a browser.**  The type check passes,
 which is not the same as the controls rendering or the sliders working.
 
-**The recommended lengths were never compared before and after the model
-changed.**  Recommending lengths is what the page is for, and swapping
-the model is exactly the change that could move them.  The old model's
-picks were checked against published tables; the new one's have not
-been.
+**The classical mode still defaults to vf 0.95.**  The impedance mode's
+71 ft result says that figure places the resonances about 5 percent too
+short, so the two modes now disagree about which lengths are safe, and
+the classical one agrees with the published tables partly by sharing
+their assumption.  Changing its default would move every classical
+recommendation and break agreement with tables the user can look up, so
+it is a decision rather than a fix.
 
 ## What the model deliberately does not do
 
