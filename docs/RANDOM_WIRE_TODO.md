@@ -56,8 +56,13 @@ dependencies.
 
 ### Status
 
-Done: the page now carries both methods behind a Method toggle
-(`?mode=`), classical by default.  The impedance mode scores every
+Done: the page carries both methods behind a Method toggle (`?mode=`),
+classical by default.  The default moved to impedance while that model
+was being fitted and has moved back: the impedance mode carries an
+EXPERIMENTAL ribbon and a list of caveats -- an unswept return height
+that outweighs everything the model does fit, unconverged segmentation,
+and a disagreement with the published tables over staple lengths -- that
+a default should not be quietly wearing.  The impedance mode scores every
 length by the geometric mean of the modelled SWR at the radio and
 offers the local minima.  A worst-case score was tried first and
 discarded: the lowest band always sets it, so it collapses into "prefer
