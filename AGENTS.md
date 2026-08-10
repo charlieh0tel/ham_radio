@@ -54,7 +54,7 @@
   identifier.
 - No trailing whitespace.
 - Do not add dependencies without discussion.
-- Run a type check (if appropripate), a syntax check and a style check
+- Run a type check (if appropriate), a syntax check and a style check
   before committing.
 
 
@@ -81,8 +81,12 @@
 - Use template literals over string concatenation.
 - Type every function parameter and return with JSDoc; the checker below
   runs under `strict`, so an unannotated parameter is an error.
-- Name the unit in the type, not only in the identifier: `Feet`,
-  `KiloHertz`, `MegaHertz` are declared as aliases in `random-wire.html`.
+- Name the unit in the type, not only in the identifier: `Meters` and
+  `Hertz` are declared as aliases in `random-wire.html`.  These are
+  plain `@typedef {number}` aliases, so they document intent but do not
+  enforce it: `tsc` sees them as `number` and will not catch metres
+  added to hertz.  Treat them as naming discipline, not a type system.
 - Use `npm` (the committed `package-lock.json`) for dependency management.
-- Run `npm run lint` (Biome) after changes and before commits.
-- Run tests with `npm test` (Vitest).
+- Type check with `npm --prefix docs/tools run check` after changes,
+  before committing and before pushing.  There is no separate linter or
+  test runner for the web pages today.
