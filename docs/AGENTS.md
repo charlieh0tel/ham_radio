@@ -50,8 +50,30 @@ matches the HTML. `tsc` then checks it with `checkJs` and `strict`.
 
 The check must pass before committing and before pushing. A `pre-push`
 hook is in `githooks/`; enable it with
-`git config core.hooksPath githooks`. CI runs the same command on any
+`git config core.hooksPath githooks`. CI runs the same commands on any
 push or PR touching `docs/`.
+
+## Tests
+
+`docs/tools/model.test.mjs` exercises the DOM-free half of
+`random-wire.html` -- the band tables, the length arithmetic, the
+impedance model and the formatters -- under `node --test`, with no test
+framework beyond the one built into node.
+
+```sh
+npm --prefix docs/tools test
+```
+
+The page marks that half with `// BEGIN PURE` and `// END PURE`.
+`tools/extract-model.mjs` pulls the region between them into a module and
+appends an export list, so the tests run the shipped code rather than a
+copy. Keep the region free of React, `window` and `document`: a DOM
+reference in there breaks the tests, which is the point of the markers.
+
+The type check proves the page compiles; it cannot prove the page
+computes. It typed cleanly while the impedance mode drew half-wave
+lengths at one velocity factor and scored against another. Both checks
+must pass before committing and before pushing.
 
 ## Before Committing
 

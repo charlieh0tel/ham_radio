@@ -1,4 +1,4 @@
-name: docs typecheck
+name: docs checks
 
 on:
   push:
@@ -24,4 +24,6 @@ jobs:
       - run: npm ci
         working-directory: docs/tools
       - run: npm run check
+        working-directory: docs/tools
+      - run: npm test
         working-directory: docs/tools

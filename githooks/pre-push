@@ -1,5 +1,6 @@
 #!/bin/sh
-# Type check the docs/ pages before a push, since pushing master deploys them.
+# Check the docs/ pages before a push, since pushing master deploys them.
+# The type check proves they compile; the tests prove the model computes.
 # Enable with: git config core.hooksPath githooks
 
 set -e
@@ -12,3 +13,4 @@ if [ ! -d "$repo_root/docs/tools/node_modules" ]; then
 fi
 
 npm --prefix "$repo_root/docs/tools" run --silent check
+npm --prefix "$repo_root/docs/tools" test --silent

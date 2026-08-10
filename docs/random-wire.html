@@ -382,6 +382,11 @@
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef } = React;
 
+    // BEGIN PURE
+    // Everything to END PURE is free of React, window and document, so
+    // tools/extract-model.mjs can pull it out and run it under node for the
+    // tests.  Keep it that way: a DOM reference in here breaks `npm test`.
+
     // ============================================================
     // Constants
     // ============================================================
@@ -1439,6 +1444,8 @@
       const ideal = spanDisplay / TARGET_TICKS;
       return TICK_STEPS.find(step => step >= ideal) ?? TICK_STEPS[TICK_STEPS.length - 1];
     };
+
+    // END PURE
 
     // ============================================================
     // URL state
