@@ -40,7 +40,13 @@ OUTPUT = "return_height_sweep.npz"
 
 
 def zin(
-    length_m, freq_hz, height_m, return_len_m, return_height_m, radius_m=WIRE_RADIUS_M
+    length_m,
+    freq_hz,
+    height_m,
+    return_len_m,
+    return_height_m,
+    radius_m=WIRE_RADIUS_M,
+    soil=SOIL,
 ):
     """Feedpoint Z with the return run at an arbitrary height.
 
@@ -90,7 +96,7 @@ def zin(
         1,
     )
     ctx.geometry_complete(1)
-    eps, sigma = GROUNDS[SOIL]
+    eps, sigma = GROUNDS[soil]
     ctx.gn_card(2, 0, eps, sigma, 0, 0, 0, 0)
     ctx.ex_card(0, 1, 1, 0, 1.0, 0, 0, 0, 0, 0)
     ctx.fr_card(0, 1, freq_hz / 1e6, 0)

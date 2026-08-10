@@ -30,6 +30,14 @@
      * 45 degrees and made wide enough that its ends are clipped away, which
      * is what gives the mitred look without drawing the triangle.
      */
+    /* Preset buttons sitting under a slider, e.g. the return-path lengths. */
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
     .ribbon {
       position: fixed;
       top: 0;
@@ -1727,6 +1735,20 @@
         return 2 * halfWaveM(lowestHz, velocityFactor);
       }, [region, bands, segment, velocityFactor]);
 
+      /**
+       * A quarter wave at the lowest selected band, which is the counterpoise
+       * length the ARRL specifies, offered as a preset beside the typical
+       * coax run.  Null when no band is selected, or when a quarter wave is
+       * longer than the control can express.
+       */
+      const [lowestBandM, quarterWaveReturnM] = useMemo(() => {
+        const selected = bandsIn(region).filter(b => bands.includes(b.m));
+        if (selected.length === 0) return [0, null];
+        const lowest = selected.reduce((a, b) => (a.m > b.m ? a : b));
+        const quarterM = halfWaveM(bandEdgesHz(lowest, segment)[0], MODEL_VF_A) / 2;
+        return [lowest.m, quarterM > RETURN_RANGE_M.max ? null : quarterM];
+      }, [region, bands, segment]);
+
       // units is a dependency because a recommended length is rounded to a
       // round number in whatever unit it will be read in.
       const solution = useMemo(
@@ -1951,11 +1973,25 @@
                            onChange={(e) => set({
                              returnM: clamp(Number(e.target.value),
                                             RETURN_RANGE_M) })} />
+                    <div className="preset-row">
+                      <button className="btn preset-btn"
+                              onClick={() => set({ returnM: DEFAULT_RETURN_M })}>
+                        25 ft coax
+                      </button>
+                      {quarterWaveReturnM !== null && (
+                        <button className="btn preset-btn"
+                                onClick={() => set({ returnM: quarterWaveReturnM })}>
+                          &#955;/4 on {lowestBandM} m
+                        </button>
+                      )}
+                    </div>
                     <div className="control-hint">
                       Coax run back to the shack, or the counterpoise wire you throw
                       out. It resonates in its own right: when the drop plus this run
                       nears a half wave it sets the feedpoint and wire length stops
-                      helping.
+                      helping. A quarter wave at your lowest band is the ARRL's
+                      counterpoise figure, and a long one flattens the curve: get it
+                      right and the wire length matters less.
                     </div>
                   </label>
                 )}

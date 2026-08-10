@@ -2,5 +2,6 @@
 sweep.npz
 gauge_sweep.npz
 return_height_sweep.npz
+unified_sweep.npz
 uv.lock
 __pycache__/
