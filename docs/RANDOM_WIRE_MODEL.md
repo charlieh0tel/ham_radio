@@ -804,6 +804,33 @@ but a second radiator with its own current distribution, which wants a
 genuinely coupled two-port rather than one number scaling
 `sqrt(Za Zr)`.  That is a different model, not a term on this one.
 
+## The two modes against each other
+
+The classical keep-out is a proxy for the impedance spike, so the two
+methods should agree about which lengths are bad.  Tested in
+`docs/tools/model.test.mjs`, holding both at `MODEL_VF_A` so the
+5 percent velocity-factor offset does not stand in for a real
+disagreement.
+
+They do agree, on both checks that can be made directly.  Every peak the
+impedance model draws across 2 to 60 m falls inside a zone the classical
+rule marks out.  And scoring a length grid, the lengths the rule rejects
+score worse at the median than the ones it accepts, which is the proxy
+being sound: two independent methods, one arithmetic on wavelength and
+one a fitted impedance model, ranking the same lengths the same way.
+
+The third check needed qualifying, and the reason is the better
+argument for the impedance mode than anything in the original list of
+gains.  Ask for four bands at the default 8 percent margin and the
+classical zones cover 71.5 m of a 60 m axis -- more than all of it, once
+overlaps are counted -- leaving a widest usable span of 2.4 m.  Every
+length is in a zone, so "avoid resonance" has stopped being advice.  The
+impedance mode still ranks them, because a continuous cost can say
+*which* compromise is least bad where a binary keep-out can only say no.
+
+That is now pinned by a test, so the saturation cannot quietly become a
+solution space again.
+
 ## References
 
 Sources for the published length tables this page is measured against,

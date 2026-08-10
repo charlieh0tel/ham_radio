@@ -403,3 +403,124 @@ test('the fitted coefficients are physically plausible', () => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// The two modes against each other
+// ---------------------------------------------------------------------------
+//
+// The classical keep-out is a proxy: those lengths are bad because the
+// feedpoint impedance spikes there.  The impedance mode drops the proxy and
+// models the spike.  So the two should agree about where the bad lengths are,
+// and where they disagree it should be for a reason that can be named.
+//
+// The comparison is made at MODEL_VF_A throughout.  The modes ship with
+// different velocity factors, which offsets every zone by about 5 percent;
+// that difference is a live decision recorded in RANDOM_WIRE_TODO.md, and
+// holding it fixed here is what lets these tests speak to anything else.
+
+const AT_MODEL_VF = { region: 'us', segment: 'full', marginPct: 8 };
+
+test('the classical avoid zones bracket the modelled impedance peaks', () => {
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const bandM = 20;
+  const band = m.bandsIn(AT_MODEL_VF.region).find(b => b.m === bandM);
+  const [loHz, hiHz] = m.bandEdgesHz(band, AT_MODEL_VF.segment);
+  const midHz = (loHz + hiHz) / 2;
+
+  const zones = m.avoidIntervals([band], AT_MODEL_VF.segment, m.MODEL_VF_A,
+    AT_MODEL_VF.marginPct, 60);
+  assert.ok(zones.length > 0, 'the rule marks something out');
+
+  // Every peak the model draws should fall inside a zone the rule marks.
+  const peaks = [];
+  let previous = null;
+  let rising = false;
+  for (let lenM = 2; lenM <= 60; lenM += 0.02) {
+    const z = m.endFedZin(lenM, midHz, site, m.WIRE_RADIUS_M);
+    const mag = Math.hypot(z.re, z.im);
+    if (previous !== null) {
+      if (mag > previous) rising = true;
+      else if (rising) { peaks.push(lenM - 0.02); rising = false; }
+    }
+    previous = mag;
+  }
+  assert.ok(peaks.length >= 3, `found ${peaks.length} peaks to check`);
+  for (const peak of peaks) {
+    const covered = zones.some(zone => peak >= zone.lo && peak <= zone.hi);
+    assert.ok(covered, `peak at ${peak.toFixed(2)} m falls in an avoid zone`);
+  }
+});
+
+test('lengths the classical rule rejects score worse than ones it accepts', () => {
+  // The two methods are independent: one is arithmetic on wavelength, the
+  // other a fitted impedance model.  If the proxy is sound they should rank
+  // the same lengths the same way.
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const bandsM = [40, 20, 15];
+  const bands = m.bandsIn(AT_MODEL_VF.region).filter(b => bandsM.includes(b.m));
+  const zones = m.avoidIntervals(bands, AT_MODEL_VF.segment, m.MODEL_VF_A,
+    AT_MODEL_VF.marginPct, 60);
+
+  const inside = [];
+  const outside = [];
+  for (let lenM = 8; lenM <= 45; lenM += 0.25) {
+    const scored = m.scoreLength(lenM, bands, AT_MODEL_VF.segment, site,
+      m.WIRE_RADIUS_M, 9);
+    const hit = zones.some(zone => lenM >= zone.lo && lenM <= zone.hi);
+    (hit ? inside : outside).push(scored.swr);
+  }
+  assert.ok(inside.length > 5 && outside.length > 5, 'both sets are populated');
+
+  const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+  assert.ok(median(inside) > median(outside),
+    `rejected lengths score worse: ${median(inside).toFixed(2)} ` +
+    `against ${median(outside).toFixed(2)}`);
+});
+
+test('the two modes recommend lengths that are mutually acceptable', () => {
+  // The strongest form: what one method offers, the other should not have
+  // ruled out.  Checked on a band set where the classical rule still has room
+  // to have an opinion -- see the saturation test below for why that
+  // qualifier is needed rather than a way of ducking the comparison.
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const bandsM = [40, 20];
+  const bands = m.bandsIn(AT_MODEL_VF.region).filter(b => bandsM.includes(b.m));
+  const zones = m.avoidIntervals(bands, AT_MODEL_VF.segment, m.MODEL_VF_A,
+    AT_MODEL_VF.marginPct, 60);
+
+  const impedance = m.solveImpedance(AT_MODEL_VF.region, bandsM,
+    AT_MODEL_VF.segment, site, m.WIRE_RADIUS_M, 9, 60);
+  assert.ok(impedance.suggestions.length > 0, 'the impedance mode offers something');
+  for (const pick of impedance.suggestions) {
+    const hit = zones.find(zone => pick.lenM >= zone.lo && pick.lenM <= zone.hi);
+    assert.ok(hit === undefined,
+      `impedance pick ${pick.lenM.toFixed(2)} m is not in a classical avoid zone`);
+  }
+});
+
+test('the classical rule saturates once enough bands are asked for', () => {
+  // Not a failure of either method, but the reason the mutual-acceptability
+  // check above is qualified, and an argument for the impedance mode: with
+  // four bands at the default margin the keep-out zones cover more than the
+  // whole axis, so every length is in one and "avoid resonance" stops being
+  // advice.  A continuous cost still ranks them; a binary rule cannot.
+  const bands = m.bandsIn('us').filter(b => [40, 20, 15, 10].includes(b.m));
+  const zones = m.avoidIntervals(bands, 'full', m.MODEL_VF_A, 8, 60);
+  const covered = zones.reduce((sum, z) => sum + (z.hi - z.lo), 0);
+  assert.ok(covered > 60, `zones cover ${covered.toFixed(1)} m of a 60 m axis`);
+
+  const solved = m.solve('us', [40, 20, 15, 10], 'full', m.MODEL_VF_A, 8, 60, 'ft');
+  const widest = Math.max(...solved.usable.map(u => u.hi - u.lo));
+  assert.ok(widest < 5, `widest usable span is only ${widest.toFixed(2)} m`);
+
+  // The impedance mode still returns a ranking over the same input.
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const scored = m.solveImpedance('us', [40, 20, 15, 10], 'full', site,
+    m.WIRE_RADIUS_M, 9, 60);
+  assert.ok(scored.suggestions.length > 0,
+    'the impedance mode still has an opinion where the rule has none');
+});
