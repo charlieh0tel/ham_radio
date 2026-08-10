@@ -393,6 +393,57 @@ bound, over 96 groups:
 The `alpha_r` and `vf_r` corners are still not measurements and should
 not be read as any.
 
+## Error bound
+
+The bound the caveat text should carry.  Taken over 96 groups, each
+fitted across 159 lengths and 7 return lengths.
+
+**For `h/lambda >= 0.05`: `|Z|` within x1.35 worst case, x1.28 at the
+90th percentile, x1.22 median; phase within 17 degrees at the 90th
+percentile.**  That covers 81 of the 96 groups and every soil, the
+worst soil being `good` at x1.35.
+
+What `h/lambda >= 0.05` means in practice, since the user sets height in
+feet and not wavelengths:
+
+| band | height above which the bound holds |
+|---|---|
+| 160 m | 26 ft |
+| 80 m | 13 ft |
+| 40 m | 7 ft |
+| 20 m and up | 4 ft or less |
+
+**Below `h/lambda = 0.05` the bound degrades to x2.3.**  In practice
+that is 160 m and 80 m with a low wire.  It is not a region to refuse to
+answer in, but it is one where the number on screen should be visibly
+hedged.
+
+Two hypotheses were tried against that low region and both failed, which
+is worth recording so they are not tried again:
+
+- **End effect**, a susceptance terminating the open end.  Fitted to
+  zero in all 96 groups, largest 0.004.
+- **A height-dependent `Z0`**, blending Schelkunoff's isolated-wire
+  figure with the wire-over-image value `60 ln(2h/a)` by an effective
+  length, on the theory that whichever return conductor is nearer sets
+  `Z0`.  Median x1.220 against x1.225, low region x1.272 against x1.295,
+  and the worst case got *worse*.  A wash.
+
+The residual that remains is structured in antenna length rather than
+return length -- flat against return length, but running from +1.09 in
+log magnitude at short lengths to -0.57 at three wavelengths, with an
+oscillation peaking near the odd quarter waves.  So it is not the mutual
+coupling finding 7 predicted; that attribution was wrong.  Something in
+how loss scales with length is still unmodelled.
+
+Chasing it further is not obviously worth it.  The remaining error lives
+in six groups at `h/lambda < 0.02`, which is 160 m with a wire 6 to 16 ft
+up over poor soil -- a marginal antenna whose real behaviour is
+dominated by the installation variance this model already refuses to
+predict.  x1.22 median is comfortably inside the severalfold spread that
+height, counterpoise and common-mode current impose on a real
+installation.
+
 ## What the model deliberately does not do
 
 - Predict a specific installation's feedpoint impedance.

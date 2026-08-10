@@ -129,24 +129,22 @@ Results ship as constants and caveat text, never as code.
 
 - [x] Decide-first experiment.  Done, and the disagreement is material.
       Findings below.
-- [ ] **Next.** Fit the model properly: sweep NEC over the dimensionless
-      ratios `l/lambda`, `a/lambda` and `h/lambda`, the return-path
-      length, and a ground model, then fit `alpha`, a series loss term
-      *and* `beta` so both ends land at once.  Today a single anchor
-      fixes both: pinning one end forces the other to about
-      `Z0^2 / (2 R)`, so the model cannot be right at a quarter wave and
-      a half wave simultaneously.  `beta` joins the fit because measured
-      reactance at the half wave is nowhere near zero (finding 3).
-      The return path gets a dedicated resonance term rather than a
-      correction folded into `alpha`: finding 4 shows it setting the
-      feedpoint outright when (drop + run) nears a half wave, which a
-      smooth coefficient surface cannot represent.
-      Ship fitted coefficients, not code: numeric output is not covered
-      by the producing program's licence, which keeps GPLv3 nec2c out
-      of this MIT repo.
-- [ ] Bound the error across the parameter space.  That bound becomes
-      the caveat on the plot, e.g. "within ~2x over 20-60 ft, 1-30 MHz,
-      15-30 ft high".
+- [x] Fit the model properly.  Done, `nec/random_wire/fit.py`: two lines
+      in series, the antenna and the return, each with its own `alpha`,
+      `beta` and `Z0` scale.  Both ends land at once, so the anchor
+      problem is gone -- no single anchor forces the other end to
+      `Z0^2 / (2 R)` any more.  `beta` is fitted rather than assumed,
+      and the return has its own resonance rather than a correction
+      folded into `alpha`.
+      Coefficients ship, not code, because the page has no business
+      solving a NEC model in the browser.  The modeller itself lives in
+      the repo; see the licence note in `nec/random_wire/README.md` for
+      why that is not a GPL problem.
+- [x] Bound the error across the parameter space.  Done: |Z| within
+      x1.35 worst case for `h/lambda >= 0.05`, degrading to x2.3 below
+      that, which is 160 m and 80 m with a low wire.  See the error
+      bound section of `RANDOM_WIRE_MODEL.md` for the per-band heights
+      and for two hypotheses that failed to improve the low region.
 
 Measured results are in `RANDOM_WIRE_MODEL.md`, under "What NEC
 measured".  The findings referenced by number above and below live
