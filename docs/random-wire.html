@@ -1088,6 +1088,26 @@
     };
 
     /**
+     * Round a length to the roundest number that is still within half a step
+     * of it, in the unit the user is reading.  Unlike pickInSpan there is no
+     * span to stay inside, so the constraint is closeness instead.
+     *
+     * @param {Meters} lenM
+     * @param {UnitKey} units
+     * @returns {Meters}
+     */
+    const roundToUnit = (lenM, units) => {
+      const display = toDisplay(lenM, units);
+      for (const step of PICK_STEPS) {
+        const rounded = Math.round(display / step) * step;
+        if (Math.abs(rounded - display) <= step / 2) {
+          return fromDisplay(Number(rounded.toFixed(2)), units);
+        }
+      }
+      return lenM;
+    };
+
+    /**
      * A length to recommend inside a usable span: the roundest number that
      * still lies strictly inside it.  Rounding to a fixed precision would push
      * the pick onto, or past, the edge of a span narrower than that precision,
@@ -1461,11 +1481,12 @@
      * @param {Meters} radiusM
      * @param {number} ununRatio
      * @param {Meters} maxLenM
+     * @param {UnitKey} units
      * @returns {{bands: Band[], curve: ScorePoint[], suggestions: ScorePoint[],
      *            shortLimit: Meters}}
      */
     const solveImpedance = (region, bandsM, segment, site, radiusM,
-                            ununRatio, maxLenM) => {
+                            ununRatio, maxLenM, units) => {
       const bands = bandsIn(region).filter(b => bandsM.includes(b.m));
       // The impedance mode does not take a velocity factor; the fitted model
       // carries its own, so the short limit uses the same one.
@@ -1482,10 +1503,29 @@
         if (scored) curve.push({ lenM, swr: scored.swr, worst: scored.worst });
       }
 
-      const suggestions = curve
-        .filter((point, i) => i > 0 && i < curve.length - 1
-          && point.swr < curve[i - 1].swr && point.swr <= curve[i + 1].swr
-          && point.lenM >= shortLimit)
+      // A minimum lands wherever the sample grid happens to fall, so the raw
+      // length is an artefact of SCORE_SAMPLES rather than a figure anyone
+      // should cut wire to.  Round it the way the classical mode does, then
+      // score the rounded length, so the number shown and the SWR beside it
+      // describe the same wire.  Two minima can round together, in which case
+      // the better one wins.
+      /** @type {Map<number, ScorePoint>} */
+      const byLength = new Map();
+      for (let i = 1; i < curve.length - 1; i++) {
+        const point = curve[i];
+        if (point.swr >= curve[i - 1].swr || point.swr > curve[i + 1].swr) continue;
+        if (point.lenM < shortLimit) continue;
+        const lenM = roundToUnit(point.lenM, units);
+        if (lenM < shortLimit) continue;
+        const scored = scoreLength(lenM, bands, segment, site, radiusM, ununRatio);
+        if (!scored) continue;
+        const existing = byLength.get(lenM);
+        if (existing === undefined || scored.swr < existing.swr) {
+          byLength.set(lenM, { lenM, swr: scored.swr, worst: scored.worst });
+        }
+      }
+
+      const suggestions = [...byLength.values()]
         .sort((a, b) => a.swr - b.swr)
         .slice(0, MAX_SUGGESTIONS);
       return { bands, curve, suggestions, shortLimit };
@@ -1874,9 +1914,9 @@
       const score = useMemo(
         () => (mode === 'impedance'
           ? solveImpedance(region, bands, segment, site, WIRE_RADIUS_M,
-                           ununRatio, maxLenM)
+                           ununRatio, maxLenM, units)
           : null),
-        [mode, region, bands, segment, site, ununRatio, maxLenM]);
+        [mode, region, bands, segment, site, ununRatio, maxLenM, units]);
 
       /**
        * The published table lengths, scored by the model, so a length the

@@ -125,7 +125,7 @@ test('suggested lengths are ordered, distinct and long enough', () => {
   const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
     soil: m.DEFAULT_SOIL };
   const out = m.solveImpedance('us', [80, 40, 20, 15, 10], 'full', site,
-    m.WIRE_RADIUS_M, 9, 60);
+    m.WIRE_RADIUS_M, 9, 60, 'ft');
   assert.ok(out.suggestions.length > 0, 'something is suggested');
   for (let i = 1; i < out.suggestions.length; i++) {
     assert.ok(out.suggestions[i].swr >= out.suggestions[i - 1].swr,
@@ -140,7 +140,8 @@ test('suggested lengths are ordered, distinct and long enough', () => {
 test('no bands selected yields no suggestions rather than throwing', () => {
   const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
     soil: m.DEFAULT_SOIL };
-  const out = m.solveImpedance('us', [], 'full', site, m.WIRE_RADIUS_M, 9, 30);
+  const out = m.solveImpedance('us', [], 'full', site, m.WIRE_RADIUS_M, 9, 30,
+    'ft');
   assert.deepEqual(out.suggestions, []);
   assert.deepEqual(out.curve, []);
 });
@@ -492,7 +493,7 @@ test('the two modes recommend lengths that are mutually acceptable', () => {
     AT_MODEL_VF.marginPct, 60);
 
   const impedance = m.solveImpedance(AT_MODEL_VF.region, bandsM,
-    AT_MODEL_VF.segment, site, m.WIRE_RADIUS_M, 9, 60);
+    AT_MODEL_VF.segment, site, m.WIRE_RADIUS_M, 9, 60, 'ft');
   assert.ok(impedance.suggestions.length > 0, 'the impedance mode offers something');
   for (const pick of impedance.suggestions) {
     const hit = zones.find(zone => pick.lenM >= zone.lo && pick.lenM <= zone.hi);
@@ -520,7 +521,7 @@ test('the classical rule saturates once enough bands are asked for', () => {
   const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
     soil: m.DEFAULT_SOIL };
   const scored = m.solveImpedance('us', [40, 20, 15, 10], 'full', site,
-    m.WIRE_RADIUS_M, 9, 60);
+    m.WIRE_RADIUS_M, 9, 60, 'ft');
   assert.ok(scored.suggestions.length > 0,
     'the impedance mode still has an opinion where the rule has none');
 });
@@ -582,6 +583,33 @@ test('every offered band lies inside the fitted frequency range', () => {
         assert.ok(hi <= m.MODEL_FIT_RANGE_HZ.max,
           `${region} ${band.label} ${segment} ends at ${hi} Hz, above the fit`);
       }
+    }
+  }
+});
+
+test('impedance suggestions are round numbers whose score matches the length', () => {
+  // A raw local minimum lands wherever the sample grid falls, so it is an
+  // artefact of SCORE_SAMPLES rather than a length to cut wire to.  Each
+  // suggestion must round in the display unit and carry the score of the
+  // rounded length, not of the sample it came from.
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const bandsM = [40, 20, 15, 10];
+  for (const units of Object.keys(m.UNITS)) {
+    const out = m.solveImpedance('us', bandsM, 'full', site, m.WIRE_RADIUS_M,
+      9, 60, units);
+    assert.ok(out.suggestions.length > 0, `${units}: something is suggested`);
+    const seen = new Set();
+    for (const pick of out.suggestions) {
+      const display = m.toDisplay(pick.lenM, units);
+      close(display, Math.round(display * 100) / 100, 1e-9,
+        `${units}: ${display} is round in the display unit`);
+      assert.ok(!seen.has(pick.lenM), `${units}: no duplicate after rounding`);
+      seen.add(pick.lenM);
+      const rescored = m.scoreLength(pick.lenM, out.bands, 'full', site,
+        m.WIRE_RADIUS_M, 9);
+      close(pick.swr, rescored.swr, 1e-9,
+        `${units}: the quoted SWR is the rounded length's own`);
     }
   }
 });
