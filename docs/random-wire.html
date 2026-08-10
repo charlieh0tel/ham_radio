@@ -1926,6 +1926,26 @@
               </div>
 
               <div className="panel">
+                <div className="panel-header">Display</div>
+                <label className="control-label">
+                  Units:{' '}
+                  {entriesOf(UNITS).map(([key, def]) => (
+                    <button key={key}
+                            className={`btn preset-btn ${units === key ? 'active' : ''}`}
+                            aria-pressed={units === key}
+                            onClick={() => set({ units: key })}>
+                      {def.label}
+                    </button>
+                  ))}
+                  <div className="control-hint">
+                    Lengths are calculated in metres and shown in this unit; a
+                    recommended length is rounded to a round number of whatever
+                    you are reading.
+                  </div>
+                </label>
+              </div>
+
+              <div className="panel">
                 <div className="panel-header">Assumptions</div>
                 {mode === 'impedance' && (
                   <div className="control-hint" style={{ marginBottom: '10px' }}>
@@ -2064,25 +2084,6 @@
                 )}
               </div>
 
-              <div className="panel">
-                <div className="panel-header">Display</div>
-                <label className="control-label">
-                  Units:{' '}
-                  {entriesOf(UNITS).map(([key, def]) => (
-                    <button key={key}
-                            className={`btn preset-btn ${units === key ? 'active' : ''}`}
-                            aria-pressed={units === key}
-                            onClick={() => set({ units: key })}>
-                      {def.label}
-                    </button>
-                  ))}
-                  <div className="control-hint">
-                    Lengths are calculated in metres and shown in this unit; a
-                    recommended length is rounded to a round number of whatever
-                    you are reading.
-                  </div>
-                </label>
-              </div>
 
             </div>
 
