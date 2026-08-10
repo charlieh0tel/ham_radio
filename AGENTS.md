@@ -50,6 +50,8 @@
   unit conversions (degrees/radians, MHz/Hz).
 - No trailing whitespace.
 - Do not add dependencies without discussion.
+- Run a type check (if appropripate), a syntax check and a style check
+  before committing.
 
 
 ## Python
@@ -65,3 +67,18 @@
 - Run `cargo clippy` after major changes and before commits.
 - Use relative imports.
 - CLI code can use anyhow!  library code must *not* use anyhow!
+
+
+## TypeScript Rules
+
+- Write clean, readable JavaScript. Use modern ES6+ patterns and style;
+  `const`/`let`, never `var`.
+- Consistent 2-space indentation.
+- Use template literals over string concatenation.
+- Type every function parameter and return with JSDoc; the checker below
+  runs under `strict`, so an unannotated parameter is an error.
+- Name the unit in the type, not only in the identifier: `Feet`,
+  `KiloHertz`, `MegaHertz` are declared as aliases in `random-wire.html`.
+- Use `npm` (the committed `package-lock.json`) for dependency management.
+- Run `npm run lint` (Biome) after changes and before commits.
+- Run tests with `npm test` (Vitest).

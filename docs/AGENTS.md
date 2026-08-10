@@ -19,12 +19,6 @@ self-contained tool per page:
 
 ## Code Style
 
-- Write clean, readable JavaScript. Use modern ES6+ patterns and style;
-  `const`/`let`, never `var`.
-- Consistent 2-space indentation.
-- Use template literals over string concatenation.
-- Type every function parameter and return with JSDoc; the checker below
-  runs under `strict`, so an unannotated parameter is an error.
 - Name the unit in the type, not only in the identifier: `Feet`,
   `KiloHertz`, `MegaHertz` are declared as aliases in `random-wire.html`.
 - Do not annotate a lookup table with `Object<string, ...>`. That widens
