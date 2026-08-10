@@ -173,10 +173,11 @@ Scatter comparable to the difference itself falsifies it and means the
 two are coupled, in which case the return resonance must enter
 multiplicatively or through the antenna's own `alpha`.
 
-There is reason to doubt H1 in advance: when (drop + run) nears a half
-wave, the return does not merely add to the feedpoint, it swamps it and
-flattens the antenna-length dependence entirely.  Pure series addition
-would not destroy the antenna's contribution that way.
+Measured, H1 holds: see finding 7.  Note that the swamping in finding 4
+is *evidence for* additivity rather than against it.  When `Zr`
+dominates `Za`, their sum is `Zr`, which is exactly the flat
+antenna-length dependence observed.  An earlier draft of this note had
+that backwards.
 
 ## What NEC measured
 
@@ -243,9 +244,32 @@ All figures at 14.2 MHz, #14 AWG.
    the three standard soils.  Low heights are worth getting right:
    improvised wires of this sort get hung low.
 
-The structural lesson under all six is the geometry section above:
+7. **The return path is additive, to about 20 percent.**  From the full
+   sweep, 106848 points over 4 frequencies, 8 heights, 7 return lengths,
+   3 soils and 159 lengths from 0.05 to 4 wavelengths, with no failed
+   solves.  Testing H1 across 72 combinations of frequency, height, soil
+   and return-length pair, the scatter of `Zin(ret_b) - Zin(ret_a)`
+   across antenna length, relative to the size of that difference:
+
+   | | residual |
+   |---|---|
+   | median | 0.20 |
+   | under 0.35 | 89 percent of cases |
+   | over 0.5 | 6 percent of cases |
+
+   So the return path earns a separate additive term, and the antenna
+   and the return can be fitted independently.  The residual is
+   uniform with height in the typical case -- median 0.17 at 10 m, 0.18
+   at 20 m, 0.22 at 3 m -- but its tail is entirely at low height, where
+   it reaches 0.89 against 0.25 for `h >= 10 m`.  Mutual coupling
+   between the wire and its return is what H1 neglects, and that is
+   strongest when the two are close together.  A coupling correction
+   growing as `h/lambda` falls is the shape to fit.
+
+The structural lesson under the first six is the geometry section above:
 feedpoint impedance is set by the whole conductor geometry, not the
-antenna wire alone.
+antenna wire alone.  Finding 7 says that geometry decomposes, which is
+what makes it tractable.
 
 ## What the model deliberately does not do
 
