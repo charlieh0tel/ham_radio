@@ -408,6 +408,14 @@ coefficients over the whole sweep, that costs almost nothing.
 x1.35 at the 90th percentile, x1.27 median.**  That covers 81 of the 96
 groups and every soil.
 
+The page quotes x1.5 rather than x1.40, because that figure is measured
+against the sweep's own four frequencies while the page evaluates at
+nine bands.  Checked at five frequencies the fit never saw -- 3.75,
+10.125, 18.118, 21.225 and 24.94 MHz -- the tabulated model runs to
+x1.47, median x1.30.  Interpolating across bands costs something, and
+the quoted bound has to cover the bands a user actually picks rather
+than the ones the sweep happened to sample.
+
 | | per-group fit | tabulated, as shipped |
 |---|---|---|
 | median | x1.22 | x1.27 |
@@ -483,6 +491,42 @@ dominated by the installation variance this model already refuses to
 predict.  x1.22 median is comfortably inside the severalfold spread that
 height, counterpoise and common-mode current impose on a real
 installation.
+
+## Known unchecked
+
+Things the numbers above rest on that were never tested, kept here so
+they are not mistaken for settled.
+
+**Segmentation is not converged.**  Every solve used 20 segments per
+wavelength, the usual accuracy rule, and that choice was never checked.
+Against 80 segments per wavelength the same geometry moves 13 percent at
+both a quarter and a half wave, 4 percent at one wavelength and 2
+percent at two.  So the x1.5 bound is measured against NEC-at-20-
+segments, not against converged NEC, and part of it is the discretisation
+rather than the model.  Convergence is also not monotonic between 40 and
+80, so the true figure is not simply "13 percent worse".
+
+**The return conductor is the same wire as the antenna.**  Both take one
+radius, so the gauge sweep moved them together.  A real coax shield is
+nearer 8 mm than 0.8 mm, a factor of ten the sweep never explored, and
+the return is the term the low-height error already lives in.
+
+**The return runs 5 cm above ground, always.**  `RETURN_HEIGHT_M` was
+picked to avoid shorting the source against the ground plane and never
+varied.  Real coax lies on the soil, or is buried, or is strung; a
+counterpoise may be well elevated.
+
+**The wire is horizontal.**  No slope, no inverted L, no sag, though a
+sloper is at least as common as a flat top for a random wire.
+
+**The page has not been opened in a browser.**  The type check passes,
+which is not the same as the controls rendering or the sliders working.
+
+**The recommended lengths were never compared before and after the model
+changed.**  Recommending lengths is what the page is for, and swapping
+the model is exactly the change that could move them.  The old model's
+picks were checked against published tables; the new one's have not
+been.
 
 ## What the model deliberately does not do
 

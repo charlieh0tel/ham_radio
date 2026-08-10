@@ -604,9 +604,14 @@
     /**
      * Height in wavelengths above which the fitted error bound holds, and the
      * bound either side of it.  Quoted in the caveat text.
+     *
+     * 1.5 rather than the 1.4 the fit reports against its own sweep: the
+     * coefficients were fitted at four frequencies and the page evaluates at
+     * nine bands, and checked against bands it never saw the model reaches
+     * 1.47.  The bound has to cover the bands the user actually picks.
      */
     const MODEL_BOUND_H_OVER_LAM = 0.05;
-    const MODEL_BOUND_FACTOR = 1.4;
+    const MODEL_BOUND_FACTOR = 1.5;
     const MODEL_BOUND_FACTOR_LOW = 2.9;
 
     /** Keeps a perfectly reflecting load from producing an infinite SWR. */
