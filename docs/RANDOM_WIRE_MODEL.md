@@ -43,12 +43,24 @@ frequency as a real axis: soil enters through its complex permittivity,
 
 ## The runtime model
 
-The feedpoint is treated as a transmission line, open at the far end:
+The page ships a single line today, open at the far end:
 
     Zin  = Z0 * coth(gamma * l)
     gamma = alpha + j*beta
     Z0   = 60 * (ln(2l/a) - 1)      # Schelkunoff, thin wire
     beta = 2*pi/lambda * velocityFactor
+
+The fitted replacement is two such lines in series at the feedpoint, the
+antenna and the return path, which is the form finding 7 licenses:
+
+    Zin = Za(l) + Zr(h + ret)
+    Za  = ka * Z0(l)       * coth((alpha_a + j*beta_a) * l)
+    Zr  = kr * Z0(h + ret) * coth((alpha_r + j*beta_r) * (h + ret))
+
+`ka` and `kr` scale each line's Schelkunoff `Z0`, which is an average
+over an isolated wire in free space and reads high once ground is
+present.  `alpha` is carried in nepers per wavelength so one number
+serves every band.
 
 Choosing this form over anything learned is deliberate.  `Zin` has
 near-poles at the half-wave resonances, and that pole structure *is* the
@@ -103,8 +115,9 @@ Split by what the user can actually measure.
 | conductor diameter | user control | fixed at #14 AWG today |
 | transformer ratio | user control | 1, 4, 9, 49, 64 |
 | `Z0` | derived | Schelkunoff, from `a` and `l` |
-| `alpha` | fitted | radiation and ground loss folded in |
-| `beta` | fitted | not assumed from a velocity factor |
+| `ka`, `kr` | fitted | `Z0` scales; ground lowers it, both near 0.75 |
+| `alpha_a`, `alpha_r` | fitted | nepers per wavelength, loss and radiation |
+| `beta_a`, `beta_r` | fitted | not assumed from a velocity factor |
 | velocity factor | derived | see below |
 
 **Velocity factor is an output, not an input.**  It is not an
@@ -280,6 +293,105 @@ The structural lesson under the first six is the geometry section above:
 feedpoint impedance is set by the whole conductor geometry, not the
 antenna wire alone.  Finding 7 says that geometry decomposes, which is
 what makes it tractable.
+
+## Fit results
+
+First fit, `nec/random_wire/fit.py`, over 96 groups of frequency by
+height by soil, each holding 159 lengths by 7 return lengths.  Residuals
+are taken on the complex logarithm: `|Zin|` spans tens of ohms to
+kilohms across a sweep, so an absolute residual would fit the peaks and
+ignore everything else, while a log residual is relative in magnitude
+and plain angular error in phase, which is what SWR responds to.
+
+| | magnitude error | phase |
+|---|---|---|
+| median | x1.22 | 10-16 deg |
+| 90th percentile | x1.32 | |
+| worst | x2.29 | 64 deg |
+
+Each line carries a scale `ka` or `kr` on its Schelkunoff `Z0`.
+Schelkunoff's figure is an average over an isolated wire in free space,
+and over ground the image lowers it; both scales come out near 0.75,
+which is that effect.  Adding `ka` alone took the median from x1.28 to
+x1.22 and the 90th percentile from x1.39 to x1.32.
+
+Tried and rejected: a susceptance terminating the open end, standing for
+end effect.  It fitted to zero in every group (median 0.000, largest
+0.004) and changed no error figure in the fourth decimal.  The five
+parameter model is nested inside that seven parameter one, so the
+comparison was fair, and end effect is simply not what the model was
+missing.  Dropped rather than kept at zero.
+
+Fitted values, with `alpha` in nepers per wavelength.  Per metre it came
+out proportional to frequency, which is only the statement that a wire
+loses a fixed fraction of its power per wavelength; per wavelength the
+numbers are comparable across bands, which is what an interpolable
+coefficient surface needs.
+
+| parameter | median | range |
+|---|---|---|
+| `alpha_a` | 0.100 | 0.038 - 0.568 |
+| `vf_a` | 1.000 | capped, see below |
+| `ka` | 0.791 | 0.612 - 1.473 |
+| `alpha_r` | 0.477 | 0.015 - 3.000 |
+| `vf_r` | 0.934 | 0.589 - 1.150 |
+| `kr` | 0.733 | 0.425 - 1.189 |
+
+Three things worth drawing out.
+
+**The antenna's velocity factor wants to be 1.0, not 0.95.**  Left free,
+`vf_a` fitted to 1.003 and drifted as high as 1.018.  That is not a wave
+outrunning light.  `vf_a` is a parameter of an equivalent line standing
+in for a radiating structure, and `beta` absorbs what the line form
+omits: `Z0` varies along a real wire where Schelkunoff's figure is an
+average, the open end is capacitively loaded, and the thing radiates.
+Capped at unity it costs 0.5 percent of median accuracy, and 75 percent
+of groups then sit against the bound -- so read the result as "1.0 or a
+little above", not as a measured phase velocity.
+
+What survives is the direction, which is the part that matters for the
+page: the wire is not propagating at 0.95.  The apparent shortening that
+0.95 was standing for is the return path in series plus `Z0` varying
+with length, both of which this model now carries explicitly.  That is
+the quantitative form of the argument that velocity factor is emergent
+rather than physical -- model the geometry and it goes away.
+
+That 75 percent of groups press against the cap is itself a signal: a
+rail-pinned parameter usually means the model form is missing something,
+here most likely the end effect and the length dependence of `Z0`.
+
+**The return path is about three times lossier than the antenna**,
+`alpha_r` 0.405 against `alpha_a` 0.126, and its characteristic
+impedance is about three quarters of the free-space thin-wire figure
+(`kr` 0.741).  Both are what a wire lying along lossy ground should do.
+
+**The error is flat with height, but its tail is not.**  Median error
+sits between x1.23 and x1.31 at every height.  The worst cases are all
+at low height -- x2.33, x2.25 and x2.19 at 2, 3 and 5 m, against x1.40
+or better everywhere at 7 m and above -- and specifically at low
+`h/lambda`, the worst being 1.9 MHz over poor ground where a 2 m height
+is 0.013 wavelengths.  This is exactly the mutual coupling finding 7
+predicted the additive model would neglect, and it is the term still to
+add.
+
+Known degeneracy, largely closed.  Before the velocity factors were
+capped, `alpha_r` ran to its bound at 28.85 MHz above 20 m while `vf_r`
+pinned at 1.15 or fell to 0.59: past roughly 3 nepers per wavelength
+`coth` saturates, the return stops behaving as a line, and the fit uses
+it as a lumped constant, which fits the data while meaning nothing.
+Capping removed that escape route.  Parameters now sitting against a
+bound, over 96 groups:
+
+| parameter | at bound |
+|---|---|
+| `alpha_a` | 0 percent |
+| `kr` | 0 percent |
+| `alpha_r` | 8 percent |
+| `vf_r` | 15 percent |
+| `vf_a` | 78 percent, by construction |
+
+The `alpha_r` and `vf_r` corners are still not measurements and should
+not be read as any.
 
 ## What the model deliberately does not do
 
