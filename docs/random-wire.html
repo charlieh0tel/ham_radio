@@ -309,6 +309,10 @@
 
     .verdict-detail { font-size: 11px; color: #aaa; line-height: 1.6; }
 
+    /* Verdict column of the published-lengths table. */
+    .score-ok { color: #009e73; }
+    .score-poor { color: #d55e00; }
+
     /* Tables */
     table {
       width: 100%;
@@ -560,6 +564,24 @@
 
     /** Number of best-length suggestions listed. */
     const MAX_SUGGESTIONS = 8;
+
+    /**
+     * Lengths the published random-wire tables offer, feet.  Scored and shown
+     * rather than quietly left out.
+     *
+     * The impedance model disagrees with some of them, 71 ft most sharply,
+     * and the disagreement is traceable: the tables place n*lambda/2 at a
+     * velocity factor of 0.95, which puts the 40 m half wave at 65.3 ft and
+     * leaves 71 ft 8.7 percent clear.  Fitted against NEC the antenna line
+     * runs at 1.0, putting it at 68.8 ft and leaving 3.2 percent, and NEC
+     * reads the SWR there accordingly.
+     *
+     * Omitting them in silence spends the page's credibility on a
+     * disagreement it can explain, so it explains it instead.  See
+     * docs/RANDOM_WIRE_MODEL.md.
+     */
+    const PUBLISHED_FT = Object.freeze(
+      [29, 35.5, 41, 58, 71, 84, 107, 119, 148, 203]);
 
     /** Below this, a length displays fine at one decimal, in display units. */
     const LEN_ROUNDING_SLOP = 0.005;
@@ -1789,6 +1811,21 @@
           : null),
         [mode, region, bands, segment, site, ununRatio, maxLenM]);
 
+      /**
+       * The published table lengths, scored by the model, so a length the
+       * page declines to recommend is visibly considered rather than absent.
+       */
+      const publishedScores = useMemo(
+        () => (mode === 'impedance' && solution.bands.length > 0
+          ? PUBLISHED_FT.map(ft => {
+            const lenM = fromDisplay(ft, 'ft');
+            const scored = scoreLength(lenM, solution.bands, segment, site,
+                                       WIRE_RADIUS_M, ununRatio);
+            return { ft, lenM, swr: scored ? scored.swr : null };
+          })
+          : []),
+        [mode, solution, segment, site, ununRatio]);
+
       /** Modelled SWR for the length in hand, for the verdict line. */
       const scoreHere = useMemo(
         () => (mode === 'impedance' && wireLenM > 0 && solution.bands.length > 0
@@ -2239,6 +2276,36 @@
                     </table>
                   )}
                   </>)}
+                </div>
+              )}
+
+              {mode === 'impedance' && publishedScores.length > 0 && (
+                <div className="panel">
+                  <div className="panel-header">Published lengths, scored</div>
+                  <div className="control-hint" style={{ marginBottom: '10px' }}>
+                    The lengths the usual tables offer, run through this model at
+                    your site. Where it disagrees, it is because those tables place
+                    a half wave using a velocity factor of 0.95 and this model,
+                    fitted against NEC, uses 1.0 &mdash; about 5% longer, which
+                    moves what counts as clear of a resonance.
+                  </div>
+                  <table>
+                    <thead>
+                      <tr><th>Length</th><th>SWR</th><th>Verdict</th></tr>
+                    </thead>
+                    <tbody>
+                      {publishedScores.map(({ ft, lenM, swr }) => (
+                        <tr key={ft}>
+                          <td>{fmtLen(lenM, units)}</td>
+                          <td>{swr === null ? '-' : `${swr.toFixed(1)}:1`}</td>
+                          <td className={swr !== null && swr <= SWR_GOOD
+                            ? 'score-ok' : 'score-poor'}>
+                            {swr === null ? '' : (swr <= SWR_GOOD ? 'ok' : 'poor')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
 

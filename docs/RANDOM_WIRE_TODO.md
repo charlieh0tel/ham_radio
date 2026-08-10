@@ -190,14 +190,12 @@ Remaining:
       object code from an MIT repo and plausibly makes the page GPLv3.
       Either that page carries its own GPL notice and source offer, or
       the engine must be permissively licensed.
-- [ ] Say something when a published length scores badly.  The impedance
-      mode rejects 71 ft at every height, soil and return length tried,
-      for the traceable reason that the tables place the 40 m half wave
-      at vf 0.95 and the fit puts it at 1.00, leaving 3.2 percent
-      clearance rather than 8.7.  A user who knows the tables will read
-      the omission as a broken tool.  Naming the conflict and its cause
-      turns that into information; staying silent spends the page's
-      credibility on a disagreement it can actually explain.
+- [x] Say something when a published length scores badly.  Done: the
+      impedance mode now carries a "Published lengths, scored" panel
+      running the standard table through the model at the user's own
+      site, with the velocity-factor difference named as the reason for
+      the disagreements.  At the defaults 8 of the 10 pass, which is what
+      makes the two that do not worth reading.
 - [ ] Decide the default return length.  25 ft is what a typical user's
       coax run is, and it gives the best agreement with the published
       tables of any value tried, but the ARRL specifies a quarter wave

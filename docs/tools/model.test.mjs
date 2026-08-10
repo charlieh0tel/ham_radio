@@ -524,3 +524,26 @@ test('the classical rule saturates once enough bands are asked for', () => {
   assert.ok(scored.suggestions.length > 0,
     'the impedance mode still has an opinion where the rule has none');
 });
+
+test('the published lengths are scored rather than omitted', () => {
+  // The page shows what it thinks of the standard tables, including where it
+  // disagrees.  A user who knows 71 ft will otherwise read its absence from
+  // the suggestions as a broken tool.
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const bands = m.bandsIn('us').filter(b => [80, 40, 20, 15, 10].includes(b.m));
+  assert.ok(m.PUBLISHED_FT.includes(71), '71 ft is among the lengths shown');
+
+  const scores = m.PUBLISHED_FT.map(ft => ({
+    ft, swr: m.scoreLength(m.fromDisplay(ft, 'ft'), bands, 'full', site,
+      m.WIRE_RADIUS_M, 9).swr,
+  }));
+  for (const { ft, swr } of scores) {
+    assert.ok(Number.isFinite(swr) && swr >= 1, `${ft} ft scores a real SWR`);
+  }
+  // Mostly agreeing with the tables is what makes the disagreements worth
+  // reading; if this ever flips, the model has drifted rather than dissented.
+  const passing = scores.filter(s => s.swr <= m.SWR_GOOD).length;
+  assert.ok(passing >= scores.length / 2,
+    `${passing} of ${scores.length} published lengths pass`);
+});
