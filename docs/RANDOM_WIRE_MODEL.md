@@ -917,7 +917,7 @@ a bound against that implementation.  A second implementation of the
 same published method differs by more than the low-`h/lambda` corner the
 page already hedges.
 
-### Neither is better; the geometry is the problem
+### One of them is wrong, and it is not the one we fitted against
 
 The two are independent translations of Burke and Poggio's original
 NEC-2 FORTRAN -- nec2c is Kyriazis's C, nec2++ is Molteno's C++ -- so
@@ -938,30 +938,53 @@ Sweeping the return path's height at 7.15 MHz over good ground:
 
 They agree to within about 3 percent everywhere except within roughly
 0.01 wavelengths of the interface, where they diverge without limit.
-That is the regime where the Sommerfeld integrand is most awkward to
-evaluate, so two implementations differing there is what one should
-expect, and it is not evidence against either.
 
-It is evidence about this model.  `RETURN_HEIGHT_M` is 5 cm, chosen to
-represent a feedline lying on the soil, which puts the return wire at
-0.001 wavelengths on 40 m -- squarely in the band where NEC-2 stops
-being reproducible between implementations.  So the coefficients are
-fitted in the one place NEC-2 is least trustworthy, and the ground
-contribution there carries an implementation uncertainty larger than the
-x1.5 the page quotes.
+Two tests locate the fault rather than splitting the difference.
 
-That also puts a asterisk on an earlier finding.  Return height was
-measured as the most influential unmodelled term, 4.6x from 5 cm to 2 m.
-Part of that steepness is real and part is numerical: nec2++ moves 6
-percent between 1 cm and 5 cm where nec2c moves 33 percent, so the
-near-ground slope is itself implementation-dependent.  The finding that
-elevated returns are a different antenna stands; the size of the effect
-close to the ground does not, to better than a factor of two.
+**Perfect ground.**  Replace the soil with a perfect conductor, which is
+image theory and involves no Sommerfeld integral at all.  At the same
+heights the two agree to 0.01 percent: 1500.8 against 1500.6 at 1 cm,
+1441.7 against 1441.5 at 5 cm.  So the geometry, the segmentation and
+the near-field handling are identical and sound in both, and the whole
+disagreement lives in the Sommerfeld evaluation.
 
-The physical case a random wire user actually has -- coax lying on the
-ground -- is the case NEC-2 handles least reliably.  There is no fix for
-that inside this approach, and it should be said out loud rather than
-buried in a tolerance.
+**The conductivity limit.**  As the soil's conductivity rises, a lossy
+half-space becomes a perfect ground plane, so the Sommerfeld result must
+converge to the perfect-ground answer.  That answer is known, and both
+compute it identically.  At 5 cm:
+
+| sigma S/m | nec2++ | nec2c |
+|---|---|---|
+| 0.03 | 1489.7 | 2090.0 |
+| 1 | 1454.9 | 1888.0 |
+| 30 | 1444.1 | 1869.1 |
+| 1000 | **1442.1** | **1867.6** |
+| exact | 1441.7 | 1441.5 |
+
+nec2++ converges to the known answer within 0.03 percent.  nec2c
+converges to a figure 29.6 percent above it.  That is not two defensible
+readings of a hard integral; it is a limit with a known answer, and one
+implementation does not reach it.
+
+So for a wire this close to ground, nec2++ is right and nec2c has a bug.
+The literature agrees that the method should work here: the
+Sommerfeld-Norton ground is documented as accurate for wires as close to
+it as to a perfect ground, so this is an implementation failure and not
+the method being pushed out of its envelope.
+
+The consequence for this model is good news, arrived at the long way
+round.  Every coefficient is fitted against PyNEC, which is nec2++, the
+implementation that passes the limit test.  The near-ground behaviour
+the model rests on is the behaviour that reduces correctly to a case
+with a known answer, so the earlier finding stands unqualified: return
+height really does move the feedpoint that much, and the 4.6x is
+physical rather than numerical.
+
+It does mean the browser check cannot use nec2c as it stands.  A page
+that ran it would show the user a second number about 30 percent high in
+exactly the configuration the page assumes, and would look like the
+model was wrong.  That is a bug to report upstream, not a spread to
+paper over.
 
 The consequence for the browser check is concrete.  Shipping it against
 nec2c while the coefficients are fitted to nec2++ would show the user
