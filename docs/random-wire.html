@@ -923,7 +923,11 @@
 
     const DEFAULTS = Object.freeze({
       region: 'us',
-      bands: [80, 40, 20, 15, 10],
+      // 80 m is left out.  A random wire is electrically short there and the
+      // match through a 9:1 is hard, so including it by default made almost
+      // every length fail its worst-band gate on 80 m and told a first-time
+      // visitor little about the others.  Selecting it is one click.
+      bands: [40, 20, 15, 10],
       segment: 'full',
       mode: 'classical',
       ununRatio: DEFAULT_UNUN_RATIO,
