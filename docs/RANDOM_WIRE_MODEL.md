@@ -1148,10 +1148,24 @@ one, so the error lands exactly on the length being picked: 69 ft on
 40 m scores 5.0:1 through a 49:1 where NEC says 2.5:1, which would send
 someone after a wide-range tuner when a compact auto would do.
 
-Worth stating rather than fixing here.  Damping the peak means a
-frequency- or length-dependent `alpha`, which is a change to the model
-form, and the random-wire case -- what the page is for -- is the one the
-current form serves correctly.
+It is not a fitting problem, which was checked rather than assumed.  A
+fit dedicated to this one geometry, reaching x1.11 overall, still misses
+the peak by x1.85: that is the ceiling for any technique, because the
+peak height is `ka Z0 / (alpha l)` and the same `alpha` sets the loss
+everywhere else.  Forcing it to fit the first peak -- 0.13 to 0.25
+nepers per wavelength -- wrecks the higher ones, taking `l = lambda` from
+0.87 of NEC to 0.53, and makes the overall error worse, x1.50 to x1.67.
+
+The obvious form change fails too.  Letting `alpha` grow with electrical
+length, on the physical grounds that radiation loss accumulates along a
+wire, makes the peak *worse*: at a power of 0.5 the peak ratio goes from
+1.85 to 3.19 and the overall error from x1.11 to x1.17.
+
+So the peaks want something structurally different -- a term that bites
+only at resonance, or a modal representation instead of one line -- not
+a better fit of this one.  That is research rather than a tweak, and the
+random-wire case, which is what the page is for, is the one the current
+form already serves correctly.
 
 ## What the model deliberately does not do
 
