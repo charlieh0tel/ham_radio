@@ -559,7 +559,7 @@ test('the published lengths are scored rather than omitted', () => {
   // Mostly agreeing with the tables on the average is what makes the
   // disagreements worth reading; if this flips, the model has drifted rather
   // than dissented.
-  const passing = scores.filter(s => s.swr <= m.SWR_GOOD).length;
+  const passing = scores.filter(s => s.swr <= m.TUNERS[m.DEFAULT_TUNER].good).length;
   assert.ok(passing >= scores.length / 2,
     `${passing} of ${scores.length} published lengths pass on the mean`);
 });
@@ -811,4 +811,36 @@ test('isKeyOf keeps a bad URL parameter out of a lookup table', () => {
   assert.equal(m.isKeyOf(m.SOILS, null), false);
   assert.equal(m.isKeyOf(m.SOILS, 'toString'), false,
     'an inherited property is not a key');
+});
+
+test('the tuner preset decides what counts as a good length', () => {
+  // The gates are the point of the preset, so a stricter tuner must accept a
+  // subset of what a looser one does -- never something different.
+  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+    soil: m.DEFAULT_SOIL };
+  const bands = m.bandsIn('us').filter(b => m.DEFAULTS.bands.includes(b.m));
+  const scored = m.PUBLISHED_FT.map(ft => m.scoreLength(
+    m.fromDisplay(ft, 'ft'), bands, 'full', site, m.WIRE_RADIUS_M, 9));
+
+  const passing = (tuner) => new Set(
+    scored.map((s, i) => [s, i]).filter(([s]) => m.isGoodScore(s, tuner))
+      .map(([, i]) => i));
+  const rig = passing('rig');
+  const wide = passing('wide');
+  const roller = passing('roller');
+  for (const i of rig) assert.ok(wide.has(i), 'rig ATU passes imply external');
+  for (const i of wide) assert.ok(roller.has(i), 'external passes imply roller');
+  assert.ok(roller.size >= wide.size && wide.size >= rig.size,
+    `nested: rig ${rig.size} <= wide ${wide.size} <= roller ${roller.size}`);
+});
+
+test('every tuner preset states both gates, and states them in order', () => {
+  for (const [key, def] of Object.entries(m.TUNERS)) {
+    assert.ok(def.good > 1, `${key}: the mean gate is a real SWR`);
+    assert.ok(def.worst >= def.good,
+      `${key}: the worst-band gate is not stricter than the mean gate`);
+    assert.ok(typeof def.label === 'string' && def.label.length > 0,
+      `${key}: has a label`);
+  }
+  assert.ok(m.DEFAULT_TUNER in m.TUNERS, 'the default is a real preset');
 });
