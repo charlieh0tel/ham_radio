@@ -312,9 +312,12 @@ Remaining:
       own current distribution and wants a coupled two-port, which is a
       different model rather than a term on this one.  Not worth doing
       unless elevated counterpoises become the point of the page.
-- [ ] Exercise the page in a browser beyond the ribbon: the impedance
-      mode's height, return-length and soil controls have never been
-      driven, and a passing type check is not a rendering test.
+- [ ] Exercise the page in a browser beyond the ribbon.  Checklist
+      written: `RANDOM_WIRE_BROWSER_CHECKS.md`, covering the controls
+      that changed, the verdicts, keyboard access, contrast, URL round
+      trips, and the handful of things only a browser can catch.  Each
+      item says what correct looks like, so it can be run without
+      reading the code.
 
 - [x] Confirm the odd-`lambda/4` case is as bad as theory says before
       building UI around it.  It is not: finding 2 measures 133-3500

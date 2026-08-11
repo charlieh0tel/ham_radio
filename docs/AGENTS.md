@@ -17,11 +17,12 @@ self-contained tool per page:
 - `sherwood.html`: Sherwood receiver performance table. Plain JS with
   Chart.js.
 
-Companion notes, not served: `RANDOM_WIRE_MODEL.md` is the modelling
+Companion notes, not served. `RANDOM_WIRE_MODEL.md` is the modelling
 approach behind `random-wire.html` -- what the impedance model claims,
 the parameter split, and what NEC measured. `RANDOM_WIRE_TODO.md` is
-task status. Keep findings and design decisions in the model note and
-task state in the TODO.
+task status. `RANDOM_WIRE_BROWSER_CHECKS.md` is the by-hand pass, since
+nothing automated here opens a browser. Keep findings and design
+decisions in the model note and task state in the TODO.
 
 ## Code Style
 
