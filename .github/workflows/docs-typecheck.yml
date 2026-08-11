@@ -25,5 +25,7 @@ jobs:
         working-directory: docs/tools
       - run: npm run check
         working-directory: docs/tools
+      - run: npm run lint
+        working-directory: docs/tools
       - run: npm test
         working-directory: docs/tools

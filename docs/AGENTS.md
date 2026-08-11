@@ -41,8 +41,15 @@ the other two pages need ambient declarations for their CDN globals
 
 ```sh
 npm --prefix docs/tools install   # once
-npm --prefix docs/tools run check
+npm --prefix docs/tools run check   # tsc and eslint
+npm --prefix docs/tools run lint    # eslint alone
 ```
+
+`check` runs eslint after `tsc`, over the same extracted `.jsx`.  The rule
+it exists for is `react-hooks/exhaustive-deps`: a dependency array that
+listed a derived object rather than the inputs behind it let switching
+display units silently discard the user's wire length, and nothing but a
+linter finds that.
 
 `tools/extract.mjs` pulls the `<script type="text/babel">` body into a
 gitignored `.check/` directory, padded so a diagnostic's line number
