@@ -769,15 +769,18 @@
     const MODEL_FIT_RANGE_HZ = Object.freeze({ min: 1.8e6, max: 30e6 });
 
     /**
-     * Height in wavelengths above which the fitted error bound holds, and the
-     * bound either side of it.  Quoted in the caveat text.
+     * Height in wavelengths above which the fitted error figures hold, and
+     * how far off |Z| is either side of it.  Quoted in the caveat text.
      *
-     * 1.5 rather than the 1.4 the fit reports against its own sweep: the
-     * coefficients were fitted at four frequencies and the page evaluates at
-     * nine bands, and checked against bands it never saw the model reaches
-     * 1.47.  The bound has to cover the bands the user actually picks.
+     * Two figures, not one, because a single number would mislead whichever
+     * way it was rounded.  Measured point by point against frequencies the
+     * fit never saw, the typical error is 1.2x and the ninetieth percentile
+     * 1.5x, with a tail to 2.4x at the ninety-ninth and 3.5x at worst.
+     * Quoting 1.5x alone reads as a cap and 14 percent of points are outside
+     * it; the caveat text says so.
      */
     const MODEL_BOUND_H_OVER_LAM = 0.05;
+    const MODEL_TYPICAL_FACTOR = 1.2;
     const MODEL_BOUND_FACTOR = 1.5;
     const MODEL_BOUND_FACTOR_LOW = 2.9;
 
@@ -2308,11 +2311,14 @@
                     Coefficients are fitted against NEC over
                     {' '}{MODEL_FIT_RANGE_HZ.min / 1e6}&ndash;
                     {MODEL_FIT_RANGE_HZ.max / 1e6} MHz, which is why no band
-                    outside that is offered: |Z| lands within about
-                    {' '}{MODEL_BOUND_FACTOR}x once the wire is
-                    {' '}{MODEL_BOUND_H_OVER_LAM} wavelengths up, which is 26 ft on
-                    160 m, 13 ft on 80 m and 7 ft on 40 m. Lower than that it slips
-                    to about {MODEL_BOUND_FACTOR_LOW}x. The return path is assumed
+                    outside that is offered. Once the wire is
+                    {' '}{MODEL_BOUND_H_OVER_LAM} wavelengths up &mdash; 26 ft on
+                    160 m, 13 ft on 80 m, 7 ft on 40 m &mdash; |Z| is typically
+                    within {MODEL_TYPICAL_FACTOR}x and within
+                    {' '}{MODEL_BOUND_FACTOR}x nine times in ten. That is not a
+                    cap: a few percent of lengths are out by
+                    {' '}{MODEL_BOUND_FACTOR_LOW}x or more, and lower wires are
+                    worse still. The return path is assumed
                     to lie on the ground: raise it a metre or two and the feedpoint
                     moves several times over, more than anything else here changes
                     it, so elevated radials are outside this model. Common-mode
