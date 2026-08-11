@@ -280,11 +280,11 @@ Remaining:
       in the page rather than moving the default: a long counterpoise
       flattens the score curve, so length choice matters less, which is
       more useful than any single length.
-- [ ] Have coefficients.py patch random-wire.html between marker
-      comments instead of printing a block to paste.  The constants were
-      hand-copied once and needed a separate script to verify; the
-      generator should write them.  Do it when the constants are next
-      regenerated.
+- [x] Have coefficients.py patch random-wire.html between marker
+      comments instead of printing a block to paste.  Done: `--write`
+      patches the page and writes coefficients.json beside the script,
+      and a test asserts the two agree, so the constants cannot drift
+      from the fit that produced them.
 - [x] Tabulate against return height and offer it as a control.  Done
       and answered no.  The full sweep shows the two-line *form* failing
       before the table does: given each group its own best coefficients
