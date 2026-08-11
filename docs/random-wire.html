@@ -829,9 +829,9 @@
      */
     const TUNERS = Object.freeze({
       rig: { label: 'Rig ATU', limit: 3 },
-      compact: { label: 'Compact auto', limit: 5 },
-      wide: { label: 'Wide-range', limit: 9 },
-      roller: { label: 'Roller / link', limit: 12 },
+      compact: { label: 'Auto', limit: 5 },
+      wide: { label: 'Wide', limit: 9 },
+      roller: { label: 'Roller', limit: 12 },
     });
     /** @typedef {keyof typeof TUNERS} TunerKey */
     /**
@@ -2419,7 +2419,7 @@
                               className={`btn preset-btn ${tuner === key ? 'active' : ''}`}
                               role="radio" aria-checked={tuner === key}
                               onClick={() => set({ tuner: key })}>
-                        {def.label}
+                        {def.label} {def.limit}:1
                       </button>
                     ))}
                     <div className="control-hint">
