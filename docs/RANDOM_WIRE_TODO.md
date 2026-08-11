@@ -83,7 +83,12 @@ because the resonator includes the drop and the return path.
 
 Still open:
 
-- [ ] Decide what the classical mode's default velocity factor should be.
+- [x] Decide what the classical mode's default velocity factor should be.
+      It stays 0.95.  The classical mode's virtue is being checkable
+      against any published table, and those tables assume 0.95; moving
+      it to the 1.01 NEC measures would break that agreement and read as
+      the page being wrong.  The disagreement between the modes is
+      explained rather than removed.  Original reasoning:
       It ships 0.95, which is what the published tables assume, but the
       fitted model runs the antenna line at 1.00 and NEC backs it: 71 ft
       is 8.7 percent clear of the 40 m half wave at 0.95 and only 3.2
@@ -109,11 +114,13 @@ Still open:
       impedance excursions assumed.  Done, see the margin section of
       `RANDOM_WIRE_MODEL.md`.  The default holds up; current behaviour
       does not need to change.
-- [ ] Expose conductor diameter, fixed at #14 AWG.  No longer blocked on
-      evidence: gauge has been swept over #12 to #22 and the shipped #14
-      table predicts every one of them within x1.44, against x1.39 for
-      #14 itself, so the control can be offered honestly.  Remaining work
-      is UI only.  The unun ratio is now selectable (1, 4, 9, 49, 64).
+- [x] Expose conductor diameter.  Decided against, and it stays #14 AWG.
+      The gauge sweep unblocked it -- the shipped table predicts #12 to
+      #22 within x1.44 against x1.39 for #14 itself -- but that is the
+      argument for *not* having the control: the dependence is
+      logarithmic, about 5 percent in Z0 across the whole range, so a
+      control would invite tuning something that cannot change the
+      answer.  The assumption is stated in the page instead.
 
 ### Controls, decided
 
@@ -245,7 +252,13 @@ Remaining:
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
 
-- [ ] **Report the nec2c near-ground bug upstream.**  Running the
+- [ ] **Report the nec2c near-ground bug upstream.**  Reproducer written:
+      `nec/random_wire/nec2c_ground_bug.py`, with the JavaScript half in
+      its docstring, ready to carry across to nec2c-js as an issue or a
+      regression test.  The conductivity limit is the sharp form: as
+      sigma rises `GN 2` must converge on `GN 1`, nec2++ reaches it
+      within 0.03 percent and nec2c stops about 30 percent above.
+      Original notes:  Running the
       fixture against nec2c failed 26 of 30 cases, and two tests place
       the fault rather than splitting the difference.  Over perfect
       ground, where no Sommerfeld integral is involved, the two agree to
