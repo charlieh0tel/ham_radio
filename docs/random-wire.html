@@ -239,6 +239,26 @@
 
     .control-label:last-child { margin-bottom: 0; }
 
+    /*
+     * A group of buttons where one is chosen.  fieldset rather than label:
+     * a label with no `for` binds to its first labelable descendant, so
+     * clicking the word "Ground" was activating the first soil button.
+     */
+    .control-group {
+      display: block;
+      margin: 0 0 10px;
+      padding: 0;
+      border: 0;
+    }
+
+    .control-group:last-child { margin-bottom: 0; }
+
+    .control-group > legend {
+      padding: 0;
+      font-size: 12px;
+      color: #888;
+    }
+
     .control-value { color: #fff; }
 
     .control-slider { width: 100%; margin-top: 4px; }
@@ -2067,11 +2087,11 @@
             <div className="column">
               <div className="panel">
                 <div className="panel-header">Method</div>
-                <div className="segment-toggle">
+                <div className="segment-toggle" role="radiogroup" aria-label="Method">
                   {entriesOf(MODES).map(([key, def]) => (
                     <button key={key}
                             className={`btn segment-btn ${mode === key ? 'active' : ''}`}
-                            aria-pressed={mode === key}
+                            role="radio" aria-checked={mode === key}
                             onClick={() => set({ mode: key })}>
                       {def.label}
                     </button>
@@ -2082,11 +2102,11 @@
 
               <div className="panel">
                 <div className="panel-header">Band plan</div>
-                <div className="presets">
+                <div className="presets" role="radiogroup" aria-label="Band plan">
                   {entriesOf(REGIONS).map(([key, def]) => (
                     <button key={key}
                             className={`btn preset-btn ${region === key ? 'active' : ''}`}
-                            aria-pressed={region === key}
+                            role="radio" aria-checked={region === key}
                             onClick={() => setRegion(key)}>
                       {def.label}
                     </button>
@@ -2105,11 +2125,11 @@
                     </button>
                   ))}
                 </div>
-                <div className="segment-toggle">
+                <div className="segment-toggle" role="radiogroup" aria-label="Segment">
                   {entriesOf(SEGMENTS).map(([key, def]) => (
                     <button key={key}
                             className={`btn segment-btn ${segment === key ? 'active' : ''}`}
-                            aria-pressed={segment === key}
+                            role="radio" aria-checked={segment === key}
                             onClick={() => set({ segment: key })}>
                       {def.label}
                     </button>
@@ -2134,17 +2154,17 @@
 
               <div className="panel">
                 <div className="panel-header">Display</div>
-                <label className="control-label">
-                  Units:{' '}
+                <fieldset className="control-group" role="radiogroup">
+                  <legend>Units</legend>
                   {entriesOf(UNITS).map(([key, def]) => (
                     <button key={key}
                             className={`btn preset-btn ${units === key ? 'active' : ''}`}
-                            aria-pressed={units === key}
+                            role="radio" aria-checked={units === key}
                             onClick={() => set({ units: key })}>
                       {def.label}
                     </button>
                   ))}
-                </label>
+                </fieldset>
               </div>
 
               <div className="panel">
@@ -2233,12 +2253,12 @@
                   </label>
                 )}
                 {mode === 'impedance' && (
-                  <label className="control-label">
-                    Ground:{' '}
+                  <fieldset className="control-group" role="radiogroup">
+                    <legend>Ground</legend>
                     {entriesOf(SOILS).map(([key, def]) => (
                       <button key={key}
                               className={`btn preset-btn ${soil === key ? 'active' : ''}`}
-                              aria-pressed={soil === key}
+                              role="radio" aria-checked={soil === key}
                               onClick={() => set({ soil: key })}>
                         {def.label}
                       </button>
@@ -2248,15 +2268,15 @@
                       scale: damp ground does not give a better match, it gives a
                       sharper resonance, so deeper dips and higher peaks.
                     </div>
-                  </label>
+                  </fieldset>
                 )}
                 {mode === 'impedance' && (
-                  <label className="control-label">
-                    Unun ratio:{' '}
+                  <fieldset className="control-group" role="radiogroup">
+                    <legend>Unun ratio</legend>
                     {UNUN_RATIOS.map(ratio => (
                       <button key={ratio}
                               className={`btn preset-btn ${ununRatio === ratio ? 'active' : ''}`}
-                              aria-pressed={ununRatio === ratio}
+                              role="radio" aria-checked={ununRatio === ratio}
                               onClick={() => set({ ununRatio: ratio })}>
                         {ratio}:1
                       </button>
@@ -2265,7 +2285,7 @@
                       1:1 is a direct feed; 9:1 suits a random wire, 49:1 and 64:1 an
                       end-fed half wave.
                     </div>
-                  </label>
+                  </fieldset>
                 )}
                 {mode === 'classical' && (
                 <label className="control-label">
