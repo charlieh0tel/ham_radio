@@ -1606,8 +1606,6 @@
       return TICK_STEPS.find(step => step >= ideal) ?? TICK_STEPS[TICK_STEPS.length - 1];
     };
 
-    // END PURE
-
     // ============================================================
     // URL state
     // ============================================================
@@ -1655,6 +1653,11 @@
       const feet = params.get(LEGACY_LEN_FT_KEY);
       return feet === null ? DEFAULTS.wireLenM : parseNum(feet, 0) / FT_PER_M;
     };
+
+    // END PURE
+    // Below here the page reads the document.  Everything above, including
+    // the URL parsing, takes what it needs as an argument, so the legacy
+    // ?len= guarantee can be tested rather than trusted.
 
     const getUrlParams = () => {
       const params = new URLSearchParams(window.location.search);

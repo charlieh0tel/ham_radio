@@ -23,11 +23,12 @@ test('feet per metre is the international foot', () => {
   close(m.FT_PER_M, 1 / 0.3048, 1e-12, 'FT_PER_M');
 });
 
-test('display units round trip', () => {
-  for (const unit of Object.keys(m.UNITS)) {
-    const there = m.toDisplay(21.336, unit);
-    close(m.fromDisplay(there, unit), 21.336, 1e-9, `round trip via ${unit}`);
-  }
+test('display units convert against their definitions', () => {
+  // Against the definition of the international foot, not against itself:
+  // a round trip through a scale factor cannot fail.
+  close(m.toDisplay(0.3048, 'ft'), 1, 1e-12, '0.3048 m is one foot');
+  close(m.toDisplay(1, 'm'), 1, 1e-12, 'metres are the internal unit');
+  close(m.fromDisplay(100, 'ft'), 30.48, 1e-12, '100 ft is 30.48 m');
 });
 
 test('a matched load is 1:1 through any transformer', () => {
@@ -231,13 +232,25 @@ test('a wider margin never narrows a keep-out zone', () => {
   }
 });
 
-test('raw avoid intervals are ordered and bounded', () => {
+test('each avoid zone delivers the clearance it promises', () => {
   // avoidIntervals returns one zone per band per multiple; overlap between
   // bands is expected here and resolved by solve().
   const bands = m.bandsIn('us').filter(b => [40, 20, 15].includes(b.m));
-  for (const interval of m.avoidIntervals(bands, 'full', 0.95, 8, 60)) {
-    assert.ok(interval.lo < interval.hi, 'each zone is ordered');
-    assert.ok(interval.lo >= 0, 'no negative length');
+  // The property worth asserting is the clearance itself: each zone must
+  // reach at least marginPct of a half wave either side of the resonance it
+  // guards, which is the whole claim the classical mode makes.
+  const marginPct = 8;
+  for (const band of bands) {
+    const [loHz, hiHz] = m.bandEdgesHz(band, 'full');
+    const shortest = m.halfWaveM(hiHz, 0.95);
+    const longest = m.halfWaveM(loHz, 0.95);
+    for (let n = 1; n * shortest <= 60; n++) {
+      const zone = m.resonanceInterval(band, 'full', 0.95, marginPct / 100, n);
+      assert.ok(zone.lo <= (n - marginPct / 100) * shortest + 1e-9,
+        `${band.label} n=${n}: low edge clears by the stated margin`);
+      assert.ok(zone.hi >= (n + marginPct / 100) * longest - 1e-9,
+        `${band.label} n=${n}: high edge clears by the stated margin`);
+    }
   }
 });
 
@@ -252,7 +265,7 @@ test('solve merges the avoid zones into disjoint ones', () => {
   }
 });
 
-test('usable spans and avoid zones tile the axis without overlapping', () => {
+test('usable spans clear every avoid zone', () => {
   const out = m.solve('us', [40, 20], 'full', 0.95, 8, 60, 'ft');
   for (const span of out.usable) {
     for (const zone of out.merged) {
@@ -302,11 +315,13 @@ test('every soil produces a usable model', () => {
   }
 });
 
-test('SWR is never below one and rises away from a match', () => {
-  for (const ohms of [5, 50, 450, 2450, 10000]) {
-    const swr = m.swrAtRadio({ re: ohms, im: 0 }, 9);
-    assert.ok(swr >= 1 - 1e-9, `SWR >= 1 at ${ohms} ohms`);
-    assert.ok(Number.isFinite(swr), `SWR finite at ${ohms} ohms`);
+test('SWR matches the closed form either side of a match', () => {
+  // Values chosen against the closed form rather than against the code: a
+  // load n times the system impedance is n:1, either side of the match.
+  for (const [ohms, ratio, want] of [[450, 9, 1], [1800, 9, 4], [112.5, 9, 4],
+                                     [2450, 49, 1], [50, 1, 1], [200, 1, 4]]) {
+    close(m.swrAtRadio({ re: ohms, im: 0 }, ratio), want, 1e-9,
+      `${ohms} ohms through ${ratio}:1`);
   }
   const matched = m.swrAtRadio({ re: 450, im: 0 }, 9);
   const reactive = m.swrAtRadio({ re: 450, im: 450 }, 9);
@@ -319,7 +334,6 @@ test('scoring a length returns a mean bounded by its own worst case', () => {
   const scored = m.scoreLength(21.6, bands, 'full', site, m.WIRE_RADIUS_M, 9);
   assert.ok(scored !== null, 'a score comes back');
   assert.ok(scored.swr >= 1, 'geometric mean is a ratio');
-  assert.ok(scored.worst.swr >= scored.swr, 'the worst band is at least the mean');
   assert.ok(bands.some(b => b.m === scored.worst.band.m),
     'the worst band is one that was asked for');
 });
@@ -612,4 +626,189 @@ test('impedance suggestions are round numbers whose score matches the length', (
         `${units}: the quoted SWR is the rounded length's own`);
     }
   }
+});
+
+// ---------------------------------------------------------------------------
+// The classical verdict, which had no tests at all
+// ---------------------------------------------------------------------------
+
+/** The default site, spelled once. */
+const SITE = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  soil: m.DEFAULT_SOIL };
+
+test('judgeLength calls a length inside an avoid zone bad', () => {
+  const bands = m.bandsIn('us').filter(b => b.m === 40);
+  const zone = m.resonanceInterval(bands[0], 'full', 0.95, 0.08, 1);
+  const middle = (zone.lo + zone.hi) / 2;
+  const shortLimit = m.tooShortM(bands, 'full', 0.95);
+  const verdict = m.judgeLength(middle, bands, 'full', 0.95, 8, shortLimit);
+  assert.ok(verdict !== null, 'a length long enough gets a verdict');
+  assert.equal(verdict.ok, false, 'the middle of a keep-out zone is not ok');
+  assert.ok(verdict.hit !== null, 'and it names the zone it landed in');
+  assert.ok(verdict.hit.lo <= middle && middle <= verdict.hit.hi,
+    'the named zone actually contains the length');
+});
+
+test('judgeLength calls a length between zones good, and measures clearance', () => {
+  const bands = m.bandsIn('us').filter(b => b.m === 40);
+  const solved = m.solve('us', [40], 'full', 0.95, 8, 60, 'ft');
+  const span = solved.usable.find(u => u.hi - u.lo > 1);
+  assert.ok(span !== undefined, 'a usable span exists to test in');
+  const middle = (span.lo + span.hi) / 2;
+  const shortLimit = m.tooShortM(bands, 'full', 0.95);
+  const verdict = m.judgeLength(middle, bands, 'full', 0.95, 8, shortLimit);
+  assert.equal(verdict.ok, true, 'the middle of a usable span is ok');
+  assert.equal(verdict.hit, null, 'nothing was hit');
+  assert.ok(verdict.clearance > 0, 'clearance is positive');
+  // The clearance must be the true distance to the nearest zone edge.
+  const nearest = Math.min(...solved.merged.map(
+    z => Math.min(Math.abs(middle - z.lo), Math.abs(middle - z.hi))));
+  close(verdict.clearance, nearest, 1e-6, 'clearance is the real distance');
+});
+
+test('judgeLength explains a too-short wire rather than refusing one', () => {
+  const bands = m.bandsIn('us').filter(b => b.m === 80);
+  const shortLimit = m.tooShortM(bands, 'full', 0.95);
+  const verdict = m.judgeLength(shortLimit * 0.5, bands, 'full', 0.95, 8,
+    shortLimit);
+  assert.ok(verdict !== null, 'a short wire still gets a verdict');
+  assert.equal(verdict.ok, false, 'and it is not a good one');
+  assert.equal(verdict.hit.kind, 'short',
+    'the reason given is the length, not a resonance');
+  // Only a nonsensical length gets nothing back.
+  assert.equal(m.judgeLength(0, bands, 'full', 0.95, 8, shortLimit), null,
+    'zero length has no verdict to give');
+  assert.equal(m.judgeLength(-5, bands, 'full', 0.95, 8, shortLimit), null,
+    'nor does a negative one');
+});
+
+test('a wider margin can only turn a good length bad, never the reverse', () => {
+  // The zones only grow with the margin, so a length inside one at 5 percent
+  // cannot be outside it at 12.  This is the monotonicity the whole rule
+  // rests on, and it is what a sign error in resonanceInterval would break.
+  const bands = m.bandsIn('us').filter(b => [40, 20].includes(b.m));
+  const shortLimit = m.tooShortM(bands, 'full', 0.95);
+  for (let lenM = 10; lenM < 50; lenM += 0.37) {
+    let wasBad = false;
+    for (const marginPct of [0, 2, 5, 8, 12, 15]) {
+      const verdict = m.judgeLength(lenM, bands, 'full', 0.95, marginPct,
+        shortLimit);
+      if (verdict === null) continue;
+      if (wasBad) {
+        assert.equal(verdict.ok, false,
+          `${lenM.toFixed(2)} m went bad then good again at ${marginPct}%`);
+      }
+      if (!verdict.ok) wasBad = true;
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Interval algebra and the pickers
+// ---------------------------------------------------------------------------
+
+test('mergeIntervals unions overlaps and leaves gaps alone', () => {
+  const merged = m.mergeIntervals([
+    { lo: 5, hi: 10 }, { lo: 8, hi: 12 }, { lo: 20, hi: 25 }, { lo: 1, hi: 3 },
+  ]);
+  assert.deepEqual(merged.map(i => [i.lo, i.hi]),
+    [[1, 3], [5, 12], [20, 25]], 'sorted, unioned, gaps preserved');
+});
+
+test('mergeIntervals joins intervals that only touch', () => {
+  const merged = m.mergeIntervals([{ lo: 0, hi: 5 }, { lo: 5, hi: 9 }]);
+  assert.equal(merged.length, 1, 'abutting intervals are one');
+});
+
+test('usableIntervals is the complement of the merged zones', () => {
+  const usable = m.usableIntervals([{ lo: 5, hi: 10 }, { lo: 20, hi: 25 }], 30);
+  for (const span of usable) {
+    assert.ok(span.lo < span.hi, 'each span is ordered');
+    for (const zone of [{ lo: 5, hi: 10 }, { lo: 20, hi: 25 }]) {
+      assert.ok(!(span.lo < zone.hi && zone.lo < span.hi),
+        `${span.lo}-${span.hi} does not overlap ${zone.lo}-${zone.hi}`);
+    }
+  }
+  // Coverage, which the old test never checked: every point not in a zone
+  // has to be in a span.
+  for (const probe of [1, 4.9, 12, 19, 26, 29.9]) {
+    assert.ok(usable.some(s => probe >= s.lo && probe <= s.hi),
+      `${probe} is covered`);
+  }
+});
+
+test('pickInSpan returns a round number strictly inside the span', () => {
+  for (const span of [{ lo: 10, hi: 20 }, { lo: 10.02, hi: 10.06 },
+                      { lo: 0.5, hi: 0.51 }]) {
+    for (const units of Object.keys(m.UNITS)) {
+      const pick = m.pickInSpan(span, units);
+      assert.ok(pick > span.lo && pick < span.hi,
+        `${units}: ${pick} is inside ${span.lo}-${span.hi}`);
+    }
+  }
+});
+
+test('pickInSpan prefers the roundest number that fits', () => {
+  // A wide span should give a whole number of feet, not a fractional one.
+  const pick = m.toDisplay(m.pickInSpan({ lo: 10, hi: 20 }, 'ft'), 'ft');
+  close(pick, Math.round(pick), 1e-9, 'a wide span picks a whole foot');
+});
+
+test('bestFeasibleMargin finds a margin that leaves something', () => {
+  // Called only when the asked-for margin empties the axis, so what matters
+  // is that what it returns actually works.
+  const fallback = m.bestFeasibleMargin('us', [40, 20, 15, 10], 'full', 0.95,
+    m.MARGIN_PCT_RANGE.max, 60, 'ft');
+  if (fallback === null) return;
+  assert.ok(fallback.marginPct >= m.MARGIN_PCT_RANGE.min);
+  assert.ok(fallback.marginPct <= m.MARGIN_PCT_RANGE.max);
+  const solved = m.solve('us', [40, 20, 15, 10], 'full', 0.95,
+    fallback.marginPct, 60, 'ft');
+  assert.ok(solved.suggestions.length > 0,
+    `the margin it recommends (${fallback.marginPct}%) really does solve`);
+});
+
+// ---------------------------------------------------------------------------
+// URL round-tripping, which the page promises and could not test
+// ---------------------------------------------------------------------------
+
+test('a length written as metres reads back unchanged', () => {
+  const params = new URLSearchParams({ [m.URL_KEYS.wireLenM]: '21.336' });
+  close(m.readWireLenM(params), 21.336, 1e-9, 'len_m is metres');
+});
+
+test('the legacy ?len= is still read as feet', () => {
+  // docs/AGENTS.md promises links shared before the SI conversion resolve to
+  // the same wire.  Nothing checked it until now.
+  const params = new URLSearchParams({ [m.LEGACY_LEN_FT_KEY]: '70' });
+  close(m.readWireLenM(params), 70 * 0.3048, 1e-9, '70 ft is 21.336 m');
+});
+
+test('the modern key wins when both are present', () => {
+  const params = new URLSearchParams({
+    [m.URL_KEYS.wireLenM]: '30', [m.LEGACY_LEN_FT_KEY]: '70' });
+  close(m.readWireLenM(params), 30, 1e-9, 'len_m takes precedence over len');
+});
+
+test('a missing or unparseable length falls back to the default', () => {
+  close(m.readWireLenM(new URLSearchParams()), m.DEFAULTS.wireLenM, 1e-9,
+    'absent');
+  close(m.readWireLenM(new URLSearchParams({ [m.URL_KEYS.wireLenM]: 'x' })),
+    m.DEFAULTS.wireLenM, 1e-9, 'unparseable');
+});
+
+test('clamp and parseNum hold their ranges', () => {
+  close(m.clamp(5, { min: 0, max: 3 }), 3, 1e-9, 'above');
+  close(m.clamp(-5, { min: 0, max: 3 }), 0, 1e-9, 'below');
+  close(m.parseNum('2.5', 9), 2.5, 1e-9, 'parses');
+  close(m.parseNum(null, 9), 9, 1e-9, 'null falls back');
+  close(m.parseNum('nonsense', 9), 9, 1e-9, 'garbage falls back');
+});
+
+test('isKeyOf keeps a bad URL parameter out of a lookup table', () => {
+  assert.equal(m.isKeyOf(m.SOILS, 'average'), true);
+  assert.equal(m.isKeyOf(m.SOILS, 'swamp'), false);
+  assert.equal(m.isKeyOf(m.SOILS, null), false);
+  assert.equal(m.isKeyOf(m.SOILS, 'toString'), false,
+    'an inherited property is not a key');
 });

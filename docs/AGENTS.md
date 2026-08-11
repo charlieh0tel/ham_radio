@@ -74,8 +74,11 @@ npm --prefix docs/tools test
 The page marks that half with `// BEGIN PURE` and `// END PURE`.
 `tools/extract-model.mjs` pulls the region between them into a module and
 appends an export list, so the tests run the shipped code rather than a
-copy. Keep the region free of React, `window` and `document`: a DOM
-reference in there breaks the tests, which is the point of the markers.
+copy. Keep the region free of React, `window` and `document`: the
+extractor scans it for those names, with comments stripped first, and
+refuses to write a module that touches the DOM. Importing alone would
+only catch a top-level reference, so a helper that read `document.title`
+when called would have imported and tested cleanly.
 
 The type check proves the page compiles; it cannot prove the page
 computes. It typed cleanly while the impedance mode drew half-wave

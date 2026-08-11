@@ -39,8 +39,50 @@ const EXPORTS = [
   'wireZ0', 'interpCoeff', 'lineZ', 'endFedZin', 'swrAtRadio', 'scoreLength',
   'solveImpedance',
   // display
-  'toDisplay', 'fromDisplay', 'fmtLen',
+  'toDisplay', 'fromDisplay', 'fmtLen', 'fmtBandEdges', 'tickStep',
+  // URL and state helpers
+  'clamp', 'parseNum', 'isKeyOf', 'entriesOf', 'readWireLenM',
+  'URL_KEYS', 'DEFAULTS', 'LEGACY_LEN_FT_KEY',
+  // classical internals worth exercising directly
+  'pickInSpan', 'mergeIntervals', 'usableIntervals', 'bestFeasibleMargin',
+  'nearestClearLength', 'PICK_STEPS', 'MARGIN_PCT_RANGE',
+  'DEFAULT_MARGIN_PCT', 'MODEL_BOUND_H_OVER_LAM',
 ];
+
+/**
+ * Identifiers that make a region not pure.  Checked as whole words, so
+ * `documentation` in a comment is fine and `document.title` is not.
+ */
+const DOM_NAMES = /\b(?:window|document|React|ReactDOM|navigator|localStorage)\b/;
+
+/**
+ * Throw if the extracted region touches the DOM.
+ *
+ * Importing the module only fails on *top-level* DOM access, so a helper
+ * that reads `document.title` when called would import and test cleanly
+ * while making the marker a lie.  This is what makes "keep the region free
+ * of React, window and document" an enforced rule rather than a request.
+ *
+ * @param {string} region
+ */
+export function assertPure(region) {
+  // Comments are stripped first, in place, so line numbers survive: prose
+  // says "document" often and means nothing by it.
+  const code = region
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, '');
+  const offenders = code
+    .split('\n')
+    .map((line, i) => [i + 1, line])
+    .filter(([, line]) => DOM_NAMES.test(line));
+  if (offenders.length > 0) {
+    const lines = region.split('\n');
+    const shown = offenders.slice(0, 5)
+      .map(([n]) => `  line ${n}: ${lines[n - 1].trim()}`).join('\n');
+    throw new Error(
+      `the PURE region touches the DOM, so the tests cannot run it:\n${shown}`);
+  }
+}
 
 /**
  * @param {string} body  the full script body
@@ -65,5 +107,6 @@ if (!source || !target) {
 const html = await readFile(resolve(source), 'utf8');
 const { body } = extractScript(html);
 const region = pureRegion(body);
+assertPure(region);
 await mkdir(dirname(resolve(target)), { recursive: true });
 await writeFile(resolve(target), `${region}\nexport { ${EXPORTS.join(', ')} };\n`);
