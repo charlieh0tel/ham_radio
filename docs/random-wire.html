@@ -406,7 +406,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useEffect, useRef } = React;
+    const { useState, useMemo, useEffect, useRef, useCallback } = React;
 
     // BEGIN PURE
     // Everything to END PURE is free of React, window and document, so
@@ -1852,8 +1852,15 @@
     function RandomWire() {
       const [p, setP] = useState(getUrlParams);
 
-      /** @param {Partial<ReturnType<typeof getUrlParams>>} updates */
-      const set = (updates) => setP(prev => ({ ...prev, ...updates }));
+      /**
+       * Stable across renders so effects can depend on it honestly: a fresh
+       * closure each render would make any effect listing it run every time.
+       *
+       * @param {Partial<ReturnType<typeof getUrlParams>>} updates
+       */
+      const set = useCallback(
+        /** @param {Partial<ReturnType<typeof getUrlParams>>} updates */
+        (updates) => setP(prev => ({ ...prev, ...updates })), []);
 
       const { region, bands, segment, velocityFactor, marginPct, units, wireLenM,
               mode, ununRatio, heightM, returnM, soil } = p;
@@ -1974,45 +1981,55 @@
       const bestLenM = mode === 'impedance'
         ? (score ? score.suggestions[0]?.lenM : undefined)
         : solution.suggestions[0]?.pick;
+
+      /**
+       * What the recommendation actually depends on, as one comparable value.
+       * The display unit is deliberately absent: it re-rounds a pick but
+       * changes no physics, and treating it as an input is what let a unit
+       * switch discard a length the user had typed.
+       */
+      const inputSignature = [region, bands.join(','), segment, mode, heightM,
+                              returnM, soil, ununRatio, velocityFactor,
+                              marginPct].join('|');
+      const lastSignature = useRef(inputSignature);
+
       useEffect(() => {
         const wasFirstRun = firstRun.current;
+        const changed = lastSignature.current !== inputSignature;
         firstRun.current = false;
+        lastSignature.current = inputSignature;
+        if (bestLenM === undefined) return;
+        // A length in the URL wins on first load.
         if (wasFirstRun && wireLenM > 0) return;
-        if (bestLenM === undefined) return;
-        autoLenM.current = bestLenM;
-        set({ wireLenM: bestLenM });
-      }, [region, bands, segment, mode, site, ununRatio, velocityFactor,
-          marginPct]);
-
-      // A length the page chose is still the page's to re-round when the unit
-      // changes, so a pick stays a round number in whatever is on screen.  A
-      // length the user chose is left exactly as they set it.
-      useEffect(() => {
-        if (bestLenM === undefined) return;
-        if (autoLenM.current === null || wireLenM !== autoLenM.current) return;
+        // After that, only a real input change moves a length the user set;
+        // a page-chosen length is re-rounded whenever the unit changes.
+        const userChose = autoLenM.current === null || wireLenM !== autoLenM.current;
+        if (!wasFirstRun && !changed && userChose) return;
         if (bestLenM === wireLenM) return;
         autoLenM.current = bestLenM;
         set({ wireLenM: bestLenM });
-      }, [units]);
+      }, [inputSignature, bestLenM, wireLenM, set]);
 
       useEffect(() => {
         if (isAtDefaults(p, autoLenM.current)) {
           window.history.replaceState(null, '', window.location.pathname);
           return;
         }
+        // Read from `p` rather than the destructured locals, so the single
+        // dependency below is honestly the whole of what this writes.
         const params = new URLSearchParams();
-        params.set(URL_KEYS.region, region);
-        params.set(URL_KEYS.bands, bands.join(','));
-        params.set(URL_KEYS.segment, segment);
-        params.set(URL_KEYS.mode, mode);
-        params.set(URL_KEYS.ununRatio, String(ununRatio));
-        params.set(URL_KEYS.velocityFactor, String(velocityFactor));
-        params.set(URL_KEYS.heightM, String(heightM));
-        params.set(URL_KEYS.returnM, String(returnM));
-        params.set(URL_KEYS.soil, soil);
-        params.set(URL_KEYS.marginPct, String(marginPct));
-        params.set(URL_KEYS.units, units);
-        if (wireLenM > 0) params.set(URL_KEYS.wireLenM, wireLenM.toFixed(3));
+        params.set(URL_KEYS.region, p.region);
+        params.set(URL_KEYS.bands, p.bands.join(','));
+        params.set(URL_KEYS.segment, p.segment);
+        params.set(URL_KEYS.mode, p.mode);
+        params.set(URL_KEYS.ununRatio, String(p.ununRatio));
+        params.set(URL_KEYS.velocityFactor, String(p.velocityFactor));
+        params.set(URL_KEYS.heightM, String(p.heightM));
+        params.set(URL_KEYS.returnM, String(p.returnM));
+        params.set(URL_KEYS.soil, p.soil);
+        params.set(URL_KEYS.marginPct, String(p.marginPct));
+        params.set(URL_KEYS.units, p.units);
+        if (p.wireLenM > 0) params.set(URL_KEYS.wireLenM, p.wireLenM.toFixed(3));
         window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
       }, [p]);
 
@@ -2136,8 +2153,10 @@
                 </div>
                 {mode === 'impedance' && (
                   <div className="control-hint" style={{ marginBottom: '10px' }}>
-                    Coefficients are
-                    fitted against NEC: |Z| lands within about
+                    Coefficients are fitted against NEC over
+                    {' '}{MODEL_FIT_RANGE_HZ.min / 1e6}&ndash;
+                    {MODEL_FIT_RANGE_HZ.max / 1e6} MHz, which is why no band
+                    outside that is offered: |Z| lands within about
                     {' '}{MODEL_BOUND_FACTOR}x once the wire is
                     {' '}{MODEL_BOUND_H_OVER_LAM} wavelengths up, which is 26 ft on
                     160 m, 13 ft on 80 m and 7 ft on 40 m. Lower than that it slips
