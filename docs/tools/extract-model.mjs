@@ -46,7 +46,7 @@ const EXPORTS = [
   // classical internals worth exercising directly
   'pickInSpan', 'mergeIntervals', 'usableIntervals', 'bestFeasibleMargin',
   'nearestClearLength', 'PICK_STEPS', 'MARGIN_PCT_RANGE',
-  'DEFAULT_MARGIN_PCT', 'MODEL_BOUND_H_OVER_LAM',
+  'DEFAULT_MARGIN_PCT',
 ];
 
 /**
