@@ -558,8 +558,11 @@ test('the published lengths are scored rather than omitted', () => {
   }
   // Mostly agreeing with the tables on the average is what makes the
   // disagreements worth reading; if this flips, the model has drifted rather
-  // than dissented.
-  const passing = scores.filter(s => s.swr <= m.TUNERS[m.DEFAULT_TUNER].limit).length;
+  // than dissented.  Judged against a fixed 5:1 rather than the default
+  // tuner, so that changing which tuner the page opens on does not silently
+  // change what this asserts.
+  const AGREEMENT_SWR = 5;
+  const passing = scores.filter(s => s.swr <= AGREEMENT_SWR).length;
   assert.ok(passing >= scores.length / 2,
     `${passing} of ${scores.length} published lengths pass on the mean`);
 });
@@ -571,11 +574,13 @@ test('the worst-band gate is what separates the published lengths', () => {
   // includes 80 m, so this is what a first-time visitor sees.
   const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
     soil: m.DEFAULT_SOIL };
+  // Against a wide-range tuner, not the default: with a rig ATU almost
+  // nothing passes either way and the comparison says nothing.
   const passing = (bandsM) => {
     const bands = m.bandsIn('us').filter(b => bandsM.includes(b.m));
     return m.PUBLISHED_FT.filter(ft => m.isGoodScore(
       m.scoreLength(m.fromDisplay(ft, 'ft'), bands, 'full', site,
-        m.WIRE_RADIUS_M, 9))).length;
+        m.WIRE_RADIUS_M, 9), 'roller')).length;
   };
   const withEighty = passing([80, 40, 20, 15, 10]);
   const without = passing([40, 20, 15, 10]);

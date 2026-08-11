@@ -815,7 +815,13 @@
       roller: { label: 'Roller / link', limit: 12 },
     });
     /** @typedef {keyof typeof TUNERS} TunerKey */
-    const DEFAULT_TUNER = 'wide';
+    /**
+     * The rig's own ATU is what most people have and the first thing they
+     * will try, so it is what the page opens on.  It is also the strictest,
+     * which makes the default answer the conservative one: a length shown as
+     * good here is good with anything.
+     */
+    const DEFAULT_TUNER = 'rig';
 
     /**
      * Whether a scored length is worth calling good: acceptable on average
