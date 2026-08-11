@@ -233,7 +233,7 @@
     /* Controls */
     .control-label {
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
       font-size: 12px;
       color: #888;
     }
@@ -247,15 +247,21 @@
      */
     .control-group {
       display: block;
-      margin: 0 0 10px;
+      margin: 0 0 14px;
       padding: 0;
       border: 0;
     }
 
     .control-group:last-child { margin-bottom: 0; }
 
+    /*
+     * A legend is a block, where the label it replaced put its text inline
+     * with the buttons, so without this the caption sits flush on the row
+     * beneath it.
+     */
     .control-group > legend {
       padding: 0;
+      margin-bottom: 6px;
       font-size: 12px;
       color: #888;
     }
@@ -267,7 +273,8 @@
     .control-hint {
       font-size: 10px;
       color: #949494;
-      margin-top: 2px;
+      margin-top: 4px;
+      line-height: 1.5;
     }
 
     .control-hint.right { text-align: right; margin-top: 8px; }
