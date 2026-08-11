@@ -1525,6 +1525,38 @@
      */
 
     /**
+     * The worst band of the worst length the classical rule recommends, as
+     * SWR at the radio through a transformer.
+     *
+     * Priced on the recommendations rather than on every length the rule
+     * permits.  A user picks from the suggestions, so what the margin is
+     * worth to them is what the suggestions are worth; the worst corner of a
+     * usable span is a length nobody was offered.
+     *
+     * The classical rule is arithmetic with no impedance in it, which is its
+     * virtue, so this deliberately changes nothing it recommends.  It only
+     * says what the margin buys, in the currency the impedance mode already
+     * grades in, because a percentage of a half wave means nothing alone.
+     * Modelled, therefore, and labelled as such where it is shown.
+     *
+     * @param {Span[]} suggestions
+     * @param {Band[]} bands
+     * @param {SegmentKey} segment
+     * @param {Site} site
+     * @param {number} ununRatio
+     * @returns {?number} SWR, or null if nothing was suggested
+     */
+    const worstSuggestedSwr = (suggestions, bands, segment, site, ununRatio) => {
+      let worst = 0;
+      for (const span of suggestions) {
+        const scored = scoreLength(span.pick, bands, segment, site,
+                                   WIRE_RADIUS_M, ununRatio);
+        if (scored) worst = Math.max(worst, scored.worst.swr);
+      }
+      return worst > 0 ? worst : null;
+    };
+
+    /**
      * Score the whole length axis, then offer its local minima best first.
      * Only strict minima are offered: a length partway down a slope is always
      * bettered by moving along it, so it is not worth recommending.
@@ -2001,6 +2033,26 @@
           : []),
         [mode, solution, segment, site, ununRatio]);
 
+      /** Fraction of the map the classical rule leaves usable, as a percent. */
+      const usablePct = useMemo(
+        () => (maxLenM > 0
+          ? Math.round(100 * solution.usable.reduce(
+            (sum, span) => sum + (span.hi - span.lo), 0) / maxLenM)
+          : 0),
+        [solution, maxLenM]);
+
+      /**
+       * What the classical clearance is worth, priced by the impedance model.
+       * Only computed in classical mode, where the number is otherwise a bare
+       * percentage; the impedance mode already speaks this currency.
+       */
+      const marginWorstSwr = useMemo(
+        () => (mode === 'classical' && solution.bands.length > 0
+          ? worstSuggestedSwr(solution.suggestions, solution.bands, segment,
+                              site, ununRatio)
+          : null),
+        [mode, solution, segment, site, ununRatio]);
+
       /** Modelled SWR for the length in hand, for the verdict line. */
       const scoreHere = useMemo(
         () => (mode === 'impedance' && wireLenM > 0 && solution.bands.length > 0
@@ -2373,6 +2425,13 @@
                   <div className="control-hint">
                     Widens each avoid zone by this fraction of a half wavelength,
                     on both sides.
+                    {marginWorstSwr !== null && (
+                      <> Leaves {usablePct}% of the axis usable; the worst band
+                      of the worst length it offers models{' '}
+                      {marginWorstSwr.toFixed(1)}:1 through a {ununRatio}:1.
+                      That figure comes from the impedance model, not from this
+                      rule &mdash; the rule has no impedance in it.</>
+                    )}
                   </div>
                 </label>
                 )}

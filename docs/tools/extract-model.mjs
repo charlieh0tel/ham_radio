@@ -37,7 +37,7 @@ const EXPORTS = [
   'tooShortM', 'solve', 'judgeLength',
   // impedance model
   'wireZ0', 'interpCoeff', 'lineZ', 'endFedZin', 'swrAtRadio', 'scoreLength',
-  'solveImpedance',
+  'solveImpedance', 'worstSuggestedSwr',
   // display
   'toDisplay', 'fromDisplay', 'fmtLen', 'fmtBandEdges', 'tickStep',
   // URL and state helpers
