@@ -685,13 +685,19 @@
      * Default is a 25 ft coax run off the 30 ft drop, which is what most
      * people physically have rather than something designed.
      *
-     * A quarter wave at the lowest band was tried instead, since that is the
-     * ARRL's counterpoise figure, and it measures worse: at the default band
-     * set that is 35 ft, which puts the return's own quarter-wave resonance
-     * inside 40 m and leaves nothing a rig ATU can match.  Measured across
-     * 35 to 140 ft the useful range is 55 to 70 ft, and 55 is the one that
-     * also describes a real installation.  The preset button still offers a
-     * quarter wave for anyone who wants to build one.
+     * A quarter wave at the lowest selected band was tried instead, since
+     * that is the ARRL's counterpoise figure.  It measures worse: at the
+     * default bands it is 35 ft, giving 3.6:1 at best against 2.9:1 here,
+     * and nothing a rig ATU can match.
+     *
+     * Sweeping the return from 30 to 160 ft, the best is about 75 ft, and it
+     * stays about 75 ft whichever bands are selected -- 75 with 40 m lowest,
+     * 87 with 80 m, 72 with 20 m.  So it does not track a quarter or a half
+     * wave of anything; a long return simply keeps its own impedance high
+     * and flat across the bands.  55 ft costs about 0.7 in the best worst
+     * band and two of the eight suggestions being wide-range rather than
+     * rig-ATU matchable, and buys describing what people actually have.
+     * The preset button still offers a quarter wave.
      */
     const DEFAULT_RETURN_M = 16.76;  // 55 ft: a 25 ft run off a 30 ft drop
     const HEIGHT_RANGE_M = Object.freeze({ min: 1, max: 30 });

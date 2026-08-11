@@ -610,6 +610,19 @@ published tables of any return length tried, median gap 3.5 ft against
 but it is worth knowing before moving it, and a typical user really does
 just have their coax run.
 
+Later, with the return redefined as the whole conductor including the
+drop, the same question was asked again and answered by sweeping.  The
+best return is about 75 ft, and it stays about 75 ft whichever bands are
+selected: 75 with 40 m lowest, 87 with 80 m, 72 with 20 m.  It therefore
+tracks neither a quarter nor a half wave of anything, which disposes of
+two tidy explanations -- the ARRL counterpoise figure, and the idea that
+a half-wave return keeps its own resonance out of the way.  A long
+return simply holds its impedance high and flat across the bands.
+
+The default stays at 55 ft, a 25 ft coax run off a 30 ft drop, because
+it is what people have rather than what they would build.  It costs
+about 0.7 in the best worst-band SWR.
+
 It is not an artifact of the near-ground trouble described below,
 either.  Located directly in NEC rather than through the fit, the 40 m
 resonance peak sits at 69.5 ft, implying a velocity factor of 1.010,
