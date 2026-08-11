@@ -2432,6 +2432,15 @@
                         No length scores better than its neighbours here.
                       </div>
                     ) : (
+                      <>
+                      {score.suggestions.every(pt => !isGoodScore(pt)) && (
+                        <div className="control-hint" style={{ marginBottom: '10px' }}>
+                          These are the best available, not good ones: every
+                          candidate has a band above {SWR_WORST_OK}:1. Changing
+                          the transformer ratio, or dropping the band in the last
+                          column, will do more here than changing length.
+                        </div>
+                      )}
                       <table>
                         <thead>
                           <tr>
@@ -2448,12 +2457,16 @@
                                 </button>
                               </td>
                               <td>{point.swr.toFixed(1)}:1</td>
-                              <td>{point.worst.swr.toFixed(1)}:1</td>
+                              <td className={point.worst.swr <= SWR_WORST_OK
+                                ? 'score-ok' : 'score-poor'}>
+                                {point.worst.swr.toFixed(1)}:1
+                              </td>
                               <td>{point.worst.band.label}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      </>
                     )
                   ) : (<>
                   {solution.suggestions.length === 0 ? (
