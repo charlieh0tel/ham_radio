@@ -1068,12 +1068,23 @@ and for the literature check on 71 ft.
 
 - ARRL, *Random Wires*.
   http://www.arrl.org/random-wires
-  The ARRL's own guidance offers **no** recommended lengths at all, only
-  that a shorter wire reaches fewer bands.  It does specify the
-  counterpoise: a quarter wave at the lowest frequency in use, which is
-  about 66 ft on 80 m and 130 ft on 160 m.  This page defaults the
-  return path to 25 ft, far short of that, and the sweep shows return
-  length matters a great deal -- worth revisiting.
+  Offers **no** recommended wire lengths at all, only that a shorter wire
+  reaches fewer bands.  It does specify a counterpoise, and the wording
+  matters: "a long, insulated wire that attaches to the ground connection
+  on your antenna tuner", best at "1/4-wavelength at the lowest frequency
+  you intend to use", and installed by looping "the wire around the room".
+
+  That is not the conductor this model has.  ARRL's counterpoise starts at
+  the tuner, in the shack; this model's return starts at the feedpoint.
+  Theirs is indoors, elevated and folded around a room; this one is a
+  straight run 5 cm off the soil.  Their configuration sits squarely in
+  the elevated-return regime the two-line form was measured to fail in --
+  x1.60 median at 2 m, the reason a return-height axis was tried and
+  rejected.
+
+  So the quarter-wave preset borrows their number and applies it to a
+  different geometry.  That, rather than any resonance argument, is why
+  it does not behave the way their advice implies.
 
 - S.A. Schelkunoff, *Theory of Antennas of Arbitrary Size and Shape*,
   Proc. IRE 29(9), 1941.  Source of the average characteristic
