@@ -415,29 +415,50 @@ for anything resting on it.
 The bound the caveat text should carry.  Taken over 96 groups, each
 fitted across 159 lengths and 7 return lengths.
 
-Two numbers, and the second is the one the page may claim.  Fitting
-coefficients independently for every frequency, height and soil gives
-x1.35 worst case for `h/lambda >= 0.05`.  The page cannot do that: it
-carries a small table and interpolates.  Measured with the tabulated
-coefficients over the whole sweep, that costs almost nothing.
+Three sets of figures, and only the last says anything about what a user
+will see.
 
-**Tabulated, for `h/lambda >= 0.05`: `|Z|` within x1.40 worst case,
-x1.35 at the 90th percentile, x1.27 median.**  That covers 81 of the 96
-groups and every soil.
+**In-sample, per-group.**  Fitting coefficients independently for every
+frequency, height and soil gives x1.35 worst for `h/lambda >= 0.05`.
 
-The page quotes x1.5 rather than x1.40, because that figure is measured
-against the sweep's own four frequencies while the page evaluates at
-nine bands.  Checked at five frequencies the fit never saw -- 3.75,
-10.125, 18.118, 21.225 and 24.94 MHz -- the tabulated model runs to
-x1.47, median x1.30.  Interpolating across bands costs something, and
-the quoted bound has to cover the bands a user actually picks rather
-than the ones the sweep happened to sample.
+**In-sample, tabulated.**  The page cannot fit per installation; it
+carries a small table and interpolates.  Over the whole sweep that costs
+little: x1.25 median, x1.32 at the 90th, x1.38 worst.
 
-| | per-group fit | tabulated, as shipped |
-|---|---|---|
-| median | x1.22 | x1.27 |
-| 90th percentile | x1.28 | x1.35 |
-| worst | x1.35 | x1.40 |
+Both are *in-sample* -- fitted on `sweep.npz`, measured on `sweep.npz` --
+so both are optimistic by construction.
+
+**Out of band.**  `out_of_band.py` solves fresh NEC cases at five
+frequencies the sweep never used, across three sites.  That is the
+holdout, and it is in the axis that matters: the sweep has four
+frequencies and the page evaluates nine bands.
+
+| | median | 90th | worst |
+|---|---|---|---|
+| per-group, in-sample | x1.22 | x1.28 | x1.35 |
+| tabulated, in-sample | x1.25 | x1.32 | x1.38 |
+| tabulated, out of band | x1.30 | x1.38 | x1.44 |
+
+**Every figure in that table is a per-group RMS, not a cap on any one
+length, and the page must not quote it as one.**  Point by point across
+the same out-of-band cases:
+
+| | error on \|Z\| |
+|---|---|
+| median point | x1.18 |
+| 90th percentile | x1.48 |
+| 99th percentile | x2.42 |
+| worst point | x3.45 |
+
+So 14 percent of individual lengths are worse than x1.5 and 4 percent
+worse than x2.  The page says "typically within 1.2x, and within 1.5x
+nine times in ten", and says explicitly that this is not a cap.  An
+earlier version printed x1.5 alone, which reads as a guarantee that one
+length in seven breaks.
+
+A leave-one-group-out split was considered and rejected: it would refit
+on less data and degrade the coefficients that ship, to answer worse a
+question the out-of-band check already answers.
 
 What `h/lambda >= 0.05` means in practice, since the user sets height in
 feet and not wavelengths:
