@@ -559,7 +559,7 @@ test('the published lengths are scored rather than omitted', () => {
   // Mostly agreeing with the tables on the average is what makes the
   // disagreements worth reading; if this flips, the model has drifted rather
   // than dissented.
-  const passing = scores.filter(s => s.swr <= m.TUNERS[m.DEFAULT_TUNER].good).length;
+  const passing = scores.filter(s => s.swr <= m.TUNERS[m.DEFAULT_TUNER].limit).length;
   assert.ok(passing >= scores.length / 2,
     `${passing} of ${scores.length} published lengths pass on the mean`);
 });
@@ -834,13 +834,23 @@ test('the tuner preset decides what counts as a good length', () => {
     `nested: rig ${rig.size} <= wide ${wide.size} <= roller ${roller.size}`);
 });
 
-test('every tuner preset states both gates, and states them in order', () => {
+test('every tuner preset states a limit a tuner could plausibly have', () => {
   for (const [key, def] of Object.entries(m.TUNERS)) {
-    assert.ok(def.good > 1, `${key}: the mean gate is a real SWR`);
-    assert.ok(def.worst >= def.good,
-      `${key}: the worst-band gate is not stricter than the mean gate`);
+    assert.ok(def.limit > 1, `${key}: the limit is a real SWR`);
+    assert.ok(def.limit <= 30, `${key}: the limit is not fantasy`);
     assert.ok(typeof def.label === 'string' && def.label.length > 0,
       `${key}: has a label`);
   }
   assert.ok(m.DEFAULT_TUNER in m.TUNERS, 'the default is a real preset');
+});
+
+test('the verdict follows the worst band, not the average', () => {
+  // The failure this replaced: a mean under the limit while one band sat far
+  // above it.  A scored length whose worst band exceeds the tuner cannot be
+  // good however low its average is.
+  const scored = { swr: 1.2, worst: { swr: 99 } };
+  assert.equal(m.isGoodScore(scored, 'roller'), false,
+    'a great average does not rescue an unmatched band');
+  assert.equal(m.isGoodScore({ swr: 4.9, worst: { swr: 4.9 } }, 'wide'), true,
+    'a length inside the limit on every band is good');
 });

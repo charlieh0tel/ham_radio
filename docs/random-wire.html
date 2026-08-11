@@ -798,16 +798,21 @@
      * itself says "good on average", which is not what a user reads it as.
      *
      * What counts as a match depends on what will be doing the matching, and
-     * the real variable is which tuner the user owns rather than two SWR
-     * numbers they would have to invent.  Each preset carries both gates: the
-     * geometric mean across the selected bands, and the worst single band.
+     * the real variable is which tuner the user owns rather than an SWR figure
+     * they would have to invent.
      *
-     * Data table: key -> label, mean gate, worst-band gate.
+     * One number each, and it gates the worst band rather than the average.  A
+     * tuner either reaches what it sees on a band or it does not; an average
+     * across bands is a ranking device, not a criterion, and grading on one is
+     * what let a length with 23:1 on 80 m read as fine.
+     *
+     * Data table: key -> label, the highest SWR that tuner will match.
      */
     const TUNERS = Object.freeze({
-      rig: { label: 'Rig ATU', good: 2, worst: 3 },
-      wide: { label: 'External', good: 5, worst: 10 },
-      roller: { label: 'Roller / link', good: 10, worst: 20 },
+      rig: { label: 'Rig ATU', limit: 3 },
+      compact: { label: 'Compact auto', limit: 5 },
+      wide: { label: 'Wide-range', limit: 9 },
+      roller: { label: 'Roller / link', limit: 12 },
     });
     /** @typedef {keyof typeof TUNERS} TunerKey */
     const DEFAULT_TUNER = 'wide';
@@ -821,9 +826,7 @@
      * @returns {boolean}
      */
     const isGoodScore = (scored, tuner = DEFAULT_TUNER) =>
-      scored !== null
-      && scored.swr <= TUNERS[tuner].good
-      && scored.worst.swr <= TUNERS[tuner].worst;
+      scored !== null && scored.worst.swr <= TUNERS[tuner].limit;
 
     /** Narrowest a map band may be drawn, SVG units, so hairlines stay visible. */
     const MIN_BAND_WIDTH = 0.5;
@@ -2389,10 +2392,11 @@
                       </button>
                     ))}
                     <div className="control-hint">
-                      What has to make the match, which is what decides whether a
-                      length counts as good: {TUNERS[tuner].good}:1 averaged across
-                      your bands and {TUNERS[tuner].worst}:1 on the worst of them.
-                      Measured at the radio, through the transformer.
+                      What has to make the match, and so what counts as a good
+                      length: every selected band must come in under{' '}
+                      {TUNERS[tuner].limit}:1 at the radio, through the
+                      transformer. The average is shown for ranking; the worst
+                      band decides.
                     </div>
                   </fieldset>
                 )}
@@ -2534,7 +2538,7 @@
                       {score.suggestions.every(pt => !isGoodScore(pt, tuner)) && (
                         <div className="control-hint" style={{ marginBottom: '10px' }}>
                           These are the best available, not good ones: every
-                          candidate has a band above {TUNERS[tuner].worst}:1. Changing
+                          candidate has a band above {TUNERS[tuner].limit}:1. Changing
                           the transformer ratio, or dropping the band in the last
                           column, will do more here than changing length.
                         </div>
@@ -2555,7 +2559,7 @@
                                 </button>
                               </td>
                               <td>{point.swr.toFixed(1)}:1</td>
-                              <td className={point.worst.swr <= TUNERS[tuner].worst
+                              <td className={point.worst.swr <= TUNERS[tuner].limit
                                 ? 'score-ok' : 'score-poor'}>
                                 {point.worst.swr.toFixed(1)}:1
                               </td>
