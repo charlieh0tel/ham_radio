@@ -1421,8 +1421,9 @@
      * The return path is part of the antenna, not a passive reference.  It
      * radiates, and it resonates on its own with a half-wavelength period in
      * (drop + run); when that nears a half wave it sets the feedpoint outright
-     * and the antenna length stops mattering.  A 25 ft coax run is a half wave
-     * on 20 m, so that is the common case rather than the exotic one.
+     * and the antenna length stops mattering.  About 35 ft of drop plus run is
+     * a half wave on 20 m, and the resonance repeats every half wave after
+     * that, so across the HF bands most installations sit near one of them.
      *
      * Coefficients are fitted against NEC; see docs/RANDOM_WIRE_MODEL.md for
      * the sweep, the decomposition it rests on, and the error bound.  This is

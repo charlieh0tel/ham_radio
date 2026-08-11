@@ -91,6 +91,11 @@ Still open:
       now disagree about a staple length.  Changing the default moves
       every classical recommendation and breaks agreement with tables the
       user can look up, so this is a judgement call, not a bug fix.
+- [ ] Re-run the margin calibration at the shipped 5 percent default.  The
+      analysis in the model note was measured at 8, which is not what the
+      page uses, so its "the default is defensible" conclusion describes a
+      configuration nobody runs.  Expect a weaker guarantee, nearer 3500
+      ohms than 2800.
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
       percentage.  Applies to the classical mode only.  Measured now, and
       the finding cuts both ways: 8 percent buys about 2800 ohms and

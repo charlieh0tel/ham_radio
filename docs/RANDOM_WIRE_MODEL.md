@@ -43,14 +43,14 @@ frequency as a real axis: soil enters through its complex permittivity,
 
 ## The runtime model
 
-The page ships a single line today, open at the far end:
+The page used to ship a single line, open at the far end:
 
     Zin  = Z0 * coth(gamma * l)
     gamma = alpha + j*beta
     Z0   = 60 * (ln(2l/a) - 1)      # Schelkunoff, thin wire
     beta = 2*pi/lambda * velocityFactor
 
-The fitted replacement is two such lines in series at the feedpoint, the
+What it ships now is two such lines in series at the feedpoint, the
 antenna and the return path, which is the form finding 7 licenses:
 
     Zin = Za(l) + Zr(h + ret)
@@ -99,8 +99,13 @@ carrying common-mode current back to the station, or a counterpoise wire
 thrown out along the ground.  It is not a passive reference.  It
 radiates, it resonates on its own with a half-wavelength period in
 (drop + run), and when that approaches a half wave it dominates the
-feedpoint outright -- antenna length stops mattering.  A 25 ft coax run
-is a half wave on 20 m, so this is the common case, not the exotic one.
+feedpoint outright -- antenna length stops mattering.  A half wave on
+20 m is about 35 ft of drop plus run, and the resonance repeats every
+half wave above that, so most installations sit near one of them on some
+band.  (An earlier draft said 25 ft was a half wave on 20 m.  It is not:
+34.7 ft is, and 25 ft is a half wave at 19.7 MHz.  No fitted number
+depended on the claim, which is measured against (drop+run)/lambda
+directly.)
 
 ## Parameters
 
@@ -265,7 +270,7 @@ All figures at 14.2 MHz, #14 AWG.
    at `h = 5 m` with a 5 m return, `|Z|` is flat at 1800-3500 ohms
    across `l/lambda` from 0.05 to 0.40.  That is the failure mode where
    a user lengthens the wire and nothing improves.  A 15 m coax run is
-   a half wave on 20 m, so this is common, not exotic.
+   a half wave near 8.9 MHz, so this is common, not exotic.
 
 5. **Height matters most below 10 m.**  Half-wave `|Z|` barely moves
    between 10 and 20 m (2674-3047) but reaches 3500-6200 at 5 m with a
@@ -883,7 +888,12 @@ tuner will reach:
 | 2500 | 10 % | 15.5 % |
 | 4000 | 5 % | 33.0 % |
 
-Two things follow.  The default of 8 percent is defensible: it buys
+**The page ships 5 percent, not 8.**  Everything below was measured at
+8 and describes a configuration the page does not use; it is left here
+until the calibration is re-run at the shipped default, which will show
+a weaker guarantee.
+
+Two things follow.  A margin of 8 percent is defensible: it buys
 about 2800 ohms, which a wide-range tuner will reach through a 9:1, and
 it leaves nearly a quarter of the axis.  It is a reasonable place to
 have landed by feel.
