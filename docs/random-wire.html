@@ -382,8 +382,25 @@
       border-bottom: 1px solid #222;
     }
 
-    tr.pick td { cursor: pointer; }
     tr.pick:hover td { background: #222; color: #fff; }
+
+    /*
+     * The length itself is the control.  A row with an onClick handler is
+     * unreachable by keyboard, and this is the primary way to accept a
+     * recommendation, so it has to be a real button rather than a row that
+     * happens to respond to a mouse.
+     */
+    .pick-btn {
+      padding: 0;
+      border: 0;
+      background: none;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .pick-btn:hover { text-decoration: underline; }
 
     .best-length { color: #4fd1ab; font-weight: 600; }
 
@@ -2398,8 +2415,13 @@
                         </thead>
                         <tbody>
                           {score.suggestions.map((point, i) => (
-                            <tr key={i} className="pick" onClick={() => setWireLen(point.lenM)}>
-                              <td className="best-length">{fmtLen(point.lenM, units)}</td>
+                            <tr key={i} className="pick">
+                              <td className="best-length">
+                                <button className="pick-btn"
+                                        onClick={() => setWireLen(point.lenM)}>
+                                  {fmtLen(point.lenM, units)}
+                                </button>
+                              </td>
                               <td>{point.swr.toFixed(1)}:1</td>
                               <td>{point.worst.swr.toFixed(1)}:1</td>
                               <td>{point.worst.band.label}</td>
@@ -2432,8 +2454,13 @@
                       </thead>
                       <tbody>
                         {solution.suggestions.map((s, i) => (
-                          <tr key={i} className="pick" onClick={() => setWireLen(s.pick)}>
-                            <td className="best-length">{fmtLen(s.pick, units)}</td>
+                          <tr key={i} className="pick">
+                            <td className="best-length">
+                              <button className="pick-btn"
+                                      onClick={() => setWireLen(s.pick)}>
+                                {fmtLen(s.pick, units)}
+                              </button>
+                            </td>
                             <td>{fmtLen(s.lo, units)}</td>
                             <td>{fmtLen(s.hi, units)}</td>
                             <td>+/- {fmtLen(s.clearance, units)}</td>
@@ -2466,9 +2493,13 @@
                     </thead>
                     <tbody>
                       {publishedScores.map(({ ft, lenM, scored }) => (
-                        <tr key={ft} className="pick"
-                            onClick={() => setWireLen(lenM)}>
-                          <td className="best-length">{fmtLen(lenM, units)}</td>
+                        <tr key={ft} className="pick">
+                          <td className="best-length">
+                            <button className="pick-btn"
+                                    onClick={() => setWireLen(lenM)}>
+                              {fmtLen(lenM, units)}
+                            </button>
+                          </td>
                           <td>{scored === null ? '-' : `${scored.swr.toFixed(1)}:1`}</td>
                           <td>{scored === null ? '-'
                             : `${scored.worst.swr.toFixed(1)}:1 ${scored.worst.band.label}`}</td>
