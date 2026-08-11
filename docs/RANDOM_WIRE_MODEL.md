@@ -395,24 +395,20 @@ is 0.013 wavelengths.  This is exactly the mutual coupling finding 7
 predicted the additive model would neglect, and it is the term still to
 add.
 
-Known degeneracy, largely closed.  Before the velocity factors were
-capped, `alpha_r` ran to its bound at 28.85 MHz above 20 m while `vf_r`
-pinned at 1.15 or fell to 0.59: past roughly 3 nepers per wavelength
-`coth` saturates, the return stops behaving as a line, and the fit uses
-it as a lumped constant, which fits the data while meaning nothing.
-Capping removed that escape route.  Parameters now sitting against a
-bound, over 96 groups:
+Parameters at a bound, over the 90 groups now fitted:
 
 | parameter | at bound |
 |---|---|
-| `alpha_a` | 0 percent |
-| `kr` | 0 percent |
-| `alpha_r` | 8 percent |
-| `vf_r` | 15 percent |
-| `vf_a` | 78 percent, by construction |
+| `alpha_a`, `ka`, `alpha_r`, `kr` | 0 percent |
+| `vf_r` | 8 percent |
+| `vf_a` | 81 percent, by construction |
 
-The `alpha_r` and `vf_r` corners are still not measurements and should
-not be read as any.
+`vf_a` is the one to read carefully.  Its upper bound *is* 1.0, so the
+median being 1.0 is not a measurement -- it is the cap.  What the fit
+says is that the antenna line wants to be at least that fast, not that
+it is exactly that fast, and the direct measurement in NEC (the
+resonance peak at 69.5 ft, implying 1.010) is the evidence that matters
+for anything resting on it.
 
 ## Error bound
 
@@ -453,10 +449,18 @@ feet and not wavelengths:
 | 40 m | 7 ft |
 | 20 m and up | 4 ft or less |
 
-**Below `h/lambda = 0.05` the bound degrades to x2.9 tabulated, x2.3
-per-group.**  In practice that is 160 m and 80 m with a low wire.  It is not a region to refuse to
-answer in, but it is one where the number on screen should be visibly
-hedged.
+**Below `h/lambda = 0.05` nothing is fitted at all.**  The table holds
+flat below its first node, so figures there are extrapolation: x1.50
+median and x3.12 worst, measured but not claimed.  In practice that is
+160 m and 80 m with a low wire.  It is not a region to refuse to answer
+in, but it is one where the number on screen should be visibly hedged.
+
+The floor is where it is for two reasons that turn out to be one.  The
+page already stops claiming accuracy at 0.05, so fitting hard below it
+was claiming a precision the page simultaneously disclaimed.  And it is
+exactly where the unusable data ends: with a 0.02 floor some 327
+non-physical points survive into the fit, 23 percent of one group at
+1.9 MHz over poor ground, while at 0.05 there are none.
 
 **The bound survives conductor gauge.**  The main sweep ran entirely at
 #14, so `a/lambda` was the one planned axis never executed and the
@@ -870,11 +874,12 @@ can price it.  At the page's defaults, over the 80/40/20/15/10 set:
 
 | margin | axis left usable | worst \|Z\| still reachable |
 |---|---|---|
-| 0 % | 54.2 % | 10482 |
-| 4 % | 37.1 % | 4459 |
-| 8 % | 23.0 % | 2782 |
-| 12 % | 9.5 % | 2107 |
-| 15 % | 3.9 % | 1843 |
+| 0 % | 54.2 % | 10487 |
+| 2 % | 46.0 % | 6557 |
+| **5 %, shipped** | **33.0 %** | **3792** |
+| 8 % | 23.0 % | 2761 |
+| 12 % | 9.5 % | 2090 |
+| 15 % | 3.9 % | 1829 |
 
 Read the other way, which is the way a user can actually state, since
 nobody knows what percentage they want but everybody knows what their
@@ -888,17 +893,15 @@ tuner will reach:
 | 2500 | 10 % | 15.5 % |
 | 4000 | 5 % | 33.0 % |
 
-**The page ships 5 percent, not 8.**  Everything below was measured at
-8 and describes a configuration the page does not use; it is left here
-until the calibration is re-run at the shipped default, which will show
-a weaker guarantee.
+Two things follow.  The shipped 5 percent buys about 3800 ohms and
+leaves a third of the axis usable.  That is a weaker guarantee than the
+8 percent an earlier draft of this note assumed -- 8 buys 2800 ohms and
+leaves 23 percent -- but it is the one the page actually makes, and
+3800 ohms through a 9:1 is still inside what a wide-range tuner will
+reach.
 
-Two things follow.  A margin of 8 percent is defensible: it buys
-about 2800 ohms, which a wide-range tuner will reach through a 9:1, and
-it leaves nearly a quarter of the axis.  It is a reasonable place to
-have landed by feel.
-
-But the range it can express is narrow.  Below about 1800 ohms the
+But the range it can express is narrow, and the shipped default sits
+near the loose end of it.  Below about 1800 ohms the
 margin stops being a usable control: 1500 ohms costs 18 percent and
 leaves 0.6 percent of the axis, and 1000 ohms cannot be had at any
 margin because the resonances are wide enough that no length escapes

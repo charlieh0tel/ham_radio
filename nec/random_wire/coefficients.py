@@ -40,16 +40,19 @@ from nec_model import C
 #: h/lambda is.  Fitting through them was making the coefficients describe
 #: the solver rather than the antenna.
 #:
-#: The page already declares this region degraded -- MODEL_BOUND_H_OVER_LAM
-#: is 0.05 -- so fitting hard below it was claiming a precision the page
-#: simultaneously disclaimed.
-MIN_H_OVER_LAMBDA = 0.02
+#: The floor is 0.05 because that is where the page already stops claiming
+#: accuracy -- MODEL_BOUND_H_OVER_LAM -- and because it is exactly where the
+#: bad data ends: at 0.02 some 327 non-physical points survive, 23 percent of
+#: one group at 1.9 MHz over poor ground, while at 0.05 there are none.
+#: Fitting where the page claims accuracy and extrapolating flat below it is
+#: the same statement made once instead of twice.
+MIN_H_OVER_LAMBDA = 0.05
 
 #: Nodes in h/lambda.  Spaced logarithmically over the range a real
 #: installation reaches, from the exclusion floor to 25 m on 10 m.  Below
 #: the first node the table is held flat, which is honest extrapolation
 #: rather than a fit to points NEC could not solve.
-NODES = np.array([0.02, 0.04, 0.08, 0.15, 0.3, 0.6, 1.2, 2.5])
+NODES = np.array([0.05, 0.09, 0.16, 0.28, 0.5, 0.9, 1.6, 2.5])
 
 #: Tabulated per soil per node.  vf_a is constant, see module docstring.
 TABLE_PARAMS = ("alpha_a_lam", "ka", "alpha_r_lam", "vf_r", "kr")

@@ -39,7 +39,10 @@ BANDS = {
     "10m": (28.0e6, 29.7e6),
 }
 
-MARGINS_PCT = (0, 2, 4, 6, 8, 10, 12, 15)
+#: 5 is what the page ships; the rest span the range so the default can be
+#: read against its neighbours rather than taken on trust.
+MARGINS_PCT = (0, 2, 5, 8, 10, 12, 15)
+SHIPPED_MARGIN_PCT = 5
 Z_LIMITS = (600, 1000, 1500, 2500, 4000)
 SAMPLES_PER_BAND = 9
 MAX_LEN_M = 60.0
@@ -98,7 +101,7 @@ if __name__ == "__main__":
     )
     print(f"worst |Z| anywhere: {peaks.max():.0f} ohms\n")
 
-    print("what a margin buys")
+    print(f"what a margin buys (the page ships {SHIPPED_MARGIN_PCT} percent)")
     print(f"{'margin %':>9} {'usable %':>9} {'worst |Z| outside':>18}")
     for margin_pct in MARGINS_PCT:
         outside = np.array([not in_any_zone(x, margin_pct) for x in lengths])
