@@ -79,26 +79,32 @@ def model_zin(params, length_m, total_return_m, wavelength_m, radius_m=WIRE_RADI
 def _residual(
     params, length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIUS_M
 ):
-    """Complex log residual, flattened to the real vector least_squares wants."""
+    """Complex log residual, flattened to the real vector least_squares wants.
+
+    The imaginary part is wrapped to (-pi, pi].  np.log returns the principal
+    argument, so a model 190 degrees out reads as -170 and the objective is
+    discontinuous where |Zin| swings through resonance -- which it does, at
+    every half wave.  Wrapping the difference rather than differencing the
+    wrapped values makes the phase error the angle it actually is.
+    """
     z = model_zin(params, length_m, total_return_m, wavelength_m, radius_m)
-    r = np.log(z) - np.log(z_nec)
-    return np.concatenate([r.real, r.imag])
+    magnitude = np.log(np.abs(z)) - np.log(np.abs(z_nec))
+    phase = np.angle(z) - np.angle(z_nec)
+    phase = (phase + np.pi) % (2.0 * np.pi) - np.pi
+    return np.concatenate([magnitude, phase])
 
 
 def fit_group(length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIUS_M):
     """Fit one (frequency, height, soil) group.
 
-    Points with a non-positive resistance are dropped first.  A passive
-    antenna cannot have one, so they are NEC failing rather than reporting:
-    they cluster entirely at 160 m with the wire a couple of metres up over
-    poor ground, where the structure is a hundredth of a wavelength above a
-    lossy half-space and the Sommerfeld solution stops converging.  Fitting
-    them pulls the coefficients toward numbers no antenna produces.
+    Every point is used.  An earlier version dropped those with a
+    non-positive resistance, which a passive antenna cannot have -- but
+    selecting on the sign of the answer is selecting on the outcome.  It kept
+    the neighbouring points from the same failing solve that happened to land
+    at small positive R, and so flattered the fit exactly where NEC was
+    struggling.  The regime is excluded instead, upstream in
+    MIN_H_OVER_LAMBDA; see coefficients.py.
     """
-    keep = z_nec.real > 0
-    length_m = length_m[keep]
-    total_return_m = total_return_m[keep]
-    z_nec = z_nec[keep]
     out = least_squares(
         _residual,
         INITIAL,
@@ -106,6 +112,8 @@ def fit_group(length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIU
         args=(length_m, total_return_m, wavelength_m, z_nec, radius_m),
         max_nfev=4000,
     )
+    if out.status <= 0:
+        raise RuntimeError(f"fit did not converge: status {out.status}, {out.message}")
     # RMS of the log-magnitude residual, reported as a factor: exp(rms) is
     # the typical multiplicative error in |Z|.
     half = len(out.fun) // 2
