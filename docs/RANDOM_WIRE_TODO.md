@@ -327,6 +327,19 @@ Remaining:
 
 Tooling: `nec/random_wire/`, Python + PyNEC, `uv`-managed.
 
+## Considered and declined
+
+- Modelling the ARRL counterpoise configuration -- source at the tuner,
+  counterpoise folded around a room a metre or two up -- as a spike.
+  Cheap to build, about eighty lines beside `end_fed_zin` reusing the
+  existing sweep and fit machinery, but limited in what it could settle.
+  NEC-2 has no walls, no mains wiring and no plumbing, so "indoors"
+  becomes "folded wire in free space over ground", and the room size is
+  a parameter nothing determines.  More to the point, at one to three
+  metres the two-line form is already measured at x1.60, so a successful
+  spike would establish what that configuration does while confirming
+  the page still cannot score it.
+
 ## Open questions
 
 - Counterpoise is now an explicit axis rather than a calibration

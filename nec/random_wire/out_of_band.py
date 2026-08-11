@@ -16,7 +16,6 @@ less data and degrade the coefficients that ship, for a number this
 already answers in the axis that matters.
 """
 
-
 import numpy as np
 
 from coefficients import (
