@@ -35,6 +35,7 @@
 
     /* Layout */
     .app {
+      position: relative;
       min-height: 100vh;
       background: #0a0a0a;
       color: #e0e0e0;
@@ -61,7 +62,7 @@
     }
 
     .ribbon {
-      position: fixed;
+      position: absolute;
       top: 0;
       right: 0;
       width: 104px;
@@ -2085,8 +2086,21 @@
       });
 
       /** @param {Meters} lenM */
-      const setWireLen = (lenM) => set({
-        wireLenM: fromDisplay(Number(toDisplay(lenM, units).toFixed(2)), units) });
+      const setWireLen = (lenM) => {
+        if (!Number.isFinite(lenM)) return;
+        set({ wireLenM: Math.max(0,
+          fromDisplay(Number(toDisplay(lenM, units).toFixed(2)), units)) });
+      };
+
+      /**
+       * What the length field shows while it is being typed in.  A controlled
+       * field formatted on every keystroke fights the user: a partial number
+       * like "5." reformats to "5.00" mid-entry, and an empty field or a
+       * stray character parses to NaN.  The draft holds whatever was typed
+       * until focus leaves, and only finite values reach the model.
+       */
+      const [lenDraft, setLenDraft] = useState(/** @type {?string} */ (null));
+      const lenShown = lenDraft ?? toDisplay(wireLenM, units).toFixed(2);
 
       const noBands = bands.length === 0;
 
@@ -2348,8 +2362,15 @@
                 <div className="verdict-headline">
                   Wire length{' '}
                   <input className="num-input len-input" type="number" min="0" step="0.5"
-                         value={toDisplay(wireLenM, units).toFixed(2)}
-                         onChange={(e) => setWireLen(fromDisplay(Number(e.target.value), units))} />
+                         value={lenShown}
+                         onChange={(e) => {
+                           setLenDraft(e.target.value);
+                           const typed = Number(e.target.value);
+                           if (e.target.value !== '' && Number.isFinite(typed)) {
+                             setWireLen(fromDisplay(typed, units));
+                           }
+                         }}
+                         onBlur={() => setLenDraft(null)} />
                   {' '}{UNITS[units].abbrev}
                   {mode === 'impedance'
                     ? (scoreHere ? `: SWR ${scoreHere.swr.toFixed(1)}:1` : '')
