@@ -680,8 +680,18 @@
      * Return path: the whole conductor from the feedpoint back to the
      * station, the vertical drop included.  The drop is part of the
      * resonator, so counting it here keeps the number the user types and the
-     * number the model resonates the same thing.  Default is a 25 ft coax run
-     * from a 30 ft feedpoint, near enough 55 ft of conductor.
+     * number the model resonates the same thing.
+     *
+     * Default is a 25 ft coax run off the 30 ft drop, which is what most
+     * people physically have rather than something designed.
+     *
+     * A quarter wave at the lowest band was tried instead, since that is the
+     * ARRL's counterpoise figure, and it measures worse: at the default band
+     * set that is 35 ft, which puts the return's own quarter-wave resonance
+     * inside 40 m and leaves nothing a rig ATU can match.  Measured across
+     * 35 to 140 ft the useful range is 55 to 70 ft, and 55 is the one that
+     * also describes a real installation.  The preset button still offers a
+     * quarter wave for anyone who wants to build one.
      */
     const DEFAULT_RETURN_M = 16.76;  // 55 ft: a 25 ft run off a 30 ft drop
     const HEIGHT_RANGE_M = Object.freeze({ min: 1, max: 30 });
@@ -2348,7 +2358,7 @@
                       <button className="btn preset-btn"
                               onClick={() => set({
                                 returnM: heightM + fromDisplay(25, 'ft') })}>
-                        25 ft coax + drop
+                        Drop + 25 ft coax
                       </button>
                       {quarterWaveReturnM !== null && (
                         <button className="btn preset-btn"
@@ -2359,12 +2369,14 @@
                     </div>
                     <div className="control-hint">
                       The whole return conductor, from the feedpoint down and back
-                      to the station &mdash; so the vertical drop counts, and this
-                      cannot be shorter than the wire height. It resonates in its
-                      own right: near a half wave it sets the feedpoint and wire
-                      length stops helping. A quarter wave at your lowest band is
-                      the ARRL's counterpoise figure, and a long one flattens the
-                      curve: get it right and the wire length matters less.
+                      to the station &mdash; the vertical drop counts toward it,
+                      so this cannot be shorter than the wire height. It resonates
+                      in its own right: near a half wave it sets the feedpoint and
+                      wire length stops helping. A quarter wave at your lowest
+                      band is the ARRL's counterpoise figure, though at the
+                      default bands that lands shorter than the coax run most
+                      people already have. Getting this right does more than
+                      choosing the wire.
                     </div>
                   </label>
                 )}
