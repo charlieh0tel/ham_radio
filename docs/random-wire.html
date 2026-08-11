@@ -825,13 +825,16 @@
      * across bands is a ranking device, not a criterion, and grading on one is
      * what let a length with 23:1 on 80 m read as fine.
      *
-     * Data table: key -> label, the highest SWR that tuner will match.
+     * Data table: key -> the highest SWR that tuner will match.  The buttons
+     * show the ratio, since that is the number every verdict turns on; which
+     * kind of tuner each ratio corresponds to is in the hint, where it can be
+     * read once rather than compared four times.
      */
     const TUNERS = Object.freeze({
-      rig: { label: 'Rig ATU', limit: 3 },
-      compact: { label: 'Auto', limit: 5 },
-      wide: { label: 'Wide', limit: 9 },
-      roller: { label: 'Roller', limit: 12 },
+      rig: { limit: 3 },
+      compact: { limit: 5 },
+      wide: { limit: 9 },
+      roller: { limit: 12 },
     });
     /** @typedef {keyof typeof TUNERS} TunerKey */
     /**
@@ -2419,15 +2422,17 @@
                               className={`btn preset-btn ${tuner === key ? 'active' : ''}`}
                               role="radio" aria-checked={tuner === key}
                               onClick={() => set({ tuner: key })}>
-                        {def.label} {def.limit}:1
+                        {def.limit}:1
                       </button>
                     ))}
                     <div className="control-hint">
-                      What has to make the match, and so what counts as a good
-                      length: every selected band must come in under{' '}
-                      {TUNERS[tuner].limit}:1 at the radio, through the
-                      transformer. The average is shown for ranking; the worst
-                      band decides.
+                      The highest SWR your tuner will match &mdash; roughly 3:1
+                      for a rig's built-in ATU, 5:1 for a compact auto-tuner,
+                      9:1 for a wide-range one, 12:1 for a roller or
+                      link-coupled. Every selected band must come in under
+                      {' '}{TUNERS[tuner].limit}:1 at the radio, through the
+                      transformer, for a length to count as good. The average
+                      is shown for ranking; the worst band decides.
                     </div>
                   </fieldset>
                 )}

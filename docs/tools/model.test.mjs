@@ -843,9 +843,10 @@ test('every tuner preset states a limit a tuner could plausibly have', () => {
   for (const [key, def] of Object.entries(m.TUNERS)) {
     assert.ok(def.limit > 1, `${key}: the limit is a real SWR`);
     assert.ok(def.limit <= 30, `${key}: the limit is not fantasy`);
-    assert.ok(typeof def.label === 'string' && def.label.length > 0,
-      `${key}: has a label`);
   }
+  // The buttons show the ratio, so the presets must be distinguishable by it.
+  const limits = Object.values(m.TUNERS).map(t => t.limit);
+  assert.equal(new Set(limits).size, limits.length, 'no two presets share a limit');
   assert.ok(m.DEFAULT_TUNER in m.TUNERS, 'the default is a real preset');
 });
 
