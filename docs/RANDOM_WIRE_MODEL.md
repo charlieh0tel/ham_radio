@@ -1116,6 +1116,43 @@ serious treatment of end-fed feedpoint impedance would more likely sit,
 and where a real refutation of 71 ft would most likely be found.  The
 literature check above covers amateur web sources only.
 
+## The peaks are too sharp, which matters most to end-fed half waves
+
+Checked by asking whether the results make sense for an EFHW through a
+49:1, where the physics is unambiguous.  Structurally they do: at the
+page's defaults the second suggestion is 69.0 ft against a 68.8 ft half
+wave on 40 m, and the first is 139 ft, a full wave on the same band.
+The model knows where those lengths are.
+
+The values there are wrong, though, and in a specific way.  Sweeping
+across the 40 m half wave and comparing with NEC:
+
+| l/lambda | NEC | model | ratio |
+|---|---|---|---|
+| 0.400 | 2066 | 1672 | 0.81 |
+| 0.475 | 3897 | 3843 | 0.99 |
+| **0.500** | **5388** | **10042** | **1.86** |
+| 0.525 | 3811 | 2380 | 0.62 |
+| 0.600 | 816 | 819 | 1.00 |
+
+Within a couple of percent of the resonance the model runs nearly twice
+high, and just past it nearly half.  Everywhere else it tracks within
+about 20 percent.  The modelled peak is taller and narrower than the
+real one, which is what `coth` does: it has a true pole where an antenna
+has a finite maximum, and `alpha` is not damping it enough.
+
+The consequences are opposite for the two ways this page gets used.  A
+random wire is chosen to *avoid* the peaks, so exaggerating them is
+conservative and harmless.  An end-fed half wave is chosen to sit *on*
+one, so the error lands exactly on the length being picked: 69 ft on
+40 m scores 5.0:1 through a 49:1 where NEC says 2.5:1, which would send
+someone after a wide-range tuner when a compact auto would do.
+
+Worth stating rather than fixing here.  Damping the peak means a
+frequency- or length-dependent `alpha`, which is a change to the model
+form, and the random-wire case -- what the page is for -- is the one the
+current form serves correctly.
+
 ## What the model deliberately does not do
 
 - Predict a specific installation's feedpoint impedance.

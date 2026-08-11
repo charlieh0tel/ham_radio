@@ -2431,6 +2431,12 @@
                     <div className="control-hint">
                       1:1 is a direct feed; 9:1 suits a random wire, 49:1 and 64:1 an
                       end-fed half wave.
+                      {ununRatio >= 49 && (
+                        <> At these ratios you are aiming at a resonance rather
+                        than avoiding one, and the model draws resonances about
+                        twice too sharp &mdash; expect it to rate a true half
+                        wave worse than it is.</>
+                      )}
                     </div>
                   </fieldset>
                 )}
