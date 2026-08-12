@@ -282,9 +282,10 @@ Remaining:
       the user a number about 30 percent high in exactly the
       configuration the page assumes, permanently.  Three ways out:
 
-      - wait for a nec2++ wasm build; `nec2-js` has `necpp-wasm` and
-        `nec2pp-wasm` branches, so this may be closer than it looks and
-        is the only option where both ends are right
+      - wait for a nec2++ wasm build; `nec2-js`'s `packages/necpp-wasm`
+        has prebuilt wasm, a runner, bindings and tests, and nec2pp-wasm
+        is reported in good shape, so this is the likely answer and the
+        only option where both ends are right
       - move the offline fit to nec2c, so both ends share a solver and
         are wrong the same way -- cheap, and it discards the one
         implementation that passes the limit test
@@ -292,7 +293,41 @@ Remaining:
         was defensible while "which is right" had no answer and reads as
         an excuse now that it does
 
-      Worth pricing the first before conceding to the others.
+      The measurement that decides it: run `sommerfeld.mjs` against the
+      necpp-wasm runner and confirm it reproduces the nec2++ column
+      rather than the nec2c one.  Small job.  See
+      `nec/random_wire/HANDOFF-nec2js.md` -- currently held.
+
+- [ ] **Consider refitting the coefficients against NEC-4.2.**  The
+      model is fitted to nec2++, which passes the conductivity limit;
+      NEC-4.2 passes it better at every height below 0.05 wl, and its
+      ground treatment was reworked for exactly the regime this model
+      lives in.  So the coefficients could be better than they are.
+
+      Three costs to weigh first, none fatal but none free:
+
+      - **Auditability.**  NEC-4 is licensed from LLNL and cannot be
+        redistributed, so nobody without a licence could regenerate the
+        constants.  `nec/random_wire/README.md` says plainly that the
+        point of keeping the modeller in the repo is that constants
+        whose producing code has been discarded cannot be checked.
+        Fitting against a solver most readers cannot run weakens that,
+        though it does not void it: the decks are generated and the
+        comparison against nec2++ stays reproducible.
+      - **Speed.**  `sweep.py` runs PyNEC in process, about 9 minutes on
+        16 cores.  NEC-4 is a binary driven by decks, one process per
+        solve, and it writes its Sommerfeld grid to `SOMD.NEC` in the
+        working directory, so each solve needs its own.  Expect a large
+        multiple of the current time.
+      - **How much it would move.**  Unmeasured, and cheap to find out:
+        solve the existing sweep points with both and compare, rather
+        than refitting first.  Where the page actually operates -- the
+        return at 0.0012 wl but the source 0.22 wl up -- nec2++ already
+        reaches the limit, so the gain may be small.  If it is, the
+        honest answer is to keep the current fit and cite NEC-4.2 as
+        corroboration instead.
+
+      Do the third of those before either of the others.
 - [x] Say something when a published length scores badly.  Done: the
       impedance mode now carries a "Published lengths, scored" panel
       running the standard table through the model at the user's own
