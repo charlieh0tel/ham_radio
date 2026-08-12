@@ -71,6 +71,81 @@ def _segments(length_m, wavelength_m):
     return n + 1 if n % 2 == 0 else n
 
 
+def _wires(length_m, freq_hz, height_m, return_len_m, radius_m):
+    """The three wires, as (tag, segments, x1, y1, z1, x2, y2, z2, radius).
+
+    Tag 1 is the antenna wire running out from the feedpoint at height h,
+    tag 2 the vertical drop toward ground, and tag 3 the return run, whose
+    direction is set by RETURN_DIRECTION.  Shared so that the deck and the
+    in-process solve cannot describe different antennas.
+    """
+    wavelength_m = C / freq_hz
+    return (
+        (
+            1,
+            _segments(length_m, wavelength_m),
+            0.0,
+            0.0,
+            height_m,
+            length_m,
+            0.0,
+            height_m,
+            radius_m,
+        ),
+        (
+            2,
+            _segments(height_m, wavelength_m),
+            0.0,
+            0.0,
+            height_m,
+            0.0,
+            0.0,
+            RETURN_HEIGHT_M,
+            radius_m,
+        ),
+        (
+            3,
+            _segments(return_len_m, wavelength_m),
+            0.0,
+            0.0,
+            RETURN_HEIGHT_M,
+            RETURN_DIRECTION * return_len_m,
+            0.0,
+            RETURN_HEIGHT_M,
+            radius_m,
+        ),
+    )
+
+
+def end_fed_deck(
+    length_m,
+    freq_hz,
+    height_m,
+    return_len_m,
+    ground="average",
+    radius_m=WIRE_RADIUS_M,
+):
+    """The same geometry as a NEC card deck, for an external solver."""
+    eps, sigma = GROUNDS[ground]
+    lines = ["CM end-fed wire with return path near ground", "CE"]
+    for tag, segments, x1, y1, z1, x2, y2, z2, radius in _wires(
+        length_m, freq_hz, height_m, return_len_m, radius_m
+    ):
+        lines.append(
+            f"GW {tag} {segments} {x1:.9g} {y1:.9g} {z1:.9g} "
+            f"{x2:.9g} {y2:.9g} {z2:.9g} {radius:.9g}"
+        )
+    lines += [
+        "GE 1",
+        f"GN 2 0 0 0 {eps:.9g} {sigma:.9g}",
+        "EX 0 1 1 0 1.0 0.0",
+        f"FR 0 1 0 0 {freq_hz / 1e6:.9g} 0",
+        "XQ",
+        "EN",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def end_fed_zin(
     length_m,
     freq_hz,
@@ -84,53 +159,12 @@ def end_fed_zin(
     The source sits on the first segment of the antenna wire, at the
     junction with the return path, which is where a real unun goes.
     """
-    wavelength_m = C / freq_hz
     ctx = nec_context()
     geo = ctx.get_geometry()
-
-    # Tag 1: the antenna wire, running out from the feedpoint at height h.
-    geo.wire(
-        1,
-        _segments(length_m, wavelength_m),
-        0.0,
-        0.0,
-        height_m,
-        length_m,
-        0.0,
-        height_m,
-        radius_m,
-        1,
-        1,
-    )
-    # Tag 2: the vertical drop from the feedpoint down toward ground.
-    geo.wire(
-        2,
-        _segments(height_m, wavelength_m),
-        0.0,
-        0.0,
-        height_m,
-        0.0,
-        0.0,
-        RETURN_HEIGHT_M,
-        radius_m,
-        1,
-        1,
-    )
-    # Tag 3: the return run.  RETURN_DIRECTION decides whether it lies under
-    # the antenna or heads away from it; see the constant.
-    geo.wire(
-        3,
-        _segments(return_len_m, wavelength_m),
-        0.0,
-        0.0,
-        RETURN_HEIGHT_M,
-        RETURN_DIRECTION * return_len_m,
-        0.0,
-        RETURN_HEIGHT_M,
-        radius_m,
-        1,
-        1,
-    )
+    for tag, segments, x1, y1, z1, x2, y2, z2, radius in _wires(
+        length_m, freq_hz, height_m, return_len_m, radius_m
+    ):
+        geo.wire(tag, segments, x1, y1, z1, x2, y2, z2, radius, 1, 1)
 
     ctx.geometry_complete(1)
     eps, sigma = GROUNDS[ground]
