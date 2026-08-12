@@ -1338,6 +1338,46 @@ modelled today, and it becomes the right target the moment the model
 reaches below `h/lambda` 0.05 -- which is what a counterpoise-height
 control would require.
 
+### Spike: counterpoise height as an axis
+
+`return_height_sweep.py` asked this against PyNEC over 0.01 to 3 m and
+the answer was no -- the form failed before the table did, x1.60 median
+at a 2 m return.  `spike_return_height.py` asks it again against NEC-4.2,
+with the axis expressed as a fraction of the wire height rather than as
+an absolute height, and the answer is different.
+
+Per-group error, each height given its own best coefficients:
+
+| counterpoise height | median | worst |
+|---|---|---|
+| ground (1 cm) | x1.13 | x1.20 |
+| 0.02h | x1.16 | x1.22 |
+| 0.05h | x1.17 | x1.23 |
+| 0.1h | x1.18 | x1.21 |
+| 0.25h | x1.17 | x1.25 |
+| 0.5h | x1.19 | x1.21 |
+| 0.9h | x1.25 | x1.44 |
+
+**The form carries the axis.**  Flat from the ground to half the wire
+height, degrading only at 0.9h where there is barely any drop left, which
+is a different antenna anyway.
+
+The coefficients move enough to need tabulating -- `alpha_a` by x2.89 and
+`kr` by x2.49 -- which is expected and is what the `h/lambda` table
+already does for height.
+
+One thing must be fixed before a real fit.  `alpha_r` reads 0.0010 at the
+top of the axis, which is its own lower bound: the fit is railing.  That
+is physically sensible, since a counterpoise well clear of the soil is a
+low-loss line, so the bound is wrong rather than the model.  Lower it
+before fitting, or the tabulated return loss will be a fence rather than
+a measurement.
+
+Two caveats on the spike's own reach.  It is two frequencies, three
+heights, one return length and one soil, so it establishes feasibility
+and not coefficients.  And a real fit needs this axis crossed with the
+existing grid, which multiplies a 77-minute sweep by about seven.
+
 ## References
 
 Sources for the published length tables this page is measured against,

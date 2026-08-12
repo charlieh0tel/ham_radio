@@ -117,6 +117,23 @@ there.
 
 Remaining:
 
+- [ ] **Counterpoise height as a control.**  Spiked and it works:
+      `spike_return_height.py` fits NEC-4.2 across the axis from the
+      ground to 0.9 of the wire height and the form holds, x1.13 to
+      x1.19 median with only 0.9h degrading.  That reverses the earlier
+      rejection, which was measured against PyNEC.
+
+      To carry it through:
+
+      - lower `alpha_r`'s bound in fit.py.  It rails at 0.0010 for a
+        counterpoise clear of the soil, which is a fence rather than a
+        measurement, and a low-loss line there is what physics expects.
+      - sweep the axis crossed with the existing grid, against NEC-4.2,
+        which is roughly seven times a 77-minute run
+      - tabulate against it as `h/lambda` is tabulated, and refit
+      - then the page gains the control, and the model gains a regime
+        where NEC-4.2 is measurably the better target
+
 - [ ] Optional on-demand NEC run once a length is chosen, against the
       height, return path and soil already entered.  Different from the
       objection to runtime NEC, which was about sweeping every candidate:

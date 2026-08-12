@@ -71,13 +71,18 @@ def _segments(length_m, wavelength_m):
     return n + 1 if n % 2 == 0 else n
 
 
-def _wires(length_m, freq_hz, height_m, return_len_m, radius_m):
+def _wires(
+    length_m, freq_hz, height_m, return_len_m, radius_m, return_height_m=RETURN_HEIGHT_M
+):
     """The three wires, as (tag, segments, x1, y1, z1, x2, y2, z2, radius).
 
     Tag 1 is the antenna wire running out from the feedpoint at height h,
     tag 2 the vertical drop toward ground, and tag 3 the return run, whose
     direction is set by RETURN_DIRECTION.  Shared so that the deck and the
     in-process solve cannot describe different antennas.
+
+    `return_height_m` is a parameter rather than the constant because the
+    constant is an assumption worth testing, not a property of the antenna.
     """
     wavelength_m = C / freq_hz
     return (
@@ -100,7 +105,7 @@ def _wires(length_m, freq_hz, height_m, return_len_m, radius_m):
             height_m,
             0.0,
             0.0,
-            RETURN_HEIGHT_M,
+            return_height_m,
             radius_m,
         ),
         (
@@ -108,10 +113,10 @@ def _wires(length_m, freq_hz, height_m, return_len_m, radius_m):
             _segments(return_len_m, wavelength_m),
             0.0,
             0.0,
-            RETURN_HEIGHT_M,
+            return_height_m,
             RETURN_DIRECTION * return_len_m,
             0.0,
-            RETURN_HEIGHT_M,
+            return_height_m,
             radius_m,
         ),
     )
@@ -124,12 +129,13 @@ def end_fed_deck(
     return_len_m,
     ground="average",
     radius_m=WIRE_RADIUS_M,
+    return_height_m=RETURN_HEIGHT_M,
 ):
     """The same geometry as a NEC card deck, for an external solver."""
     eps, sigma = GROUNDS[ground]
     lines = ["CM end-fed wire with return path near ground", "CE"]
     for tag, segments, x1, y1, z1, x2, y2, z2, radius in _wires(
-        length_m, freq_hz, height_m, return_len_m, radius_m
+        length_m, freq_hz, height_m, return_len_m, radius_m, return_height_m
     ):
         lines.append(
             f"GW {tag} {segments} {x1:.9g} {y1:.9g} {z1:.9g} "
@@ -153,6 +159,7 @@ def end_fed_zin(
     return_len_m,
     ground="average",
     radius_m=WIRE_RADIUS_M,
+    return_height_m=RETURN_HEIGHT_M,
 ):
     """Feedpoint impedance of a horizontal end-fed wire over ground.
 
@@ -162,7 +169,7 @@ def end_fed_zin(
     ctx = nec_context()
     geo = ctx.get_geometry()
     for tag, segments, x1, y1, z1, x2, y2, z2, radius in _wires(
-        length_m, freq_hz, height_m, return_len_m, radius_m
+        length_m, freq_hz, height_m, return_len_m, radius_m, return_height_m
     ):
         geo.wire(tag, segments, x1, y1, z1, x2, y2, z2, radius, 1, 1)
 
