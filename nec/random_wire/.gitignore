@@ -5,3 +5,4 @@ return_height_sweep.npz
 unified_sweep.npz
 uv.lock
 __pycache__/
+nec4_compare.npz

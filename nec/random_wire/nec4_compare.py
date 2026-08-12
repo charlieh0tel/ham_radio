@@ -32,19 +32,28 @@ from pathlib import Path
 
 import numpy as np
 
-from nec_model import C, end_fed_deck, end_fed_zin
+import sweep
+from nec_model import C, GROUNDS, end_fed_deck, end_fed_zin
 
-#: A stratified sample of sweep.py's grid rather than the whole thing,
-#: which is 106,848 points.  Every frequency, the extremes and middle of
-#: the height axis, the default return and a long one.
-FREQS_HZ = (1.9e6, 7.15e6, 14.175e6, 28.85e6)
+#: A stratified sample of sweep.py's grid: every frequency, the extremes
+#: and middle of the height axis, the default return and a long one.  The
+#: ratio step is coarser than the sweep's 0.025, which exists to resolve
+#: peak shape, because here the question is agreement rather than shape.
+FREQS_HZ = sweep.FREQS_HZ
 HEIGHTS_M = (3.0, 10.0, 20.0)
 RETURNS_M = (7.62, 20.0)
-SOIL = "average"
-
-#: Antenna length in wavelengths.  Coarser than the sweep's 0.025, which
-#: exists to resolve peak shape; here the question is agreement, not shape.
+SOILS = ("average",)
 RATIOS = np.arange(0.05, 2.0 + 1e-9, 0.05)
+
+#: `--full` instead solves exactly the grid the coefficients are fitted on,
+#: so the answer is about the fit rather than about a sample of it.  About
+#: 107k points and a little over an hour.
+FULL_HEIGHTS_M = sweep.HEIGHTS_M
+FULL_RETURNS_M = sweep.RETURNS_M
+FULL_SOILS = tuple(sorted(GROUNDS))
+FULL_RATIOS = np.arange(
+    sweep.RATIO_MIN, sweep.RATIO_MAX + sweep.RATIO_STEP / 2, sweep.RATIO_STEP
+)
 
 #: Where the page stops claiming accuracy, and the axis that matters.
 MIN_H_OVER_LAMBDA = 0.05
@@ -87,32 +96,37 @@ def solve(binary, work, deck_text):
     return parse_impedance(result.read_text())
 
 
-def compare(binary):
-    """Both solvers over the sample.  Yields one row per point."""
+def compare(binary, heights_m, returns_m, soils, ratios):
+    """Both solvers over the given axes.  Yields one row per point."""
     for freq_hz in FREQS_HZ:
         wavelength_m = C / freq_hz
-        # One directory per frequency: the ground is fixed for the whole
-        # run, so the cached grid stays valid across everything inside.
-        with tempfile.TemporaryDirectory(prefix="n4-") as work:
-            for height_m in HEIGHTS_M:
-                for return_m in RETURNS_M:
-                    for ratio in RATIOS:
-                        length_m = ratio * wavelength_m
-                        args = (length_m, freq_hz, height_m, return_m)
-                        try:
-                            necpp = end_fed_zin(*args, ground=SOIL)
-                            nec4 = solve(binary, work, end_fed_deck(*args, ground=SOIL))
-                        except (subprocess.CalledProcessError, ValueError):
-                            continue
-                        yield (
-                            freq_hz,
-                            height_m,
-                            return_m,
-                            ratio,
-                            height_m / wavelength_m,
-                            abs(necpp),
-                            abs(nec4),
-                        )
+        for soil in soils:
+            # NEC-4 caches its Sommerfeld grid in SOMD.NEC in the working
+            # directory, and that grid is a function of frequency and ground.
+            # One directory per (frequency, soil) is therefore both safe and
+            # the thing that makes the full grid affordable.
+            with tempfile.TemporaryDirectory(prefix="n4-") as work:
+                for height_m in heights_m:
+                    for return_m in returns_m:
+                        for ratio in ratios:
+                            length_m = ratio * wavelength_m
+                            args = (length_m, freq_hz, height_m, return_m)
+                            try:
+                                necpp = end_fed_zin(*args, ground=soil)
+                                nec4 = solve(
+                                    binary, work, end_fed_deck(*args, ground=soil)
+                                )
+                            except (subprocess.CalledProcessError, ValueError):
+                                continue
+                            yield (
+                                freq_hz,
+                                height_m,
+                                return_m,
+                                ratio,
+                                height_m / wavelength_m,
+                                abs(necpp),
+                                abs(nec4),
+                            )
 
 
 def summarise(label, rows):
@@ -132,11 +146,20 @@ def summarise(label, rows):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: nec4_compare.py /path/to/nec4d42")
+    argv = [a for a in sys.argv[1:] if a != "--full"]
+    full = "--full" in sys.argv
+    if len(argv) != 1:
+        raise SystemExit("usage: nec4_compare.py [--full] /path/to/nec4d42")
 
+    axes = (
+        (FULL_HEIGHTS_M, FULL_RETURNS_M, FULL_SOILS, FULL_RATIOS)
+        if full
+        else (HEIGHTS_M, RETURNS_M, SOILS, RATIOS)
+    )
+    print("the full fitted grid" if full else "a stratified sample", flush=True)
     start = time.time()
-    rows = np.array(list(compare(sys.argv[1])))
+    rows = np.array(list(compare(argv[0], *axes)))
+    np.savez_compressed("nec4_compare.npz", rows=rows)
     print(f"{len(rows)} points, {time.time() - start:.0f} s\n")
     print("|Z| from NEC-4.2 against |Z| from nec2++, as a factor.")
     print("x1.000 would mean the refit cannot change anything.\n")
@@ -154,7 +177,7 @@ if __name__ == "__main__":
     for freq_hz in FREQS_HZ:
         summarise(f"{freq_hz / 1e6:g} MHz", rows[rows[:, 0] == freq_hz])
     print()
-    for height_m in HEIGHTS_M:
+    for height_m in np.unique(rows[:, 1]):
         summarise(f"{height_m:g} m up", rows[rows[:, 1] == height_m])
 
     # Where the disagreement sits matters more than its size.  |Zin| is a

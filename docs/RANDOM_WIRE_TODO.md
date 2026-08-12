@@ -81,18 +81,6 @@ quarter-wave end has not survived it.  See the NEC findings below: a
 quarter-wave antenna wire has no characteristic impedance to anchor to,
 because the resonator includes the drop and the return path.
 
-Still open:
-
-- [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
-      percentage.  Applies to the classical mode only.  Measured now, and
-      the finding cuts both ways: 8 percent buys about 2800 ohms and
-      leaves 23 percent of the axis, which is a defensible default to
-      have reached by feel, but the control cannot express much below
-      1800 ohms.  1500 ohms costs an 18 percent margin and leaves 0.6
-      percent of the axis; 1000 ohms is unreachable at any margin.  So
-      the feature is buildable and would be honest, and over much of its
-      range the honest answer is that nothing qualifies.
-
 ### Controls, decided
 
 The model gained three parameters the user can actually measure --
@@ -304,6 +292,17 @@ Remaining:
 Tooling: `nec/random_wire/`, Python + PyNEC, `uv`-managed.
 
 ## Considered and declined
+
+- Deriving `marginPct` from a user-set `|Z|max` instead of a magic
+  percentage, in the classical mode.  Buildable and honest, and declined
+  because over most of its range the honest answer is that no length
+  qualifies.  Measured: 8 percent buys about 2800 ohms and leaves 23
+  percent of the axis, which makes the shipped default a defensible
+  thing to have reached by feel.  Below that it saturates fast -- 1500
+  ohms costs an 18 percent margin and leaves 0.6 percent of the axis,
+  and 1000 ohms is unreachable at any margin.  A control whose range is
+  mostly "nothing qualifies" teaches the user less than the fixed
+  percentage it would replace.
 
 - Modelling the ARRL counterpoise configuration -- source at the tuner,
   counterpoise folded around a room a metre or two up -- as a spike.
