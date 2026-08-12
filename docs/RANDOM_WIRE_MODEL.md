@@ -1266,6 +1266,38 @@ sits 30 ft up, at 0.22 wavelengths, which is milder -- and nec2++'s
 measured pass at 0.0012 wavelengths is the evidence that it is mild
 enough, rather than an assumption that it is.
 
+### What refitting against NEC-4.2 would move
+
+`nec4_compare.py` solves the whole fitted grid with both -- 106,848
+points, an hour and fifty-four minutes -- and reports `|Z|` from NEC-4.2
+against `|Z|` from nec2++ as a factor.  x1.000 would mean a refit cannot
+change anything.
+
+| | median | 90th | worst |
+|---|---|---|---|
+| all | x0.998 | x1.557 | x57.95 |
+| h/lambda 0-0.05 | x0.979 | x2.528 | x57.95 |
+| h/lambda 0.05-0.1 | x1.000 | x1.625 | x27.43 |
+| h/lambda 0.1-0.2 | x1.004 | x1.523 | x25.94 |
+| h/lambda 0.2-0.5 | x0.995 | x1.464 | x5.36 |
+| h/lambda 0.5+ | x0.997 | x1.300 | x4.97 |
+
+By frequency the split is cleaner than by height: 1.9 MHz is x2.207 at
+the 90th and 28.85 MHz is x1.256.  Low and slow is where they part.
+
+The medians say the two solvers agree to a couple of tenths of a percent
+in the typical case.  The 90th percentiles say the tail is the size of
+the model's own x1.35 bound, which is the number that decides the
+question: **the choice of solver matters about as much as the model's
+stated error**, so a refit moves real numbers rather than polishing.
+
+Two tidy explanations were tested at this scale and neither holds.  It
+is not resonance placement -- the spread is *widest* more than 0.15
+wavelengths from a half-wave multiple, where `|Zin|` is flattest, rather
+than on the steep flanks where a small shift would inflate a ratio.  And
+it is not height alone: the 90th falls from 0.05 through 0.2 and rises
+again through 0.2-0.5, so no monotonic story fits.
+
 ## References
 
 Sources for the published length tables this page is measured against,

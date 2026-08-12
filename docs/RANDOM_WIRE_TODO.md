@@ -332,15 +332,12 @@ Remaining:
         Fitting against a solver most readers cannot run weakens that,
         though it does not void it: the decks are generated and the
         comparison against nec2++ stays reproducible.
-      - **How much it would move.**  The open question, and cheap to
-        find out: solve the existing sweep points with both and compare,
-        rather than refitting first.  Where the page actually operates --
-        the return at 0.0012 wl but the source 0.22 wl up -- nec2++
-        already reaches the limit, so the gain may be small.  If it is,
-        the honest answer is to keep the current fit and cite NEC-4.2 as
-        corroboration instead.
-
-      Measure the second before arguing the first.
+      - **How much it would move.**  Measured, over the whole fitted
+        grid: median x0.998, 90th x1.557.  The typical case is a wash
+        and the tail is the size of the model's own x1.35 bound, so the
+        solver matters about as much as the fit does.  That settles it
+        in favour of refitting.  Details in RANDOM_WIRE_MODEL.md, "What
+        refitting against NEC-4.2 would move".
 
       One practical note for whoever drives it: NEC-4 writes its
       Sommerfeld grid to `SOMD.NEC` in the working directory and reuses

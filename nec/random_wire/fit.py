@@ -122,8 +122,14 @@ def fit_group(length_m, total_return_m, wavelength_m, z_nec, radius_m=WIRE_RADIU
     return out.x, np.exp(rms_log_mag), np.degrees(rms_phase)
 
 
-def load():
-    d = np.load(SWEEP, allow_pickle=False)
+def load(path=SWEEP):
+    """The sweep and its impedances.
+
+    `path` exists so the same fit can run against a grid from another
+    solver -- `nec4_sweep.py` writes this schema -- without every caller
+    having to know which one it is.
+    """
+    d = np.load(path, allow_pickle=False)
     return d, d["resistance"] + 1j * d["reactance"]
 
 

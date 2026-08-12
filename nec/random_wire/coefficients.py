@@ -29,7 +29,7 @@ import numpy as np
 
 from scipy.optimize import least_squares
 
-from fit import fit_group, load, model_zin
+from fit import SWEEP, fit_group, load, model_zin
 from nec_model import C
 
 #: Below this the model is not fitted at all.  Two independent failures
@@ -290,9 +290,14 @@ if __name__ == "__main__":
         action="store_true",
         help="patch docs/random-wire.html instead of printing the block",
     )
+    parser.add_argument(
+        "--sweep",
+        default=SWEEP,
+        help="grid to fit against; nec4_sweep.npz is the NEC-4.2 one",
+    )
     args = parser.parse_args()
 
-    d, z = load()
+    d, z = load(args.sweep)
     soils = list(d["soil_names"])
     groups = fitted_groups(d, z)
     table = refine_table(build_table(groups, len(soils)), d, z, soils)
