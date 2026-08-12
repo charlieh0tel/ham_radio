@@ -8,3 +8,4 @@ __pycache__/
 nec4_compare.npz
 *.log
 nec4_sweep.npz
+SOMD.NEC
