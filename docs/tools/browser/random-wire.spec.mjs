@@ -192,6 +192,34 @@ test.describe('the installation panel', () => {
     expect(feet).toBeLessThan(38);
   });
 
+  test('every part of the return slider changes the return', async ({ page }) => {
+    await open(page);
+    const returnPath = page
+      .locator('label', { hasText: 'Counterpoise' })
+      .locator('input');
+    const readout = async () =>
+      Number.parseFloat(
+        (await page.locator('label', { hasText: 'Counterpoise' }).textContent()).match(
+          /([\d.]+)\s*ft/,
+        )[1],
+      );
+
+    const min = Number(await returnPath.getAttribute('min'));
+    const max = Number(await returnPath.getAttribute('max'));
+    const step = Number(await returnPath.getAttribute('step'));
+    // A range input steps from its own min, so only those values are legal.
+    const snap = (value) => min + Math.round((value - min) / step) * step;
+
+    // Anywhere the thumb can go, moving it must move the number.  A floor
+    // below the wire height would leave the bottom of the travel inert.
+    const seen = new Set();
+    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
+      await returnPath.fill(String(snap(min + (max - min) * fraction)));
+      seen.add(await readout());
+    }
+    expect(seen.size).toBe(5);
+  });
+
   test('the return path is never shorter than the drop it starts with', async ({
     page,
   }) => {
@@ -200,7 +228,9 @@ test.describe('the installation panel', () => {
     const returnPath = page
       .locator('label', { hasText: 'Counterpoise' })
       .locator('input');
-    await returnPath.fill('5');
+    // Set a short return, then raise the wire above it.  The return has to
+    // follow, because the drop is part of it.
+    await returnPath.fill(await returnPath.getAttribute('min'));
     await height.fill('25');
     const readout = await page
       .locator('label', { hasText: 'Counterpoise' })

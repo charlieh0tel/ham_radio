@@ -2314,8 +2314,11 @@
        * a previously chosen return, and silently modelling a negative run
        * would be worse than quietly holding the floor.
        *
-       * @type {Site}
+       * @type {Meters}
        */
+      const effectiveReturnM = Math.max(returnM, heightM);
+
+      /** @type {Site} */
       const site = useMemo(
         () => ({ heightM, returnM: Math.max(returnM, heightM), soil }),
         [heightM, returnM, soil]);
@@ -2698,11 +2701,14 @@
                 {mode === 'impedance' && (
                   <label className="control-label">
                     Counterpoise / return: <span className="control-value">
-                      {fmtLen(Math.max(returnM, heightM), units)}</span>
+                      {fmtLen(effectiveReturnM, units)}</span>
+                    {/* Floor the travel at the drop rather than letting the
+                        lower part of it move without changing anything. */}
                     <input className="control-slider" type="range"
-                           min={RETURN_RANGE_M.min} max={RETURN_RANGE_M.max}
+                           min={Math.max(RETURN_RANGE_M.min, heightM)}
+                           max={RETURN_RANGE_M.max}
                            step={RETURN_STEP_M}
-                           value={returnM}
+                           value={effectiveReturnM}
                            onChange={(e) => set({
                              returnM: clamp(Number(e.target.value),
                                             RETURN_RANGE_M) })} />
@@ -3062,7 +3068,7 @@
                   <div className="control-hint">
                     The geometry this model was fitted against: the wire at{' '}
                     {fmtLen(heightM, units)}, the drop and return run making up{' '}
-                    {fmtLen(Math.max(returnM, heightM), units)}, Sommerfeld
+                    {fmtLen(effectiveReturnM, units)}, Sommerfeld
                     ground at {SOILS[soil].epsR} and {SOILS[soil].sigmaSm} S/m,
                     swept across the selected bands. The .nec deck is NEC-2
                     cards for any solver; the .antennasim file is an AntennaSim

@@ -36,12 +36,3 @@ npm --prefix docs/tools run serve
 - [ ] **Does anything look wrong that no assertion covers?**  Spacing
       that has drifted, a panel in an order that reads oddly, a control
       that is technically reachable but awkward to use.
-
-## Known, not yet decided
-
-- [ ] **The counterpoise slider has a dead zone.**  The return path is
-      measured from the feedpoint, so it includes the vertical drop and
-      cannot be shorter than the wire height.  At the default 30 ft
-      height the bottom half of the slider therefore does nothing: it
-      moves, and the readout stays at 30.0 ft.  The physics is right and
-      the presentation is not.  See `RANDOM_WIRE_TODO.md`.
