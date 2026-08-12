@@ -1298,6 +1298,46 @@ than on the steep flanks where a small shift would inflate a ratio.  And
 it is not height alone: the 90th falls from 0.05 through 0.2 and rises
 again through 0.2-0.5, so no monotonic story fits.
 
+### And what it actually moves: nothing that ships
+
+`nec4_sweep.py` solves the same grid with NEC-4.2 and
+`coefficients.py --sweep nec4_sweep.npz` fits the same form to it.  The
+two fits, measured the same way:
+
+| | nec2++ (shipped) | NEC-4.2 |
+|---|---|---|
+| h/lambda >= 0.05 | x1.25 median, x1.32 90th, x1.38 worst | x1.25 median, x1.33 90th, x1.39 worst |
+| h/lambda < 0.05 | x1.50 median, x3.12 worst | x1.37 median, x1.71 worst |
+
+**Where the page claims accuracy the two are indistinguishable.**  Same
+median, 90th percentiles a hundredth apart.  So the refit is declined:
+it would swap the coefficients for others that deliver the same answer,
+against a solver most readers cannot run.
+
+Two things are worth keeping from it anyway.
+
+The first is that the limit test does not discriminate *here*.  In this
+geometry both solvers converge on the perfect-ground answer -- nec2++ to
++0.0 percent, NEC-4.2 to +0.2 -- because the feedpoint is 0.22
+wavelengths up and only the return is near the soil.  NEC-4.2's
+advantage was measured on a dipole with the *fed* element near ground,
+which is not the antenna this page models.  All the disagreement between
+them sits at realistic soil conductivity, where there is no exact answer
+to appeal to: at sigma 0.03 nec2++ reads 1489.7 and NEC-4.2 2081.5.
+
+The second is the low-`h/lambda` row, which was not predicted.  Below
+0.05 the same form fits the NEC-4.2 grid about twice as well, worst case
+x1.71 against x3.12.  The model has not improved; the target has got
+smoother.  That is indirect evidence that NEC-4.2's near-ground
+behaviour is the more physical one, since a fixed form tracks a simpler
+function more easily, and it is exactly the regime where nec2++ is
+nearing its own envelope.
+
+So the ordering inverts.  NEC-4.2 is not worth adopting for the antenna
+modelled today, and it becomes the right target the moment the model
+reaches below `h/lambda` 0.05 -- which is what a counterpoise-height
+control would require.
+
 ## References
 
 Sources for the published length tables this page is measured against,

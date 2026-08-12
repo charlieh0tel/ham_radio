@@ -245,6 +245,7 @@ STYLES = {
     "flags": lambda source, out: ([("-i"), str(source), "-o", str(out)], out),
     "attached": lambda source, out: ([f"-i{source}", f"-o{out}"], out),
     "stdio": lambda source, out: ([], None),
+    "positional": lambda source, out: ([str(source), str(out)], out),
 }
 DEFAULT_STYLE = "flags"
 

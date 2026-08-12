@@ -176,79 +176,6 @@ Remaining:
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
 
-- [x] **Export the deck, and hand it to a solver the page does not
-      carry.**  Done.  Impedance mode now has a "NEC deck" panel with
-      "Download .nec" and "Download .antennasim".  This is the on-demand
-      NEC run above with the solver taken out: the page describes the
-      installation in NEC-2 cards and lets the user run it wherever they
-      like, which costs no wasm, no GPL entanglement beyond what the page
-      already carries, and no claim about whose answer is right.
-
-      `buildNecDeck` is in the pure region and emits the fitted geometry:
-      tag 1 the antenna wire, tag 2 the drop, tag 3 the return run at
-      `DECK_RETURN_HEIGHT_M`, one radius throughout, 20 segments per
-      wavelength at the top of the sweep, and `GN 2` with the soil's own
-      constants -- `GN 1` being the mistake `reference_cases.json` was
-      built to catch.  The tests check the cards against that fixture,
-      and the soil constants against `nec_model.py` itself, so the deck
-      and the coefficients cannot drift apart quietly.
-
-      One FR card sweeps linearly, so it spans the lowest selected band
-      edge to the highest in `DECK_SWEEP_POINTS` steps rather than
-      visiting the bands and skipping the gaps.
-
-      The deck ends `FR / XQ / EN`.  NEC-2 solves at an execution card,
-      not at the FR card, and the first version shipped without one:
-      `nec2c` loaded it, echoed the geometry and computed nothing.  A
-      test now requires the card.
-
-      **An "Open in AntennaSim" button was built and then removed.**
-      AntennaSim (EA1FUO's browser NEC-2 front end) has no way to be
-      handed a deck by URL -- no query parameter, no hash, no
-      postMessage -- so the button could only save the file and open the
-      site, leaving the user to import it by hand.  What it actually
-      produced was the default dipole template on the Simulator page,
-      because the importer lives on the Wire Editor page and swallows
-      failures in an empty `catch`.  A button that opens a site showing
-      somebody else's antenna is worse than no button; the deck goes to
-      whatever solver the user already has.
-
-      Their importer was checked directly against our deck, running
-      `engine/parsers/nec-file.ts` standalone: it takes the three wires,
-      the segment counts, the radius, the feedpoint and the 7-29.7 MHz
-      sweep, and drops the ground constants -- it reads only the GN
-      card's type and then defaults to 13 and 0.005.  So an imported deck
-      always simulates medium soil.  Fixable upstream in a few lines
-      (parse fields 5 and 6, carry them through `ImportResult` into the
-      store); not raised.
-
-      **So a second button writes `.antennasim`**, their editor project
-      format, which does carry the constants: `buildAntennaSimProject`
-      emits schema version 2, `mode: "editor"`, the same wires from the
-      shared `deckWires`, `ground: {type: "custom", ...}` with this
-      page's soil, and the sweep as a range.  Checked by running their
-      own `validateProjectFile` over our output, which accepts it with
-      the constants intact.  It loads from their Wire Editor page; the
-      Simulator page says so rather than failing silently.
-
-      Two things the file cannot carry, both theirs rather than ours.
-      Their editor keeps `frequencySegments`, a multi-band list separate
-      from `frequencyRange`, and the Run passes the segments *instead of*
-      the range whenever the list is non-empty; neither `clearAll` nor
-      the project loader clears it, so band toggles left in the session
-      outrank the sweep our file asks for and the run covers one band.
-      And the balun is in a UI store that no project file serializes, in
-      either mode, so the unun ratio has to be set in their control --
-      as it would in any NEC deck, which has no transformer in it.  The
-      panel says both.
-
-      The cost, recorded because nothing in CI will remind anyone: this
-      is a third-party versioned schema written from a page that is
-      otherwise self-contained.  Their loader rejects a file claiming a
-      newer version than it knows, so ours stays at 2, and a schema
-      change upstream breaks the file with no warning from the type
-      check or the tests.
-
 - [ ] **Decide what the browser check runs on.**  Was "blocked until
       nec2c is fixed"; that framing is dead, since the gap is the method
       and no upstream fix will close it.  Running `nec2c-wasm` would show
@@ -315,35 +242,6 @@ Remaining:
         is where a second model would earn its keep, rather than
         between solvers.
 
-- [ ] **Consider refitting the coefficients against NEC-4.2.**  The
-      model is fitted to nec2++, which passes the conductivity limit;
-      NEC-4.2 passes it better at every height below 0.05 wl, and its
-      ground treatment was reworked for exactly the regime this model
-      lives in.  So the coefficients could be better than they are.
-
-      Speed is not a concern; that is decided.  Two things left to
-      weigh, neither fatal:
-
-      - **Auditability.**  NEC-4 is licensed from LLNL and cannot be
-        redistributed, so nobody without a licence could regenerate the
-        constants.  `nec/random_wire/README.md` says plainly that the
-        point of keeping the modeller in the repo is that constants
-        whose producing code has been discarded cannot be checked.
-        Fitting against a solver most readers cannot run weakens that,
-        though it does not void it: the decks are generated and the
-        comparison against nec2++ stays reproducible.
-      - **How much it would move.**  Measured, over the whole fitted
-        grid: median x0.998, 90th x1.557.  The typical case is a wash
-        and the tail is the size of the model's own x1.35 bound, so the
-        solver matters about as much as the fit does.  That settles it
-        in favour of refitting.  Details in RANDOM_WIRE_MODEL.md, "What
-        refitting against NEC-4.2 would move".
-
-      One practical note for whoever drives it: NEC-4 writes its
-      Sommerfeld grid to `SOMD.NEC` in the working directory and reuses
-      it, so each solve needs its own directory or a sweep that varies
-      frequency or ground will silently reuse the wrong grid.
-      `sommerfeld_cross.py` already does this.
 - [ ] Decide the default return length.  25 ft is what a typical user's
       coax run is, and it gives the best agreement with the published
       tables of any value tried, but the ARRL specifies a quarter wave
@@ -363,6 +261,16 @@ Remaining:
 Tooling: `nec/random_wire/`, Python + PyNEC, `uv`-managed.
 
 ## Considered and declined
+
+- Refitting the coefficients against NEC-4.2.  Measured rather than
+  argued: fitted to each grid, the same form gives x1.25 median and
+  x1.32 against x1.33 at the 90th for `h/lambda >= 0.05`.
+  Indistinguishable where the page claims accuracy, so the refit would
+  change the constants and not the answers.  Revisit if the model ever
+  reaches below `h/lambda` 0.05, where the same form fits NEC-4.2 about
+  twice as well, x1.71 worst against x3.12 -- that is the
+  counterpoise-height direction, and it is what would make NEC-4.2 the
+  right target.  See RANDOM_WIRE_MODEL.md.
 
 - Deriving `marginPct` from a user-set `|Z|max` instead of a magic
   percentage, in the classical mode.  Buildable and honest, and declined
