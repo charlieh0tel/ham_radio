@@ -117,6 +117,24 @@ there.
 
 Remaining:
 
+- [ ] **Slopers.**  Measured as not covered: against the flat model a
+      sloper runs x1.57 to x5.72 median depending on which equivalent
+      height is tried, and no substitution is consistent.  A common
+      arrangement -- arguably the default, since the unun usually sits at
+      the shack and the wire goes up to a tree.
+
+      Remapping is out.  An effective height fits each case to x1.05-1.09
+      median, so the form can represent a sloper, but the height it needs
+      is frequency dependent (2.5 m at 7.15 MHz against 1.0 m at 14.175
+      for the same antenna), and the page scores several bands at once.
+
+      So it wants modelling.  Spike it as counterpoise height was spiked:
+      sweep it, fit per group, and ask separately whether the form
+      carries it and whether the coefficients tabulate.  A sloper's
+      return really is different -- counterpoise at the feed, no drop --
+      so a second geometry with its own table is likelier to be right
+      than another axis on this one.
+
 - [ ] **Counterpoise height as a control.**  Spiked and it works:
       `spike_return_height.py` fits NEC-4.2 across the axis from the
       ground to 0.9 of the wire height and the form holds, x1.13 to

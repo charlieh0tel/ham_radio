@@ -700,7 +700,30 @@ nearer 8 mm than 0.8 mm, a factor of ten the sweep never explored, and
 the return is the term the low-height error already lives in.
 
 **The wire is horizontal.**  No slope, no inverted L, no sag, though a
-sloper is at least as common as a flat top for a random wire.
+sloper is at least as common as a flat top for a random wire.  That was
+an assumption and is now a measurement: `slope_check.py` puts a sloper
+fed at 1.5 m against the flat model, and neither obvious substitution
+holds.
+
+| | apex | vs flat at the apex | vs flat at the mean height |
+|---|---|---|---|
+| 7.15 MHz | 10 m | med x5.72, worst x22.10 | med x1.66, worst x4.23 |
+| 7.15 MHz | 20 m | med x1.57, worst x2.20 | med x5.22, worst x24.22 |
+| 14.175 MHz | 10 m | med x1.81, worst x3.15 | med x2.78, worst x5.79 |
+| 14.175 MHz | 20 m | med x1.80, worst x3.89 | med x1.49, worst x2.15 |
+
+The best cell is x1.49 median, outside the model's own x1.35 bound, and
+there is no consistent winner: the mean height is far closer at a 10 m
+apex on 40 m and far worse at 20 m.  So a sloper is a different antenna
+and the page does not cover it.
+
+An effective height does exist -- searched per case, the best flat height
+reproduces a sloper to x1.05 to x1.09 median, better than the model's own
+bound, so the two-line form can represent one.  It cannot be used,
+because the height it wants depends on frequency: the same 6 m apex needs
+2.5 m at 7.15 MHz and 1.0 m at 14.175.  One antenna cannot have two
+heights and the page scores several bands at once, so no geometric
+remapping survives.  Supporting slopers means modelling them.
 
 **The classical mode still defaults to vf 0.95.**  The impedance mode's
 71 ft result says that figure places the resonances about 5 percent too
