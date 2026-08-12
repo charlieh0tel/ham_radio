@@ -19,24 +19,28 @@ carries the wasm build; this runs them side by side, which is what shows
 that the disagreement is two-way rather than a spread.
 
 Results are in docs/RANDOM_WIRE_MODEL.md, "Every implementation, against
-height".  In short: all agree to 0.05 wavelengths, below which nec2++ and
-PyNEC part company with the entire FORTRAN lineage -- nec2c both stock
-and on its `validation` branch, nec2dx, and aegnec2 -- which agrees with
-itself to three or four figures across five orders of magnitude of error.
-Only nec2++ reaches the limit, and only down to about 0.005 wavelengths.
+height".  In short: all agree to 0.05 wavelengths, below which NEC-4.2
+and nec2++ part company with the entire FORTRAN lineage -- nec2c both
+stock and on its `validation` branch, nec2dx, and aegnec2 -- which agrees
+with itself to three or four figures across five orders of magnitude of
+error.  NEC-4.2 reaches the limit best, nec2++ next, and both give up
+below about 0.005 wavelengths.
 
 Usage, with any subset of the solvers:
 
     LD_LIBRARY_PATH=~/src/necpp/_install_/lib \\
     uv run python sommerfeld_cross.py \\
+        nec4.2=prompt:/usr/bin/nec4d42 \\
         nec2++=attached:~/src/necpp/_install_/bin/nec2++ \\
         nec2c=~/src/nec2c/nec2c \\
         nec2dx=attached:~/src/nec2c/nec2dx \\
         nec2dxs=stdio:~/src/nec2/nec2dxs \\
         aegnec2=jobname:~/src/aegnec2/_install_/bin/aegnec2
 
-PyNEC is always included, in process.  `nec2dx` comes from nec2c's
-`validation` branch; see nec2c_ground_bug.py for the build.
+PyNEC is always included, in process, and duplicates the nec2++ column.
+`nec2dx` comes from nec2c's `validation` branch; see nec2c_ground_bug.py
+for the build.  NEC-4 is licensed from LLNL, so that column needs a copy
+this repo cannot supply.
 
 The runs build their decks in a temp directory and discard them.
 `--decks=DIR` writes the same text out instead, two files per height, for
@@ -79,14 +83,24 @@ IMPEDANCE_FIELD = 4
 #: so split on the exponent form rather than on whitespace.
 SCIENTIFIC = re.compile(r"[-+]?\d*\.?\d+[Ee][-+]?\d+")
 
+#: Stand-in for the deck itself, for solvers that read it on stdin.
+DECK_ON_STDIN = object()
+
 #: How each implementation wants to be invoked, mapping a deck path and an
-#: output path to the argv to use and where the report lands.  None means
-#: the report comes back on stdout.  Names match sommerfeld.mjs.
+#: output path to (argv, what to write to stdin, where the report lands).
+#: A report location of None means it comes back on stdout.  The first four
+#: names match sommerfeld.mjs; `prompt` is NEC-4, which asks for the input
+#: and output file names in turn.
 STYLES = {
-    "flags": lambda src, out: (["-i", str(src), "-o", str(out)], out),
-    "attached": lambda src, out: ([f"-i{src}", f"-o{out}"], out),
-    "stdio": lambda src, out: ([], None),
-    "jobname": lambda src, out: ([str(src.with_suffix(""))], src.with_suffix(".res")),
+    "flags": lambda src, out: (["-i", str(src), "-o", str(out)], None, out),
+    "attached": lambda src, out: ([f"-i{src}", f"-o{out}"], None, out),
+    "stdio": lambda src, out: ([], DECK_ON_STDIN, None),
+    "jobname": lambda src, out: (
+        [str(src.with_suffix(""))],
+        None,
+        src.with_suffix(".res"),
+    ),
+    "prompt": lambda src, out: ([], f"{src}\n{out}\n", out),
 }
 DEFAULT_STYLE = "flags"
 
@@ -136,12 +150,18 @@ def run_deck(binary, text, style):
     with tempfile.TemporaryDirectory(prefix="sc-") as work:
         source = Path(work) / "in.nec"
         source.write_text(text)
-        args, out = STYLES[style](source, Path(work) / "out.txt")
+        args, stdin, out = STYLES[style](source, Path(work) / "out.txt")
+        if stdin is DECK_ON_STDIN:
+            stdin = text
+        # NEC-4 caches its Sommerfeld grid in SOMD.NEC in the working
+        # directory.  Run in the scratch directory so each solve gets its own
+        # and no stale grid can be picked up; every path passed in is absolute.
         done = subprocess.run(
             [binary, *args],
-            input=None if out else text.encode(),
+            input=None if stdin is None else stdin.encode(),
             capture_output=True,
             check=True,
+            cwd=work,
         )
         return parse_impedance(out.read_text() if out else done.stdout.decode())
 

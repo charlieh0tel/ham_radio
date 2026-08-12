@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEC-2's Sommerfeld ground near the interface</title>
+<style>
+  :root {
+    --ground: #f5f6f8;
+    --surface: #ffffff;
+    --surface-sunk: #eef0f4;
+    --ink: #15181e;
+    --muted: #5a6472;
+    --rule: #dce0e7;
+    --rule-strong: #b6bec9;
+    --accent: #1d4e89;
+    --ok: #1b6b4c;
+    --warn: #8a5a12;
+    --bad: #a3311d;
+
+    --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+    --measure: 68ch;
+    --step: 1.5rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0f1216;
+      --surface: #161a20;
+      --surface-sunk: #1b2027;
+      --ink: #e6e9ee;
+      --muted: #9aa4b2;
+      --rule: #262c35;
+      --rule-strong: #3a424e;
+      --accent: #82b4e6;
+      --ok: #4fbf8b;
+      --warn: #d9a441;
+      --bad: #e2755c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0f1216;
+    --surface: #161a20;
+    --surface-sunk: #1b2027;
+    --ink: #e6e9ee;
+    --muted: #9aa4b2;
+    --rule: #262c35;
+    --rule-strong: #3a424e;
+    --accent: #82b4e6;
+    --ok: #4fbf8b;
+    --warn: #d9a441;
+    --bad: #e2755c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 2rem) 6rem;
+  }
+
+  /* Prose sits in a 74ch centre column; tables break out to the full width
+     so their columns fit without a scrollbar. */
+  .page {
+    max-width: 940px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr min(74ch, 100%) 1fr;
+    row-gap: var(--step);
+  }
+  .page > * { grid-column: 2; min-width: 0; }
+  .page > .wide { grid-column: 1 / -1; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  h1 {
+    font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+    line-height: 1.15;
+    font-weight: 600;
+    text-wrap: balance;
+    margin: 0.35rem 0 0;
+    letter-spacing: -0.015em;
+  }
+
+  .standfirst {
+    font-size: 1.12rem;
+    color: var(--muted);
+    max-width: var(--measure);
+    margin: 0.6rem 0 0;
+    text-wrap: pretty;
+  }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-wrap: balance;
+    margin: 1.25rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    margin: 0.75rem 0 0;
+  }
+
+  p, li { max-width: var(--measure); margin: 0; text-wrap: pretty; }
+
+  .prose { display: flex; flex-direction: column; gap: 0.85rem; }
+
+  ul { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  li::marker { color: var(--rule-strong); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--surface-sunk);
+    padding: 0.1em 0.34em;
+    border-radius: 3px;
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    background: var(--surface-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 0.9rem 1rem;
+    margin: 0;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .summary h2 {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .summary ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .summary li::marker { font-family: var(--mono); font-size: 0.85em; color: var(--muted); }
+
+  .scroller { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); }
+
+  table {
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78rem;
+    width: 100%;
+  }
+  caption {
+    caption-side: bottom;
+    text-align: left;
+    font-family: var(--serif);
+    font-size: 0.88rem;
+    color: var(--muted);
+    padding: 0.75rem 1rem 0.9rem;
+    max-width: var(--measure);
+  }
+  th, td { padding: 0.42rem 0.7rem; text-align: right; white-space: nowrap; }
+  thead th {
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--rule-strong);
+    color: var(--ink);
+  }
+  tbody td { border-bottom: 1px solid var(--rule); }
+  tbody tr:last-child td { border-bottom: 0; }
+  th.rowhead, td.rowhead { text-align: left; color: var(--muted); }
+  /* The vertical rule encodes the finding: two implementations on one
+     side, the entire FORTRAN lineage on the other. */
+  .split { border-left: 2px solid var(--rule-strong); }
+  .agree { color: var(--muted); }
+  .near { color: var(--warn); }
+  .diverge { color: var(--bad); font-weight: 600; }
+  .crash { color: var(--muted); font-style: italic; font-family: var(--serif); }
+
+  .group-label td {
+    padding-top: 0.55rem;
+    padding-bottom: 0.3rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule-strong);
+  }
+
+  .meta {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+  }
+  .meta dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(7rem, auto) 1fr;
+    gap: 0.4rem 1.1rem;
+  }
+  .meta dt { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); }
+  .meta dd { margin: 0; font-family: var(--mono); font-size: 0.76rem; }
+
+  .note {
+    border-left: 2px solid var(--rule-strong);
+    padding-left: 1rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  blockquote {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    background: var(--surface-sunk);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 3px 3px 0;
+    font-size: 0.95rem;
+    max-width: var(--measure);
+  }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.25rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+  }</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Findings &middot; NEC-2 ground evaluation</p>
+    <h1>The near-ground Sommerfeld failure is the method, not the port</h1>
+    <p class="standfirst">
+      Six NEC-2 builds and NEC-4.2 against a limit with an exact answer. The two
+      <code>somnec.c</code> fixes on nec2c's <code>validation</code> branch are real and
+      measurable &mdash; they move nec2c onto the FORTRAN to five figures &mdash; but they do
+      not touch this regime, because the FORTRAN misses it too, and NEC-4.2 does not.
+    </p>
+  </header>
+
+  <section class="summary">
+    <h2>What this reports</h2>
+    <ol>
+      <li>
+        Below about 0.05 wavelengths the implementations split <strong>two ways, not
+        along a spectrum</strong>: NEC-4.2 and nec2++ give one answer, and nec2c, the
+        <code>validation</code> branch, nec2dx and aegnec2 give another, agreeing with each
+        other to three or four figures across five orders of magnitude of error.
+      </li>
+      <li>
+        <strong>NEC-4.2 reaches the limit, and reaches it best</strong> &mdash; +0.05% at
+        0.02 wl where the NEC-2 lineage is +91.9%. That also answers the obvious objection to
+        this test: if sigma 1e10 were merely a numerical stress case outside the method's
+        envelope, NEC-4.2 would struggle with it too.
+      </li>
+      <li>
+        <strong>The <code>validation</code> fixes work as designed.</strong> They move nec2c
+        <em>within</em> the FORTRAN group, onto nec2dx. They do not move it toward the limit,
+        and nothing in that branch should have been expected to.
+      </li>
+      <li>
+        <strong>At necpp <code>master</code>, both of those source sites read correctly</strong>
+        &mdash; offered as an observation, since I do not know the history between the two
+        codebases and cannot say whether they were ever otherwise.
+      </li>
+      <li>
+        <strong>nec2dxs segfaults</strong> on Sommerfeld ground below 0.5 wl, dying in the
+        ground setup rather than returning a wrong number.
+      </li>
+    </ol>
+  </section>
+
+  <section class="prose">
+    <h2>The test</h2>
+    <p>
+      As a soil's conductivity rises, a lossy half-space becomes a perfect conductor. So
+      <code>GN 2</code> at sigma 1e10 must reproduce what <code>GN 1</code> gives for the same
+      geometry. That is exact physics rather than a modelling judgement, every implementation
+      computes the <code>GN 1</code> side identically, and the correct value of the gap is
+      therefore zero everywhere.
+    </p>
+    <p>
+      The deck is a horizontal half-wave dipole, centre fed, 11 segments, 145.9 MHz, swept in
+      height. Each cell below is the feedpoint resistance under <code>GN 2</code> against the
+      same geometry under <code>GN 1</code>, as a percentage.
+    </p>
+  </section>
+
+  <div class="scroller wide">
+    <table>
+      <caption>
+        Error against a known-zero. Grey is agreement to two decimal places; amber is a
+        real but small gap; red is a gross one. The rule after nec2++ marks the split.
+      </caption>
+      <thead>
+        <tr>
+          <th class="rowhead" scope="col">height</th>
+          <th scope="col">NEC-4.2</th>
+          <th scope="col">nec2++</th>
+          <th scope="col" class="split">nec2c</th>
+          <th scope="col">nec2c-val</th>
+          <th scope="col">nec2dx</th>
+          <th scope="col">nec2dxs</th>
+          <th scope="col">aegnec2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="group-label">
+          <td class="rowhead" colspan="3">reaches the limit</td>
+          <td class="split" colspan="5">misses it below 0.05 wl</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.5 wl</th>
+          <td class="agree">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree split">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree">-0.00%</td><td class="agree">-0.00%</td><td class="agree">+0.00%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.2 wl</th>
+          <td class="agree">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree split">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree">+0.00%</td><td class="crash">crash</td><td class="agree">+0.00%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.1 wl</th>
+          <td class="agree">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree split">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree">+0.00%</td><td class="crash">crash</td><td class="agree">+0.00%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.05 wl</th>
+          <td class="agree">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree split">+0.00%</td><td class="agree">+0.00%</td>
+          <td class="agree">+0.00%</td><td class="crash">crash</td><td class="agree">+0.00%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.02 wl</th>
+          <td class="agree">+0.05%</td><td class="near">+0.77%</td>
+          <td class="diverge split">+91.89%</td><td class="diverge">+91.91%</td>
+          <td class="diverge">+91.92%</td><td class="crash">crash</td><td class="diverge">+91.92%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.01 wl</th>
+          <td class="near">+0.46%</td><td class="near">-0.69%</td>
+          <td class="diverge split">-95.35%</td><td class="diverge">-95.08%</td>
+          <td class="diverge">-95.09%</td><td class="crash">crash</td><td class="diverge">-95.09%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.005 wl</th>
+          <td class="near">+2.90%</td><td class="near">+8.21%</td>
+          <td class="diverge split">+3037.98%</td><td class="diverge">+3039.24%</td>
+          <td class="diverge">+3039.26%</td><td class="crash">crash</td><td class="diverge">+3038.92%</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.002 wl</th>
+          <td class="diverge">+50.53%</td><td class="diverge">+125.70%</td>
+          <td class="diverge split">+46607.55%</td><td class="diverge">+46612.07%</td>
+          <td class="diverge">+46613.28%</td><td class="crash">crash</td><td class="diverge">+46609.83%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="prose">
+    <h2>Reading it</h2>
+    <p>
+      The <code>validation</code> column sits inside the FORTRAN group, and the small distance
+      it moved is the whole story about those two <code>somnec.c</code> commits. Master sits
+      slightly off nec2dx and the branch lands on it &mdash; at 0.01 wl, -95.35% becomes
+      -95.08% against the FORTRAN's -95.09%. That is exactly what a corrected transcription
+      should do, and it is a good argument for the branch on its own terms. It is also why the
+      branch cannot close this gap: the target it converges on is itself 95% from the known
+      answer.
+    </p>
+    <p>
+      NEC-4.2 is what makes that reading safe. It is an independent implementation with a
+      ground treatment reworked precisely for this regime, and it reaches the limit from the
+      other side of the split &mdash; closer to zero than nec2++ at every height below
+      0.05 wl. Two implementations that share no code agree, and the five that descend from
+      the NEC-2 FORTRAN agree with each other instead.
+    </p>
+    <p>
+      It also disposes of the strongest objection available to this test, which is that sigma
+      1e10 is far outside anything physical and might be probing numerical conditioning rather
+      than the method. If that were what the table showed, NEC-4.2 would be in trouble too. It
+      returns +0.05% at 0.02 wl.
+    </p>
+    <p class="note">
+      Same result on a second geometry. An end-fed 32.6 m wire 9.1 m up with a 7.6 m return
+      lying 5 cm off the soil, at 7.15 MHz, sigma 1000: nec2++ 1442.1 &Omega; against a
+      perfect-ground 1441.7, so it converges. nec2c master reads 1867.6, the branch 1868.3,
+      and nec2dx 1868.4, against a perfect-ground 1441.5 &mdash; 29.6% high, all three.
+    </p>
+  </section>
+
+  <section class="prose">
+    <h2>What necpp's source reads at <code>master</code></h2>
+    <p>
+      Both fixes carry the same sentence in their commit messages &mdash;
+      <a href="https://github.com/KJ7LNW/nec2c/commit/a475aad3bc954b70d22916f9abb1ee7b82aaf05f"><code>a475aad</code></a>,
+      the gshank L1-norm correction, and
+      <a href="https://github.com/KJ7LNW/nec2c/commit/3f16cbc2f8dfbc0750ddc5eb83a325c6bb890334"><code>3f16cbc</code></a>,
+      the evlua contour correction:
+    </p>
+    <blockquote>
+      The slip lives only in the NEC lineage (nec2c to necpp and xnec2c); nec2dx.f to nec2dxs
+      is unaffected.
+    </blockquote>
+    <p>
+      The nec2dx half matches what I measured: it behaves as its own lineage rather than as
+      nec2c's. On the necpp half I can only report what the file says today. At
+      <code>master</code> (<code>a8e829e</code>) the convergence gate in
+      <code>src/c_evlcom.cpp</code> takes the two magnitudes separately:
+    </p>
+    <pre><code>amg=fabs(real(a1))+fabs(imag(a1));</code></pre>
+    <p>
+      and <code>evlua</code> selects its tail integration with a plain <code>if/else</code> on
+      a <code>bool jump</code>, so exactly one of the two branches always runs.
+    </p>
+    <p>
+      I have not traced how these two codebases relate, whether these sites were ever
+      different in necpp, or what xnec2c reads &mdash; anyone who knows that history will place
+      this faster than I can. The reason it is here at all is narrow: it means necpp's
+      reaching the limit is not accounted for by these two sites, so whatever separates the
+      two columns is something else, still unidentified.
+    </p>
+  </section>
+
+  <section class="prose">
+    <h2>nec2dxs crashes rather than diverging</h2>
+    <p>
+      The Fortran build from <code>yeti01/nec2</code> solves 0.5 wl and then segfaults, with a
+      core dump, at every height below it. It dies immediately after printing the ground
+      constants, so the failure is in the Sommerfeld setup and not in the solve:
+    </p>
+    <pre><code>RELATIVE DIELECTRIC CONST.= 13.000
+CONDUCTIVITY= 1.000E+10 MHOS/METER
+Segmentation fault (core dumped)</code></pre>
+    <p>
+      Worth separating from the rest: it is the only build here that fails loudly instead of
+      returning a confident wrong number.
+    </p>
+  </section>
+
+  <section class="prose">
+    <h2>What I am not claiming</h2>
+    <ul>
+      <li>
+        <strong>Not that any of them is right at the bottom.</strong> necpp holds to roughly
+        0.005 wl and then goes the same way, reaching +125.70% at 0.002 wl; even NEC-4.2 is
+        +50.53% there. The split is about where each stops working, not about one being
+        correct everywhere.
+      </li>
+      <li>
+        <strong>Not that I know why necpp differs.</strong> I established that it passes and
+        that it lacks these two slips. I did not identify what in its ground evaluation
+        accounts for the difference, and someone who knows that code will get there faster.
+      </li>
+      <li>
+        <strong>Not that PyNEC is a third witness.</strong> It wraps this same nec2++, so it
+        is excluded above; it was run, and agrees with a locally built binary to every figure
+        printed. The two independent codes on that side are NEC-4.2 and nec2++.
+      </li>
+      <li>
+        <strong>Not that passing the limit proves correctness over real soil.</strong> The test
+        only exercises the high-conductivity corner, where an exact answer exists. At the
+        conductivity of actual ground there is no oracle here, so passing is necessary rather
+        than sufficient.
+      </li>
+    </ul>
+  </section>
+
+  <section class="prose">
+    <h2>Reproducing it</h2>
+    <p>
+      One script drives every solver over the same generated decks, taking each as
+      <code>name=style:path</code>, where the style is how that implementation wants to be
+      invoked &mdash; <code>flags</code> for nec2c's <code>-i</code>/<code>-o</code>,
+      <code>attached</code> for nec2++, <code>stdio</code>, <code>jobname</code> for aegnec2,
+      and <code>prompt</code> for NEC-4, which asks for the two file names in turn.
+      <code>--decks=DIR</code> writes the 16 decks out if you would rather run them by hand.
+      The NEC-4.2 column needs a licensed copy; every other column can be built from source.
+    </p>
+    <pre><code>git clone https://github.com/KJ7LNW/nec2c &amp;&amp; cd nec2c
+git checkout validation &amp;&amp; ./autogen.sh &amp;&amp; ./configure &amp;&amp; make
+# builds ./nec2c and, on this branch, the FORTRAN ./nec2dx
+
+python sommerfeld_cross.py \
+    nec4.2=prompt:/usr/bin/nec4d42 \
+    nec2++=attached:$NECPP/bin/nec2++ \
+    nec2c=$STOCK/nec2c \
+    nec2c-val=$VALIDATION/nec2c \
+    nec2dx=$VALIDATION/nec2dx \
+    nec2dxs=stdio:$NEC2/nec2dxs \
+    aegnec2=jobname:$AEGNEC2/bin/aegnec2</code></pre>
+    <p>A single deck, if that is all you want &mdash; this is the 0.02 wl case:</p>
+    <pre><code>CM sommerfeld probe h=0.02wl
+CE
+GW 1 11 -0.5 0 0.0410956077 0.5 0 0.0410956077 0.001
+GE -1
+GN 2 0 0 0 13 1e+10
+EX 0 1 6 0 1.0 0.0
+FR 0 1 0 0 145.9 0
+XQ
+EN</code></pre>
+    <p>
+      Swap the <code>GN</code> card for a bare <code>GN 1</code> to get the other half of the
+      comparison. The dipole and the sweep come from the
+      <code>sommerfeld.mjs</code> harness and
+      <code>sommerfeld_near_ground.nec</code> deck in nec2-js.
+    </p>
+  </section>
+
+  <section>
+    <h2>What was built</h2>
+    <div class="meta">
+      <dl>
+        <dt>NEC-4.2</dt>
+        <dd>nec4d42, licensed from LLNL &mdash; not redistributable</dd>
+        <dt>nec2c</dt>
+        <dd><a href="https://github.com/KJ7LNW/nec2c/commit/55be1e0e3fe5ee9dad4ce6050711450d19c562fd">KJ7LNW/nec2c master 55be1e0</a></dd>
+        <dt>nec2c-val</dt>
+        <dd><a href="https://github.com/KJ7LNW/nec2c/commit/d1fcfe8db1808e9564852f7e1c997656b97f3c1d">KJ7LNW/nec2c validation d1fcfe8</a></dd>
+        <dt>nec2dx</dt>
+        <dd>same tree, Fortran target</dd>
+        <dt>nec2++</dt>
+        <dd><a href="https://github.com/tmolteno/necpp/commit/a8e829ec61d827c2d194860ba5dd5788d6a21d3a">tmolteno/necpp master a8e829e</a></dd>
+        <dt>nec2dxs</dt>
+        <dd><a href="https://github.com/yeti01/nec2/commit/b91085ea98bdaf1fbdc43a7c97f0d0fcc2225396">yeti01/nec2 b91085e</a></dd>
+        <dt>aegnec2</dt>
+        <dd><a href="https://github.com/flintoftid/aegnec2/commit/06c276187e22b004acea371c1558bcc932c8d5bf">flintoftid/aegnec2 06c2761</a></dd>
+      </dl>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Found while fitting a closed-form feedpoint model for an end-fed random wire against
+      NEC, where the return path lies a few centimetres off the soil and the choice of
+      implementation moved the answer by a third.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

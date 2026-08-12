@@ -1097,27 +1097,39 @@ must agree, so the number is the error in the Sommerfeld evaluation.
 From `nec/random_wire/sommerfeld_cross.py`, which takes the solvers as
 arguments and carries the invocation recipe.
 
-| height | PyNEC | nec2++ | nec2c | nec2c-val | nec2dx | nec2dxs | aegnec2 |
+| height | NEC-4.2 | nec2++ | nec2c | nec2c-val | nec2dx | nec2dxs | aegnec2 |
 |---|---|---|---|---|---|---|---|
-| 0.5 wl | -0.00% | +0.00% | +0.00% | +0.00% | -0.00% | -0.00% | +0.00% |
+| 0.5 wl | +0.00% | +0.00% | +0.00% | +0.00% | -0.00% | -0.00% | +0.00% |
 | 0.2 wl | +0.00% | +0.00% | +0.00% | +0.00% | +0.00% | *crash* | +0.00% |
 | 0.1 wl | +0.00% | +0.00% | +0.00% | +0.00% | +0.00% | *crash* | +0.00% |
 | 0.05 wl | +0.00% | +0.00% | +0.00% | +0.00% | +0.00% | *crash* | +0.00% |
-| 0.02 wl | +0.77% | +0.77% | +91.89% | +91.91% | +91.92% | *crash* | +91.92% |
-| 0.01 wl | -0.69% | -0.69% | -95.35% | -95.08% | -95.09% | *crash* | -95.09% |
-| 0.005 wl | +8.21% | +8.21% | +3037.98% | +3039.24% | +3039.26% | *crash* | +3038.92% |
-| 0.002 wl | +125.70% | +125.70% | +46607.55% | +46612.07% | +46613.28% | *crash* | +46609.83% |
+| 0.02 wl | **+0.05%** | +0.77% | +91.89% | +91.91% | +91.92% | *crash* | +91.92% |
+| 0.01 wl | **+0.46%** | -0.69% | -95.35% | -95.08% | -95.09% | *crash* | -95.09% |
+| 0.005 wl | **+2.90%** | +8.21% | +3037.98% | +3039.24% | +3039.26% | *crash* | +3038.92% |
+| 0.002 wl | **+50.53%** | +125.70% | +46607.55% | +46612.07% | +46613.28% | *crash* | +46609.83% |
 
-Four things fall out of it.
+PyNEC is omitted because it wraps nec2++ and reproduces it to every
+figure printed; it is one implementation, not two.
+
+Five things fall out of it.
 
 Everything agrees perfectly down to 0.05 wavelengths, so this is a
 near-ground effect with a clean onset and not a general disagreement.
 
-The split below that is two-way and total.  PyNEC and nec2++ are one
+The split below that is two-way and total.  NEC-4.2 and nec2++ are one
 answer; nec2c, the validation branch, nec2dx and aegnec2 are the other,
 and the second group agrees with itself to three or four figures across
 five orders of magnitude of error.  There is no spectrum here to split
 the difference along.
+
+**NEC-4.2 settles which side is right**, and it is the side this model
+is fitted to.  It shares no code with nec2++, its ground treatment was
+reworked for exactly this regime, and it reaches the limit better than
+nec2++ does at every height below 0.05 wl.  It also disposes of the
+strongest objection to the test -- that sigma 1e10 is so far outside
+anything physical that it might be probing numerical conditioning rather
+than the method.  If that were what the table showed, NEC-4.2 would be
+in trouble too; it returns +0.05 percent at 0.02 wl.
 
 **The validation branch does not move nec2c out of that group**, which
 is the direct answer to whether its `somnec.c` fixes bear on this.  They
@@ -1147,9 +1159,8 @@ Two limits on that reassurance, both worth keeping in view:
 - A locally built `nec2++` binary reproduces PyNEC to every figure
   printed, which is reassuring about reproducibility and nothing else --
   PyNEC wraps that same nec2++, so it is one implementation checked
-  twice.  There is no third opinion in this regime; nec2++ is a minority
-  of one against the FORTRAN lineage, holding the exact limit as its
-  only warrant.
+  twice.  NEC-4.2 is the independent opinion, and it agrees with
+  nec2++ rather than with the lineage nec2++ came from.
 
 The consequence for the browser check is worse than it looked, because
 it is now structural.  Shipping it against `nec2c-wasm` would show the
