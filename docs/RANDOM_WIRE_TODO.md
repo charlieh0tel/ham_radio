@@ -252,33 +252,47 @@ Remaining:
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
 
-- [ ] **Report the nec2c near-ground bug upstream.**  Reproducer written:
-      `nec/random_wire/nec2c_ground_bug.py`, with the JavaScript half in
-      its docstring, ready to carry across to nec2c-js as an issue or a
-      regression test.  The conductivity limit is the sharp form: as
-      sigma rises `GN 2` must converge on `GN 1`, nec2++ reaches it
-      within 0.03 percent and nec2c stops about 30 percent above.
-      Original notes:  Running the
-      fixture against nec2c failed 26 of 30 cases, and two tests place
-      the fault rather than splitting the difference.  Over perfect
-      ground, where no Sommerfeld integral is involved, the two agree to
-      0.01 percent at the same heights.  And as soil conductivity rises,
-      Sommerfeld must converge to the perfect-ground answer: nec2++
-      reaches it within 0.03 percent, nec2c stops 29.6 percent above it.
-      A limit with a known answer that one implementation does not
-      reach is a bug, not a difference of opinion.
+- [x] **Report the nec2c near-ground bug upstream.**  Closed, because
+      there is no nec2c bug to report.  `nec/random_wire/nec2c_ground_bug.py`
+      now runs the comparison across PyNEC and any external binaries
+      given as `name=path`.
 
-      Good news for this model, which is fitted against nec2++ via
-      PyNEC, so the near-ground behaviour it rests on is the behaviour
-      that reduces correctly.  The 4.6x return-height finding stands
-      unqualified.
+      What we had: as sigma rises `GN 2` must converge on `GN 1`; at a
+      5 cm return nec2++ reaches that within 0.03 percent and nec2c
+      stops 29.6 percent above.  Read as a defect in nec2c.
 
-      Blocks the browser check until fixed: running nec2c there would
-      show the user a number about 30 percent high in exactly the
-      configuration the page assumes, and would read as the model being
-      wrong.  A reproducer is easy to write from
-      `reference_cases.json` -- the conductivity sweep at a 5 cm return
-      is the clearest form.
+      What settled it: the nec2c maintainer's `validation` branch, which
+      carries two genuine `somnec.c` transcription slips *and* builds
+      `nec2dx`, the original NEC-2 FORTRAN.  The fixes move nec2c onto
+      the FORTRAN to five figures and leave the 29.6 percent untouched,
+      and `nec2dx` misses the limit by the same amount.  On the dipole
+      deck in `nec2-js/investigations/`, stock nec2c, fixed nec2c,
+      nec2dx and aegnec2 all sit at +91.9 percent; nec2++ is at +0.77.
+
+      So NEC-2's own Sommerfeld evaluation fails the limit near the
+      interface and nec2++ is the only implementation tried that passes;
+      what accounts for that is not established.  Still good news for this model, which
+      is fitted against nec2++ via PyNEC: the 4.6x return-height finding
+      stands unqualified.  See RANDOM_WIRE_MODEL.md, "It is the method,
+      not the port".
+
+- [ ] **Decide what the browser check runs on.**  Was "blocked until
+      nec2c is fixed"; that framing is dead, since the gap is the method
+      and no upstream fix will close it.  Running `nec2c-wasm` would show
+      the user a number about 30 percent high in exactly the
+      configuration the page assumes, permanently.  Three ways out:
+
+      - wait for a nec2++ wasm build; `nec2-js` has `necpp-wasm` and
+        `nec2pp-wasm` branches, so this may be closer than it looks and
+        is the only option where both ends are right
+      - move the offline fit to nec2c, so both ends share a solver and
+        are wrong the same way -- cheap, and it discards the one
+        implementation that passes the limit test
+      - ship the button reporting a known implementation spread, which
+        was defensible while "which is right" had no answer and reads as
+        an excuse now that it does
+
+      Worth pricing the first before conceding to the others.
 - [x] Say something when a published length scores badly.  Done: the
       impedance mode now carries a "Published lengths, scored" panel
       running the standard table through the model at the user's own

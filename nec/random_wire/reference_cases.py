@@ -16,6 +16,16 @@ PyNEC wraps nec2++ and nec2c-wasm carries Kyriazis's nec2c, so these are
 two independent translations of NEC-2 rather than the same code twice.
 Close agreement is meaningful; exact agreement is not expected, and
 TOLERANCE says how much of a gap should still count as a pass.
+
+**nec2c cannot pass this fixture, and that is not a porting error.**
+These cases put the return path 5 cm off the soil, where NEC-2's own
+Sommerfeld evaluation misses the conductivity limit by about 30 percent
+-- as does the original FORTRAN, so no nec2c fix will close it.  Only
+nec2++ reaches the limit; see nec2c_ground_bug.py.  The fixture stays
+useful for the mistakes it was built to catch, which are geometry and
+ground constants, but a run against nec2c-wasm will fail it wholesale
+and the failure says nothing about the port.  Read TOLERANCE as applying
+to a nec2++ build.
 """
 
 import json

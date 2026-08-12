@@ -981,9 +981,10 @@ page already hedges.
 
 The two are independent translations of Burke and Poggio's original
 NEC-2 FORTRAN -- nec2c is Kyriazis's C, nec2++ is Molteno's C++ -- so
-neither is a reference for the other and "which is right" has no answer
-here.  But the disagreement is not uniform, and where it lives says what
-is actually wrong.
+neither is a reference for the other, and at first "which is right" had
+no answer here.  It does now, from two directions: a limit with a known
+answer, below, and the FORTRAN itself, further down.  But the
+disagreement is not uniform, and where it lives says what is wrong.
 
 Sweeping the return path's height at 7.15 MHz over good ground:
 
@@ -1026,11 +1027,10 @@ converges to a figure 29.6 percent above it.  That is not two defensible
 readings of a hard integral; it is a limit with a known answer, and one
 implementation does not reach it.
 
-So for a wire this close to ground, nec2++ is right and nec2c has a bug.
-The literature agrees that the method should work here: the
-Sommerfeld-Norton ground is documented as accurate for wires as close to
-it as to a perfect ground, so this is an implementation failure and not
-the method being pushed out of its envelope.
+So for a wire this close to ground, nec2++ reaches an answer that is
+known and nec2c does not.  The literature says the method should work
+here: the Sommerfeld-Norton ground is documented as accurate for wires
+as close to it as to a perfect ground.
 
 The consequence for this model is good news, arrived at the long way
 round.  Every coefficient is fitted against PyNEC, which is nec2++, the
@@ -1040,19 +1040,133 @@ with a known answer, so the earlier finding stands unqualified: return
 height really does move the feedpoint that much, and the 4.6x is
 physical rather than numerical.
 
-It does mean the browser check cannot use nec2c as it stands.  A page
-that ran it would show the user a second number about 30 percent high in
-exactly the configuration the page assumes, and would look like the
-model was wrong.  That is a bug to report upstream, not a spread to
-paper over.
+### It is the method, not the port
 
-The consequence for the browser check is concrete.  Shipping it against
-nec2c while the coefficients are fitted to nec2++ would show the user
-two numbers that disagree for a reason invisible to them, which is the
-same failure as the `GN 1` deck, one layer deeper.  Either the offline
-fit moves to nec2c so both ends share a solver, or the button reports
-the difference as a known implementation spread rather than as an error
-in the model.
+This was first written up as a bug in nec2c, to report upstream.  That
+was wrong, and the correction matters more than the original finding.
+
+The nec2c maintainer has a `validation` branch carrying two real
+hand-transcription slips in `somnec.c`, both on the Sommerfeld path: a
+misplaced parenthesis in gshank's convergence gate, which computed
+`|Re + |Im||` instead of the L1 magnitude `|Re| + |Im|`, and a collapsed
+GO TO ladder in evlua that could skip both of the two tail integrations
+closing the spectral contour.  Both are genuine and both are fixed.
+
+The branch also builds `nec2dx`, the original NEC-2 FORTRAN, which is
+the oracle rather than another opinion: it is what every port was
+transcribed from.  Running all four on the 5 cm case:
+
+| sigma S/m | nec2++ | nec2c stock | nec2c fixed | nec2dx FORTRAN |
+|---|---|---|---|---|
+| 0.03 | 1489.7 | 2090.0 | 2107.3 | 2107.4 |
+| 1000 | **1442.1** | 1867.6 | 1868.3 | 1868.4 |
+| exact | 1441.7 | 1441.5 | 1441.5 | 1441.5 |
+
+The fix works, and what it buys is fidelity to NEC-2: it moves nec2c
+onto the FORTRAN to five figures, where stock was 0.8 percent off it.
+It does not move it onto the limit.  Fixed nec2c misses by the same 29.6
+percent stock does.
+
+The half-wave dipole deck in `nec2-js/investigations/` says the same
+thing at 0.02 wavelengths, where the fed element itself is near the
+soil: stock nec2c is +91.90 percent past the limit, fixed nec2c +91.92,
+nec2dx +91.92, and aegnec2 -- which links the original SOMNEC -- +91.90.
+The entire FORTRAN lineage agrees with itself and misses.  nec2++ is the
+outlier at +0.77 percent, and it is the one that is right.
+
+So the ranking in this section survives but its reason does not.  nec2c
+is not defective here; it is faithful.  **NEC-2's own Sommerfeld
+evaluation fails the conductivity limit near the interface, and nec2++
+is the only implementation tried that passes.**  The coefficients are
+still fitted against the one that passes.
+
+What in nec2++ accounts for that is not established.  The two `somnec.c`
+sites upstream fixed read correctly in necpp today, so it is not those,
+and the history between the two codebases has not been traced here.  The
+warrant for preferring nec2++ is the measured limit, not a story about
+why.
+
+### Every implementation, against height
+
+One horizontal half-wave dipole, centre fed, 11 segments, 145.9 MHz,
+swept in height over ground.  Each cell is the feedpoint resistance
+under `GN 2` at sigma 1e10 against the same geometry under `GN 1`, which
+must agree, so the number is the error in the Sommerfeld evaluation.
+`nec2c` is master, `nec2c-val` the `validation` branch, `nec2dx` and
+`nec2dxs` are FORTRAN NEC-2, and aegnec2 links the original SOMNEC.
+From `nec/random_wire/sommerfeld_cross.py`, which takes the solvers as
+arguments and carries the invocation recipe.
+
+| height | PyNEC | nec2++ | nec2c | nec2c-val | nec2dx | nec2dxs | aegnec2 |
+|---|---|---|---|---|---|---|---|
+| 0.5 wl | -0.00% | +0.00% | +0.00% | +0.00% | -0.00% | -0.00% | +0.00% |
+| 0.2 wl | +0.00% | +0.00% | +0.00% | +0.00% | +0.00% | *crash* | +0.00% |
+| 0.1 wl | +0.00% | +0.00% | +0.00% | +0.00% | +0.00% | *crash* | +0.00% |
+| 0.05 wl | +0.00% | +0.00% | +0.00% | +0.00% | +0.00% | *crash* | +0.00% |
+| 0.02 wl | +0.77% | +0.77% | +91.89% | +91.91% | +91.92% | *crash* | +91.92% |
+| 0.01 wl | -0.69% | -0.69% | -95.35% | -95.08% | -95.09% | *crash* | -95.09% |
+| 0.005 wl | +8.21% | +8.21% | +3037.98% | +3039.24% | +3039.26% | *crash* | +3038.92% |
+| 0.002 wl | +125.70% | +125.70% | +46607.55% | +46612.07% | +46613.28% | *crash* | +46609.83% |
+
+Four things fall out of it.
+
+Everything agrees perfectly down to 0.05 wavelengths, so this is a
+near-ground effect with a clean onset and not a general disagreement.
+
+The split below that is two-way and total.  PyNEC and nec2++ are one
+answer; nec2c, the validation branch, nec2dx and aegnec2 are the other,
+and the second group agrees with itself to three or four figures across
+five orders of magnitude of error.  There is no spectrum here to split
+the difference along.
+
+**The validation branch does not move nec2c out of that group**, which
+is the direct answer to whether its `somnec.c` fixes bear on this.  They
+move it *within* the group, onto nec2dx: at 0.01 wl master reads -95.35
+and the branch -95.08 against the FORTRAN's -95.09, and at 0.005 wl
+3037.98 becomes 3039.24 against 3039.26.  The fixes are real and they
+buy fidelity to NEC-2.  NEC-2 is what is wrong here.
+
+`nec2dxs` segfaults, with a core dump, immediately after printing the
+ground constants -- so it dies in the Sommerfeld setup rather than
+returning a wrong number.  It is the only build that fails loudly.
+
+nec2++ holds to roughly 0.005 wavelengths and then goes the way the
+FORTRAN went, just later.  Our return path sits at 0.0012 wavelengths on
+40 m, which is past that -- but the fed point is 30 ft up, at 0.22
+wavelengths, and the feedpoint impedance is dominated by the elevated
+wire.  The 5 cm limit test above passes at 0.0 percent, so this
+installation is inside the envelope by measurement rather than by
+argument.  It is not a general licence, and a model with the *source*
+near the soil would need its own check.
+
+Two limits on that reassurance, both worth keeping in view:
+
+- The limit test only exercises the high-conductivity corner.  At sigma
+  1000 there is an exact answer to check against; at the sigma 0.005 of
+  real soil there is none.  Passing is necessary, not sufficient.
+- A locally built `nec2++` binary reproduces PyNEC to every figure
+  printed, which is reassuring about reproducibility and nothing else --
+  PyNEC wraps that same nec2++, so it is one implementation checked
+  twice.  There is no third opinion in this regime; nec2++ is a minority
+  of one against the FORTRAN lineage, holding the exact limit as its
+  only warrant.
+
+The consequence for the browser check is worse than it looked, because
+it is now structural.  Shipping it against `nec2c-wasm` would show the
+user a second number about 30 percent high in exactly the configuration
+the page assumes, and no upstream fix will lift that -- there is nothing
+left to repair.  Either the button waits for a nec2++ wasm build, or the
+offline fit moves to nec2c so both ends share a solver and both are
+wrong the same way.  Reporting it as a known implementation spread is
+still available but reads as an excuse now that we know which one is
+right.
+
+One limit on how far to carry this.  The dipole deck puts the *fed*
+element near the soil and no engine meets the limit below about 0.002
+wavelengths.  Here the near-ground wire is the return and the source
+sits 30 ft up, at 0.22 wavelengths, which is milder -- and nec2++'s
+measured pass at 0.0012 wavelengths is the evidence that it is mild
+enough, rather than an assumption that it is.
 
 ## References
 
