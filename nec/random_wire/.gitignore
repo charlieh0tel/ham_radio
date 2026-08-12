@@ -9,3 +9,4 @@ nec4_compare.npz
 *.log
 nec4_sweep.npz
 SOMD.NEC
+nec4_return_height_sweep.npz

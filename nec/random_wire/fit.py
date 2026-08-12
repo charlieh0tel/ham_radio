@@ -52,7 +52,11 @@ PARAM_NAMES = ("alpha_a_lam", "vf_a", "ka", "alpha_r_lam", "vf_r", "kr")
 #: an average over an isolated wire in free space; over ground the image
 #: lowers it, and both come out near 0.75, which is that effect.
 INITIAL = (0.12, 0.98, 1.0, 0.5, 0.92, 0.7)
-BOUNDS = ((1e-3, 0.5, 0.2, 1e-3, 0.4, 0.05), (3.0, 1.0, 5.0, 3.0, 1.0, 3.0))
+#: alpha_r's floor is far below alpha_a's because a counterpoise clear of
+#: the soil is a nearly lossless line, and at 1e-3 the fit rails there
+#: rather than measuring it.  Not zero: a lossless line has infinite |Z|
+#: at every half-wave multiple, and coth has nothing to damp it with.
+BOUNDS = ((1e-3, 0.5, 0.2, 1e-6, 0.4, 0.05), (3.0, 1.0, 5.0, 3.0, 1.0, 3.0))
 
 
 def schelkunoff_z0(length_m, radius_m=WIRE_RADIUS_M):
