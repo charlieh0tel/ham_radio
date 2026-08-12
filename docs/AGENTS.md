@@ -81,6 +81,26 @@ refuses to write a module that touches the DOM. Importing alone would
 only catch a top-level reference, so a helper that read `document.title`
 when called would have imported and tested cleanly.
 
+## Browser tests
+
+`docs/tools/browser/` drives the real page under Playwright, served the
+way GitHub Pages serves it.
+
+```sh
+npm --prefix docs/tools run test:browser
+npm --prefix docs/tools run serve      # to look by hand
+```
+
+It covers control wiring, the tuner verdicts, presets, unit and URL
+round trips, phone-width layout, contrast, console cleanliness and
+keyboard access.  CI runs it alongside the type check.
+`RANDOM_WIRE_BROWSER_CHECKS.md` holds what is left for a human.
+
+Two traps worth knowing before adding a test.  The option buttons carry
+`role="radio"` and `aria-checked`, so `getByRole('button')` will not find
+them.  And Playwright unescapes the pattern inside `:text-matches("...")`,
+so a `\d` arrives as a literal `d`; pass a RegExp instead.
+
 The type check proves the page compiles; it cannot prove the page
 computes. It typed cleanly while the impedance mode drew half-wave
 lengths at one velocity factor and scored against another. Both checks

@@ -9,10 +9,13 @@
     "check:all": "npm run extract && tsc -p tsconfig.all.json",
     "extract:model": "node extract-model.mjs ../random-wire.html .check/model.mjs",
     "test": "npm run extract:model && node --test model.test.mjs",
-    "lint": "npm run extract && eslint .check/random-wire.jsx"
+    "lint": "npm run extract && eslint .check/random-wire.jsx",
+    "serve": "node serve.mjs",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "eslint": "^10.8.1",

@@ -1,2 +1,4 @@
 node_modules/
 .check/
+test-results/
+playwright-report/

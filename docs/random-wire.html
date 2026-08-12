@@ -208,7 +208,8 @@
       font-weight: 400;
     }
 
-    .band-btn.active .band-freq { color: #2aa383; }
+    /* 5.07:1 on #12403a, dimmer than the label's #4fd1ab at 6.07:1. */
+    .band-btn.active .band-freq { color: #32c19b; }
 
     /* Segment toggle */
     .segment-toggle {
@@ -3017,6 +3018,35 @@
                 </div>
               )}
 
+              {!noBands && (
+                <div className="panel">
+                  <div className="panel-header">Half-wave lengths per band</div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Band</th><th>Edges</th><th>λ/2 span</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {solution.bands.map(band => {
+                        const [lo, hi] = bandEdgesHz(band, segment);
+                        return (
+                          <tr key={band.m}>
+                            <td>{band.label}</td>
+                            <td>{fmtBandEdges(lo, hi)}</td>
+                            <td>
+                              {fmtLen(halfWaveM(hi, displayVf), units)} -{' '}
+                              {fmtLen(halfWaveM(lo, displayVf), units)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <div className="control-hint right">{BAND_EDGE_UNIT_HINT}</div>
+                </div>
+              )}
+
               {deck !== null && (
                 <div className="panel">
                   <div className="panel-header">NEC deck</div>
@@ -3046,35 +3076,6 @@
                     ground, where NEC-2's own Sommerfeld evaluation is off; see
                     RANDOM_WIRE_MODEL.md.
                   </div>
-                </div>
-              )}
-
-              {!noBands && (
-                <div className="panel">
-                  <div className="panel-header">Half-wave lengths per band</div>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Band</th><th>Edges</th><th>λ/2 span</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {solution.bands.map(band => {
-                        const [lo, hi] = bandEdgesHz(band, segment);
-                        return (
-                          <tr key={band.m}>
-                            <td>{band.label}</td>
-                            <td>{fmtBandEdges(lo, hi)}</td>
-                            <td>
-                              {fmtLen(halfWaveM(hi, displayVf), units)} -{' '}
-                              {fmtLen(halfWaveM(lo, displayVf), units)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div className="control-hint right">{BAND_EDGE_UNIT_HINT}</div>
                 </div>
               )}
             </div>

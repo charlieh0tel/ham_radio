@@ -355,12 +355,30 @@ Remaining:
       in the page rather than moving the default: a long counterpoise
       flattens the score curve, so length choice matters less, which is
       more useful than any single length.
-- [ ] Exercise the page in a browser beyond the ribbon.  Checklist
-      written: `RANDOM_WIRE_BROWSER_CHECKS.md`, covering the controls
-      that changed, the verdicts, keyboard access, contrast, URL round
-      trips, and the handful of things only a browser can catch.  Each
-      item says what correct looks like, so it can be run without
-      reading the code.
+- [ ] **Give the counterpoise slider something to do at the bottom of
+      its travel.**  The return is measured from the feedpoint, so it
+      includes the drop and cannot be shorter than the wire height.  At
+      the default 30 ft that leaves the lower half of the slider inert:
+      it moves and the readout stays at 30.0 ft.  The constraint is
+      physical and should stay; what to do about the control is open.
+
+      - clamp the slider's own `min` to the height, so it cannot be
+        dragged into the dead zone at all
+      - or let it set the run *beyond* the drop, and show the total
+        separately, which is closer to how someone describes their
+        installation: "25 ft of coax" rather than "55 ft from the
+        feedpoint"
+
+      The second reads better and changes what the number means, so it
+      wants deciding rather than doing.
+
+- [ ] Exercise the page in a browser for the things a machine cannot
+      judge.  The mechanical half is automated in
+      `docs/tools/browser/random-wire.spec.mjs` and runs in CI;
+      `RANDOM_WIRE_BROWSER_CHECKS.md` is now only the judgement calls --
+      whether the caveat text reads well, whether the recommendations
+      look right for a real installation, whether anything has drifted
+      that no assertion covers.
 
 Tooling: `nec/random_wire/`, Python + PyNEC, `uv`-managed.
 
