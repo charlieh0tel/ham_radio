@@ -30,7 +30,7 @@ Usage, with any subset of the solvers:
 
     LD_LIBRARY_PATH=~/src/necpp/_install_/lib \\
     uv run python sommerfeld_cross.py \\
-        nec4.2=prompt:/usr/bin/nec4d42 \\
+        nec4.2=positional:/usr/bin/nec4d42 \\
         nec2++=attached:~/src/necpp/_install_/bin/nec2++ \\
         nec2c=~/src/nec2c/nec2c \\
         nec2dx=attached:~/src/nec2c/nec2dx \\
@@ -89,8 +89,9 @@ DECK_ON_STDIN = object()
 #: How each implementation wants to be invoked, mapping a deck path and an
 #: output path to (argv, what to write to stdin, where the report lands).
 #: A report location of None means it comes back on stdout.  The first four
-#: names match sommerfeld.mjs; `prompt` is NEC-4, which asks for the input
-#: and output file names in turn.
+#: names match sommerfeld.mjs.  NEC-4 takes `positional`, an input and an
+#: output path; it also accepts `prompt`, asking for the same two names in
+#: turn, which is what it falls back to when given no arguments.
 STYLES = {
     "flags": lambda src, out: (["-i", str(src), "-o", str(out)], None, out),
     "attached": lambda src, out: ([f"-i{src}", f"-o{out}"], None, out),
@@ -100,6 +101,7 @@ STYLES = {
         None,
         src.with_suffix(".res"),
     ),
+    "positional": lambda src, out: ([str(src), str(out)], None, out),
     "prompt": lambda src, out: ([], f"{src}\n{out}\n", out),
 }
 DEFAULT_STYLE = "flags"
