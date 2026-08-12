@@ -229,12 +229,30 @@ Remaining:
       wire *in* the interface and returns a value inconsistent with
       both sides.  Buried is well behaved from 1 cm to 50 cm down.
 
-      Open: what depth stands for "lying on the ground"?  A coax on
-      soil has its axis a radius above the surface and sees both media;
-      5 cm up is all air and 5 cm down is all soil.  Those bracket it
-      rather than bound it, so this needs deciding before a sweep, not
-      after.  Bound up with the refit question below, since both turn
-      on solving the grid with NEC-4.
+      What it does not do is let the return sit *on* the ground.  That
+      case is not expressible: the thin-wire kernel wants one medium
+      around the conductor and a wire on the surface has half its field
+      in each, so z = 0 returns a value consistent with neither side and
+      the above branch fails below about 1 cm.  Closing the bracket from
+      5 cm to 1 cm either side does not converge -- at a quarter wave it
+      widens, x2.19 median against x1.57.  Insulation does not change
+      this; soil at HF is a lossy dielectric, so contact is not shorting
+      and coax and bare wire are the same case.
+
+      So the decision is not a depth but a regime, and the honest
+      justification for staying above ground is mechanical: real ground
+      is not flat, and a centimetre or two of average clearance
+      describes coax draped over grass and ruts.  Two things follow,
+      both open:
+
+      - is 5 cm the right clearance for that story, or 1-2 cm?  NEC-4
+        puts 31 percent between them, and 5 cm was never chosen for a
+        physical reason.
+      - radials or a counterpoise under the turf are a genuinely
+        different install, and burial models them well -- nearly flat
+        from 1 to 50 cm down, so it needs no depth from the user.  That
+        is where a second model would earn its keep, rather than
+        between solvers.
 
 - [ ] **Consider refitting the coefficients against NEC-4.2.**  The
       model is fitted to nec2++, which passes the conductivity limit;

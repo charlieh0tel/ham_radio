@@ -781,11 +781,53 @@ length picker operates in.  So the standoff is not a harmless artifact;
 it is a modelling assumption with teeth, and it was adopted for a
 solver's convenience rather than for a physical reason.
 
-Neither position is the real one.  Coax lying on soil has its axis about
-one radius above the surface, seeing air above and soil below, while
-5 cm up is all air and 5 cm down is all soil.  The two bracket the truth
-rather than bounding it tightly, and what is established here is the
-size of that bracket, not which end to believe.
+#### The case we want is the one NEC cannot express
+
+Neither position is the real one, and closing the bracket does not
+help.  Narrowing it from 5 cm either side to 1 cm leaves it no tighter
+overall and makes it worse where it matters:
+
+| bracket | all | at a quarter wave |
+|---|---|---|
+| +/- 5 cm | median x1.15, worst x5.02 | median x1.57, worst x5.02 |
+| +/- 1 cm | median x1.14, worst x5.24 | median **x2.19**, worst x5.24 |
+
+The two limits do not converge on contact, and they cannot.  The
+thin-wire kernel assumes a homogeneous medium around the conductor.  A
+wire lying on the surface has half its near field in air and half in
+soil, which is neither branch: approached from above it is entirely in
+air, from below entirely in soil.  That is why z = 0 returns a value
+consistent with neither side.  The above branch also runs out before
+contact -- at 1 mm a #14 wire is 1.2 radii up, its surface 0.19 mm from
+the soil, and the answer breaks an otherwise monotonic trend -- so it is
+usable to about 1 cm and no further.
+
+**Insulation does not rescue this**, which was worth checking because it
+looks like it should.  A jacket is a few-percent effect, the same one
+that gives insulated wire a velocity factor near 0.95 rather than 1.0:
+it raises the effective radius and lightly loads the line.  It does not
+move the conductor into the air regime, because soil at HF is a lossy
+dielectric rather than a conductor:
+
+| | 1.9 MHz | 7.15 MHz | 14.175 MHz | 28.85 MHz |
+|---|---|---|---|---|
+| loss tangent | 3.64 | 0.97 | 0.49 | 0.24 |
+
+Skin depth is metres throughout -- 5.2 m at 1.9 MHz, 1.3 m at 28.85 --
+so a wire in contact is not shorted to anything, and touching against a
+millimetre off is not a discontinuity a jacket would protect against.
+Coax and bare wire are the same case here.  That table also says the
+soil changes character across the bands the page covers, from
+conductor-like at 160 m to dielectric-like at 10 m, which is likely part
+of why the bracket refuses to close uniformly.
+
+So what justifies keeping the return above ground is mechanical rather
+than electrical: **real ground is not flat.**  Coax drapes over grass,
+leaf litter and ruts, so a centimetre or two of average clearance is a
+fair description of a real installation, and it is a statement about the
+install rather than a modelling convenience.  Burial is the wrong model
+for something lying on top and the right one for radials under the turf,
+which is a different antenna the page also invites.
 
 ### Swept, and the model can absorb it
 

@@ -29,11 +29,37 @@ At a quarter wave, where |Zin| is low and the return path dominates, it
 moves it by up to a factor of 5.  That is the regime the length picker
 works in, so the standoff is not a harmless artifact.
 
-Neither position is the real one.  Coax lying on soil sits with its axis
-about one radius above the surface, seeing air above and soil below;
-5 cm up is all air and 5 cm down is all soil, and they bracket the truth
-rather than bounding it tightly.  What this script establishes is the
-size of that bracket, not which end to believe.
+## The case we actually want is the one NEC cannot express
+
+Neither position is the real one, and tightening the bracket does not
+help: closing it from 5 cm to 1 cm either side leaves it no tighter and
+makes it worse at a quarter wave, x2.19 median against x1.57.  The two
+limits do not converge on contact.
+
+They cannot.  The thin-wire kernel assumes a homogeneous medium around
+the conductor.  A wire lying on the surface has half its near field in
+air and half in soil, which is neither branch: from above the wire is
+entirely in air, from below entirely in soil.  Hence z = 0 returning a
+value consistent with neither.  The above branch also runs out before
+contact -- at 1 mm our #14 wire is 1.2 radii up, its surface 0.19 mm
+from the soil, and the answer breaks an otherwise monotonic trend -- so
+it is usable to about 1 cm and no further.
+
+Insulation does not rescue this.  A jacket is a few-percent effect, the
+same one that gives insulated wire a velocity factor near 0.95 rather
+than 1.0: it raises the effective radius and lightly loads the line.  It
+does not move the conductor into the air regime, because soil at HF is a
+lossy dielectric rather than a conductor -- loss tangent 3.6 at 1.9 MHz
+falling to 0.24 at 28.85, skin depth metres throughout -- so a wire in
+contact is not shorted to anything, and touching versus a millimetre off
+is not the discontinuity a jacket would protect against.
+
+So what justifies keeping the return above ground is mechanical, not
+electrical: real ground is not flat.  Coax drapes over grass, leaf
+litter and ruts, so a centimetre or two of average clearance describes
+a real install.  Burial is the wrong model for something lying on top,
+and the right one for radials under the turf, which is a different
+installation.
 
     uv run python ground_contact.py /usr/bin/nec4d42
 """
@@ -44,15 +70,18 @@ import sys
 import tempfile
 from pathlib import Path
 
+import numpy as np
+
 from nec_model import C, GROUNDS, WIRE_RADIUS_M, _segments
 
 #: Depths and heights to walk through the interface.  0.0 and -0.001 are
 #: omitted deliberately; see the module docstring.
 RETURN_HEIGHTS_M = (0.5, 0.1, 0.05, 0.01, -0.01, -0.05, -0.1, -0.5)
 
-#: The pair the comparison turns on: the shipped standoff, and its mirror
-#: image just under the surface.
-ABOVE_M, BELOW_M = 0.05, -0.05
+#: Brackets across the interface, each a height and its mirror image.  Two
+#: of them, because the question is not only how wide the bracket is but
+#: whether closing it converges on contact.  It does not.
+BRACKETS = ((0.05, -0.05), (0.01, -0.01))
 
 FREQS_HZ = (1.9e6, 7.15e6, 14.175e6, 28.85e6)
 HEIGHTS_M = (3.0, 10.0, 20.0)
@@ -158,11 +187,9 @@ def walk_the_interface(binary, work):
         )
 
 
-def bracket(binary):
-    """The standoff against its mirror image, across the grid."""
-    print(f"\n\n{ABOVE_M:g} m above the soil against {abs(BELOW_M):g} m below it.\n")
-    print(f"{'MHz':>7} {'h m':>5} {'l/lam':>6} {'above':>9} {'below':>9} {'ratio':>7}")
-    worst, worst_low = 1.0, 1.0
+def bracket(binary, above_m, below_m):
+    """One bracket across the interface, over the grid.  Returns the ratios."""
+    ratios, quarter = [], []
     for freq_hz in FREQS_HZ:
         wavelength_m = C / freq_hz
         # A directory per frequency.  NEC-4 caches its Sommerfeld grid in
@@ -174,23 +201,45 @@ def bracket(binary):
                 for ratio in RATIOS:
                     length_m = ratio * wavelength_m
                     args = (length_m, freq_hz, height_m, RETURN_M)
-                    above = solve(binary, work, deck(*args, ABOVE_M))
-                    below = solve(binary, work, deck(*args, BELOW_M))
+                    above = solve(binary, work, deck(*args, above_m))
+                    below = solve(binary, work, deck(*args, below_m))
                     if not (above and below):
                         continue
                     factor = abs(below) / abs(above)
-                    worst = max(worst, factor, 1 / factor)
+                    ratios.append(factor)
                     if ratio == 0.25:
-                        worst_low = max(worst_low, factor, 1 / factor)
-                    print(
-                        f"{freq_hz / 1e6:7.3f} {height_m:5g} {ratio:6.2f} "
-                        f"{abs(above):9.1f} {abs(below):9.1f} {factor:7.3f}"
-                    )
-    print(f"\nworst overall x{worst:.2f}, worst at a quarter wave x{worst_low:.2f}")
+                        quarter.append(factor)
+    return ratios, quarter
+
+
+def report(label, ratios):
+    """Spread of a bracket, geometrically: x2 and x0.5 are the same size."""
+    if not ratios:
+        print(f"{label:>10}  no points")
+        return
+    log = np.abs(np.log(ratios))
     print(
-        "The quarter wave is where the return path dominates the feedpoint,\n"
-        "and it is where the length picker operates.  The standoff is a\n"
-        "modelling assumption with teeth, not a harmless artifact."
+        f"{label:>10}  n={len(ratios):3d}  median x{np.exp(np.median(log)):.2f}  "
+        f"90th x{np.exp(np.percentile(log, 90)):.2f}  "
+        f"worst x{np.exp(log.max()):.2f}"
+    )
+
+
+def brackets(binary):
+    """Both brackets, to show that closing one does not converge."""
+    print("\n\nThe bracket across the interface, and whether closing it helps.\n")
+    for above_m, below_m in BRACKETS:
+        ratios, quarter = bracket(binary, above_m, below_m)
+        print(f"+{above_m:g} m against {below_m:g} m")
+        report("all", ratios)
+        report("quarter", quarter)
+        print()
+    print(
+        "Closing the bracket does not tighten it, and at a quarter wave it\n"
+        "widens.  The two limits do not converge on contact, because a wire\n"
+        "lying on the surface has half its near field in each medium and is\n"
+        "neither of them.  The quarter wave is where the return dominates\n"
+        "the feedpoint, and it is where the length picker operates."
     )
 
 
@@ -199,4 +248,4 @@ if __name__ == "__main__":
         raise SystemExit("usage: ground_contact.py /path/to/nec4d42")
     with tempfile.TemporaryDirectory(prefix="gc-") as work:
         walk_the_interface(sys.argv[1], work)
-    bracket(sys.argv[1])
+    brackets(sys.argv[1])
