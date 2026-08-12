@@ -668,11 +668,18 @@
      * resonance, so deeper minima and higher peaks.  Permittivity shifts the
      * effective electrical length while conductivity damps, and the two do
      * not move together across these three.
+     *
+     * Data table: key -> display label, relative permittivity, conductivity
+     * in S/m.  The constants are the three standard NEC cases, from the ARRL
+     * Antenna Book's ground conductivity table, and they are the same numbers
+     * the coefficients were fitted at; see nec/random_wire/nec_model.py.  They
+     * are carried here so the exported deck asks NEC for the ground this model
+     * was fitted against rather than some other one.
      */
     const SOILS = Object.freeze({
-      poor: { label: 'Sandy' },
-      average: { label: 'Medium' },
-      good: { label: 'Damp' },
+      poor: { label: 'Sandy', epsR: 5, sigmaSm: 0.001 },
+      average: { label: 'Medium', epsR: 13, sigmaSm: 0.005 },
+      good: { label: 'Damp', epsR: 20, sigmaSm: 0.03 },
     });
     /** @typedef {keyof typeof SOILS} SoilKey */
     const DEFAULT_SOIL = 'average';
@@ -1003,7 +1010,7 @@
      *
      * @typedef {Object} Site
      * @property {Meters} heightM  height of the horizontal wire
-     * @property {Meters} returnM  return run, not counting the drop
+     * @property {Meters} returnM  whole return conductor, drop included
      * @property {SoilKey} soil
      */
 
@@ -1656,6 +1663,283 @@
     };
 
     // ============================================================
+    // NEC deck
+    // ============================================================
+
+    /**
+     * How high the return conductor lies, metres.  Not zero: bonding it to
+     * ground would short the source.  This is the geometry the coefficients
+     * were fitted at, so a deck built any other way is a different antenna
+     * from the one the page just scored; see nec/random_wire/nec_model.py,
+     * which explains why 5 cm stands for a feedline or counterpoise on the
+     * soil and does not stand for an elevated one.
+     */
+    const DECK_RETURN_HEIGHT_M = 0.05;
+
+    /**
+     * Segmentation, matching the fitting runs: 20 segments per wavelength is
+     * the usual NEC accuracy rule, and a floor keeps a short wire from being
+     * described by two or three.  Counts are made odd so a centre segment
+     * exists, and capped because NEC-2 builds a dense matrix and the browser
+     * solvers this deck is aimed at cap it too.
+     */
+    const DECK_SEGMENTS_PER_WAVELENGTH = 20;
+    const DECK_MIN_SEGMENTS = 9;
+    const DECK_MAX_SEGMENTS = 199;
+
+    /**
+     * Frequencies in the swept FR card.  A NEC-2 FR card sweeps linearly, so
+     * one card cannot follow the selected bands and skip the gaps; the deck
+     * spans from the lowest selected band edge to the highest and lets the
+     * user read the bands off the result.  201 is the most a swept FR card is
+     * usually given, and readers that cap the count cap it there.
+     */
+    const DECK_SWEEP_POINTS = 201;
+
+    /** Decimals used for metres, radii and megahertz in a card. */
+    const DECK_LEN_DIGITS = 4;
+    const DECK_RADIUS_DIGITS = 6;
+    const DECK_MHZ_DIGITS = 6;
+
+    /**
+     * Segment count for one wire at the top of the sweep, where segments are
+     * electrically longest.
+     *
+     * @param {Meters} lenM
+     * @param {Meters} wavelengthM  shortest wavelength in the sweep
+     * @returns {number}
+     */
+    const deckSegments = (lenM, wavelengthM) => {
+      const n = Math.ceil(DECK_SEGMENTS_PER_WAVELENGTH * lenM / wavelengthM);
+      const bounded = Math.min(Math.max(n, DECK_MIN_SEGMENTS), DECK_MAX_SEGMENTS);
+      return bounded % 2 === 0 ? bounded - 1 : bounded;
+    };
+
+    /**
+     * The linear frequency sweep covering every selected band.
+     *
+     * @param {Band[]} bands
+     * @param {SegmentKey} segment
+     * @returns {?{startHz: Hertz, stepHz: Hertz, points: number}}
+     */
+    const deckSweep = (bands, segment) => {
+      if (bands.length === 0) return null;
+      const edges = bands.map(band => bandEdgesHz(band, segment));
+      const startHz = Math.min(...edges.map(([lo]) => lo));
+      const stopHz = Math.max(...edges.map(([, hi]) => hi));
+      if (stopHz <= startHz) return { startHz, stepHz: 0, points: 1 };
+      return {
+        startHz,
+        stepHz: (stopHz - startHz) / (DECK_SWEEP_POINTS - 1),
+        points: DECK_SWEEP_POINTS,
+      };
+    };
+
+    /**
+     * @typedef {Object} DeckWire  one NEC wire, metres throughout
+     * @property {number} tag
+     * @property {number} segments
+     * @property {Meters} x1
+     * @property {Meters} y1
+     * @property {Meters} z1
+     * @property {Meters} x2
+     * @property {Meters} y2
+     * @property {Meters} z2
+     * @property {Meters} radius
+     */
+
+    /**
+     * The wires of the installation, as the model was fitted at: the antenna
+     * horizontal at the wire height, fed at the end; a vertical drop from the
+     * feedpoint to just above ground; and the rest of the return conductor
+     * running horizontally at that height, out along the antenna.
+     *
+     * `site.returnM` is the whole return conductor, so the horizontal run is
+     * what is left of it after the drop.  A wire of no length is left out
+     * rather than emitted as a point.
+     *
+     * Shared by both exports, so the deck and the project file cannot come to
+     * describe two different antennas.
+     *
+     * @param {Meters} lenM
+     * @param {Site} site
+     * @param {Meters} radiusM
+     * @param {Meters} wavelengthM  shortest wavelength in the sweep
+     * @returns {DeckWire[]}
+     */
+    const deckWires = (lenM, site, radiusM, wavelengthM) => {
+      const dropM = Math.max(site.heightM - DECK_RETURN_HEIGHT_M, 0);
+      const runM = Math.max(site.returnM - site.heightM, 0);
+      /** @type {DeckWire[]} */
+      const wires = [{
+        tag: 1, segments: deckSegments(lenM, wavelengthM),
+        x1: 0, y1: 0, z1: site.heightM,
+        x2: lenM, y2: 0, z2: site.heightM, radius: radiusM,
+      }];
+      if (dropM > 0) {
+        wires.push({
+          tag: 2, segments: deckSegments(dropM, wavelengthM),
+          x1: 0, y1: 0, z1: site.heightM,
+          x2: 0, y2: 0, z2: DECK_RETURN_HEIGHT_M, radius: radiusM,
+        });
+      }
+      if (runM > 0) {
+        wires.push({
+          tag: 3, segments: deckSegments(runM, wavelengthM),
+          x1: 0, y1: 0, z1: DECK_RETURN_HEIGHT_M,
+          x2: runM, y2: 0, z2: DECK_RETURN_HEIGHT_M, radius: radiusM,
+        });
+      }
+      return wires;
+    };
+
+    /**
+     * The shortest wavelength a sweep reaches, which is what segmentation has
+     * to be adequate at.
+     *
+     * @param {{startHz: Hertz, stepHz: Hertz, points: number}} sweep
+     * @returns {Meters}
+     */
+    const sweepShortestWaveM = (sweep) =>
+      C_SPEED / (sweep.startHz + sweep.stepHz * (sweep.points - 1));
+
+    /**
+     * A NEC-2 input deck for the installation on screen, as card text.
+     *
+     * The source sits on the first segment of the antenna wire, at the
+     * junction with the return, which is where a real unun goes.  Ground is
+     * GN 2, the Sommerfeld-Norton solution, with the soil's own constants:
+     * GN 1 is a perfect plane and would answer a different question.
+     *
+     * Cards are free format, which every NEC-2 reader accepts.
+     *
+     * @param {Meters} lenM
+     * @param {Band[]} bands
+     * @param {SegmentKey} segment
+     * @param {Site} site
+     * @param {Meters} radiusM
+     * @returns {?string}  null when there is nothing to sweep
+     */
+    const buildNecDeck = (lenM, bands, segment, site, radiusM) => {
+      const sweep = deckSweep(bands, segment);
+      if (sweep === null || lenM <= 0) return null;
+
+      const soil = SOILS[site.soil];
+      const wires = deckWires(lenM, site, radiusM, sweepShortestWaveM(sweep));
+
+      const len = (/** @type {Meters} */ value) => value.toFixed(DECK_LEN_DIGITS);
+      const mhz = (/** @type {Hertz} */ freqHz) =>
+        (freqHz / 1e6).toFixed(DECK_MHZ_DIGITS);
+
+      const cards = [
+        `CM Random wire ${len(lenM)} m at ${len(site.heightM)} m,`
+          + ` ${len(site.returnM)} m return over ${soil.label.toLowerCase()} soil`,
+        'CM Generated by random-wire.html.  Geometry per',
+        'CM nec/random_wire/nec_model.py: tag 1 antenna, tag 2 drop, tag 3 return run.',
+        'CM The result is the feedpoint impedance, ahead of any unun.',
+        'CE',
+      ];
+      for (const wire of wires) {
+        cards.push(`GW ${wire.tag} ${wire.segments} ${len(wire.x1)} ${len(wire.y1)}`
+          + ` ${len(wire.z1)} ${len(wire.x2)} ${len(wire.y2)} ${len(wire.z2)}`
+          + ` ${wire.radius.toFixed(DECK_RADIUS_DIGITS)}`);
+      }
+      cards.push(
+        // GE 1: geometry complete, with a ground plane present.
+        'GE 1',
+        `GN 2 0 0 0 ${soil.epsR} ${soil.sigmaSm}`,
+        // EX 0: voltage source, 1 V on tag 1 segment 1, the feedpoint.
+        'EX 0 1 1 0 1 0',
+        `FR 0 ${sweep.points} 0 0 ${mhz(sweep.startHz)} ${mhz(sweep.stepHz)}`,
+        // XQ: execute.  NEC-2 solves at an execution card, not at FR, and a
+        // deck ending FR / EN computes nothing at all -- it prints the
+        // geometry echo and stops.  XQ inside the sweep runs every frequency
+        // and reports the feedpoint at each, which is what this page is about;
+        // nec_model.py's fitting runs use the same card.
+        'XQ',
+        'EN',
+      );
+      return `${cards.join('\n')}\n`;
+    };
+
+    /**
+     * AntennaSim project format: schema version, and the extension its Open
+     * dialog accepts.
+     *
+     * Written because its .nec importer reads the ground card's type and
+     * discards the constants, so an imported deck always simulates medium
+     * soil however the page was set.  A project file carries them, and this
+     * page's whole subject is what the ground does to the match.
+     *
+     * This is somebody else's format and nothing here can test it: the
+     * version is theirs, the field names are theirs, and a schema change
+     * upstream is a broken file with no warning from any check we run.  It is
+     * written at version 2 deliberately -- their loader rejects a file
+     * claiming to be newer than it understands, and accepts an older one.
+     */
+    const ANTENNASIM_SCHEMA_VERSION = 2;
+    const ANTENNASIM_EXTENSION = 'antennasim';
+
+    /**
+     * The installation as an AntennaSim editor project.
+     *
+     * Same wires as the deck, plus the two things the deck cannot carry
+     * across their importer: the soil constants, and the sweep as a range
+     * rather than an FR card.
+     *
+     * `createdAt` is a parameter rather than read from the clock here, which
+     * keeps this half of the page free of anything the tests cannot pin.
+     *
+     * @param {Meters} lenM
+     * @param {Band[]} bands
+     * @param {SegmentKey} segment
+     * @param {Site} site
+     * @param {Meters} radiusM
+     * @param {string} createdAt  ISO 8601
+     * @returns {?string}  JSON, or null when there is nothing to sweep
+     */
+    const buildAntennaSimProject = (lenM, bands, segment, site, radiusM,
+                                    createdAt) => {
+      const sweep = deckSweep(bands, segment);
+      if (sweep === null || lenM <= 0) return null;
+
+      const soil = SOILS[site.soil];
+      const stopHz = sweep.startHz + sweep.stepHz * (sweep.points - 1);
+      const wires = deckWires(lenM, site, radiusM, C_SPEED / stopHz);
+      // The pattern is drawn at one frequency, and the lowest selected band is
+      // where a random wire is shortest against a wavelength and the ground
+      // does the most to it.
+      const designHz = (sweep.startHz + bandEdgesHz(
+        bands.reduce((a, b) => (a.m > b.m ? a : b)), segment)[1]) / 2;
+
+      return `${JSON.stringify({
+        version: ANTENNASIM_SCHEMA_VERSION,
+        app_version: 'random-wire.html',
+        created_at: createdAt,
+        mode: 'editor',
+        editor: {
+          wires,
+          excitations: [{ wire_tag: 1, segment: 1, voltage_real: 1,
+                          voltage_imag: 0 }],
+          loads: [],
+          transmissionLines: [],
+          junctions: [],
+          ground: {
+            type: 'custom',
+            custom_permittivity: soil.epsR,
+            custom_conductivity: soil.sigmaSm,
+          },
+          frequencyRange: {
+            start_mhz: sweep.startHz / 1e6,
+            stop_mhz: stopHz / 1e6,
+            steps: sweep.points,
+          },
+          designFrequencyMhz: designHz / 1e6,
+        },
+      }, null, 2)}\n`;
+    };
+
+    // ============================================================
     // Formatting
     // ============================================================
 
@@ -1743,6 +2027,33 @@
     // Below here the page reads the document.  Everything above, including
     // the URL parsing, takes what it needs as an argument, so the legacy
     // ?len= guarantee can be tested rather than trusted.
+
+    /**
+     * Save text to a file, by way of a link the page clicks for itself.
+     *
+     * @param {string} text
+     * @param {string} filename
+     */
+    const saveTextFile = (text, filename) => {
+      const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    };
+
+    /**
+     * File name for a deck, in metres regardless of the display unit: the
+     * name is a file on disk rather than something being read off the page,
+     * and one unit keeps a directory of them sortable.
+     *
+     * @param {Meters} lenM
+     * @param {string} extension
+     * @returns {string}
+     */
+    const deckFilename = (lenM, extension) =>
+      `random-wire-${lenM.toFixed(2)}m.${extension}`;
 
     const getUrlParams = () => {
       const params = new URLSearchParams(window.location.search);
@@ -2097,6 +2408,34 @@
                         WIRE_RADIUS_M, ununRatio)
           : null),
         [mode, wireLenM, solution, segment, site, ununRatio]);
+
+      /**
+       * The deck for the length in hand.  Impedance mode only: the geometry
+       * it describes is the height, return path and soil, and those controls
+       * only exist in that mode, so a deck offered beside the classical rule
+       * would be built from numbers the user was never shown.
+       */
+      const deck = useMemo(
+        () => (mode === 'impedance'
+          ? buildNecDeck(wireLenM, solution.bands, segment, site, WIRE_RADIUS_M)
+          : null),
+        [mode, wireLenM, solution, segment, site]);
+
+      const saveDeck = () => {
+        if (deck !== null) saveTextFile(deck, deckFilename(wireLenM, 'nec'));
+      };
+
+      // Built on click rather than in a memo: it carries a timestamp, and one
+      // that ages with the render would make the file differ from itself.
+      const saveAntennaSimProject = () => {
+        if (deck === null) return;
+        const project = buildAntennaSimProject(
+          wireLenM, solution.bands, segment, site, WIRE_RADIUS_M,
+          new Date().toISOString());
+        if (project !== null) {
+          saveTextFile(project, deckFilename(wireLenM, ANTENNASIM_EXTENSION));
+        }
+      };
 
       // Only searched when the asked-for margin leaves nothing.
       const fallback = useMemo(
@@ -2675,6 +3014,38 @@
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {deck !== null && (
+                <div className="panel">
+                  <div className="panel-header">NEC deck</div>
+                  <div className="presets">
+                    <button className="btn preset-btn" onClick={saveDeck}>
+                      Download .nec
+                    </button>
+                    <button className="btn preset-btn"
+                            onClick={saveAntennaSimProject}>
+                      Download .antennasim
+                    </button>
+                  </div>
+                  <div className="control-hint">
+                    The geometry this model was fitted against: the wire at{' '}
+                    {fmtLen(heightM, units)}, the drop and return run making up{' '}
+                    {fmtLen(Math.max(returnM, heightM), units)}, Sommerfeld
+                    ground at {SOILS[soil].epsR} and {SOILS[soil].sigmaSm} S/m,
+                    swept across the selected bands. The .nec deck is NEC-2
+                    cards for any solver; the .antennasim file is an AntennaSim
+                    project, opened from its Wire Editor page, and is the one
+                    that carries the soil constants &mdash; its .nec importer
+                    drops them and simulates medium soil instead. Neither file
+                    carries the {ununRatio}:1: a NEC deck has no transformer in
+                    it and AntennaSim's project format has no field for one, so
+                    what either reports is the bare feedpoint against 50 ohms.
+                    Expect a NEC-2 answer to differ from this page near the
+                    ground, where NEC-2's own Sommerfeld evaluation is off; see
+                    RANDOM_WIRE_MODEL.md.
+                  </div>
                 </div>
               )}
 

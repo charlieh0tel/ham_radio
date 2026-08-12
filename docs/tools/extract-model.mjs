@@ -38,6 +38,10 @@ const EXPORTS = [
   // impedance model
   'wireZ0', 'interpCoeff', 'lineZ', 'endFedZin', 'swrAtRadio', 'scoreLength',
   'solveImpedance', 'worstSuggestedSwr',
+  // NEC deck
+  'buildNecDeck', 'buildAntennaSimProject', 'deckWires', 'deckSweep',
+  'deckSegments', 'DECK_RETURN_HEIGHT_M', 'ANTENNASIM_SCHEMA_VERSION',
+  'DECK_SWEEP_POINTS', 'DECK_MAX_SEGMENTS', 'DECK_SEGMENTS_PER_WAVELENGTH',
   // display
   'toDisplay', 'fromDisplay', 'fmtLen', 'fmtBandEdges', 'tickStep',
   // URL and state helpers

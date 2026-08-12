@@ -1,6 +1,6 @@
 # random-wire.html: what to check in a browser
 
-The type checker, the linter and 61 tests all pass without a browser ever
+The type checker, the linter and 71 tests all pass without a browser ever
 opening the page.  None of them can see a control that does not render, a
 button that activates the wrong thing, or text that has become unreadable.
 Everything below changed recently and has never been driven by hand.
@@ -51,6 +51,32 @@ These controls are new or reworked and none has been used.
       it must follow the **worst band**, not the average.  Find a length
       whose average is low and whose worst band is high; the box must be
       orange.
+
+## The NEC deck panel
+
+Impedance mode only, and new.  Nothing automated opens a file dialog or a
+second tab.
+
+- [ ] **Panel presence.** "NEC deck" appears in impedance mode with a
+      length in hand, and is **absent in classical mode**, where the page
+      never asked for a height, a return path or a soil.
+- [ ] **Download .nec.** Saves `random-wire-<length>m.nec`.  Open it: the
+      `CM` lines should name the length, height, return and soil showing
+      on screen, and the `GN` card should carry the constants for the
+      selected ground (5 / 0.001, 13 / 0.005, 20 / 0.03), not 13 / 0.005
+      always.
+- [ ] **The deck tracks the controls.** Change the length, the height and
+      the soil, download again, and confirm all three moved in the file.
+- [ ] **Download .antennasim.** Load it in AntennaSim from the **Wire
+      Editor** page, Open (Ctrl+O).  Three wires, fed at the end of the
+      long one, sweep 7-29.7 MHz, and the ground reading *custom* with
+      this page's two constants -- that last is the whole reason the
+      format is written.  Opening it from the Simulator page instead
+      should say so plainly rather than doing nothing.
+- [ ] **The deck solves.** `nec2c -i <file> -o out` should print one
+      "ANTENNA INPUT PARAMETERS" block per swept frequency, 201 of them.
+      A deck with no execution card loads, echoes the geometry and
+      computes nothing, which is what it did before the `XQ` card.
 
 ## Display
 

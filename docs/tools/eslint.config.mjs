@@ -22,6 +22,7 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals: { React: 'readonly', ReactDOM: 'readonly', window: 'readonly',
                  document: 'readonly', URLSearchParams: 'readonly',
+                 URL: 'readonly', Blob: 'readonly',
                  console: 'readonly', Chart: 'readonly', math: 'readonly',
                  fmin: 'readonly' },
     },
