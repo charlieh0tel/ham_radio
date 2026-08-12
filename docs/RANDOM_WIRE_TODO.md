@@ -210,6 +210,32 @@ Remaining:
       rather than the nec2c one.  Small job.  See
       `nec/random_wire/HANDOFF-nec2js.md` -- currently held.
 
+- [ ] **Model the counterpoise in contact with the ground.**  Most
+      people let the coax lie on the dirt.  The model holds it 5 cm up
+      because NEC-2 must: a wire bonded to the ground plane shorts the
+      source.  NEC-4 has no such limit, and `ground_contact.py` shows
+      the standoff is not free -- 5 cm above against 5 cm below moves
+      the feedpoint about 15 percent near half- and full-wave
+      multiples, and up to x5.02 at a quarter wave, which is where the
+      picker operates.
+
+      It also retires the argument that made the standoff look safe:
+      "0.01 m gives nearly the same answer" is true in PyNEC (x0.92)
+      and false in NEC-4.2 (x1.31).
+
+      Recipe, all three needed: split the drop at z = 0, since no
+      segment may span the interface; `GE 0`, because `GE 1` rejects
+      anything at or below it; and avoid z = 0 exactly, which puts the
+      wire *in* the interface and returns a value inconsistent with
+      both sides.  Buried is well behaved from 1 cm to 50 cm down.
+
+      Open: what depth stands for "lying on the ground"?  A coax on
+      soil has its axis a radius above the surface and sees both media;
+      5 cm up is all air and 5 cm down is all soil.  Those bracket it
+      rather than bound it, so this needs deciding before a sweep, not
+      after.  Bound up with the refit question below, since both turn
+      on solving the grid with NEC-4.
+
 - [ ] **Consider refitting the coefficients against NEC-4.2.**  The
       model is fitted to nec2++, which passes the conductivity limit;
       NEC-4.2 passes it better at every height below 0.05 wl, and its

@@ -736,11 +736,56 @@ than height, soil or gauge.
 | 10 m SWR | 3.3 | 3.0 | 2.6 | 3.8 | 6.6 |
 
 The sweep's 5 cm stands for a feedline or counterpoise **lying on the
-soil**, and 0.01 m gives nearly the same answer, so the assumption is
-safe for that install -- which is the common one.  It is not safe in
-general.  An elevated counterpoise, elevated radials, or a feedline on
-standoffs is a different antenna, and the fitted coefficients say
-nothing about it.
+soil**, which is the common install.  It is not safe in general.  An
+elevated counterpoise, elevated radials, or a feedline on standoffs is a
+different antenna, and the fitted coefficients say nothing about it.
+
+### The 5 cm standoff, revisited with NEC-4
+
+This section used to add that 0.01 m gives nearly the same answer as
+5 cm, so the standoff was safe for a wire on the ground.  **That is a
+PyNEC observation and NEC-4.2 does not reproduce it.**  On the 107 ft
+wire, 30 ft up, 25 ft return at 7.15 MHz:
+
+| return z | PyNEC | NEC-4.2 |
+|---|---|---|
+| 0.01 m | 1296.9 | 2584.9 |
+| 0.05 m | 1405.9 | 1969.4 |
+| ratio | x0.92 | x1.31 |
+
+Eight percent against thirty-one.  The claim held for the solver it was
+measured on and not for the one that models this regime better.
+
+The standoff exists because NEC-2 cannot do better: a wire bonded to the
+ground plane shorts the source, so the return must float.  NEC-4 can put
+wires at and below the interface, so the assumption is testable.
+`ground_contact.py` does it, and three things have to be right: the
+vertical drop must be split at z = 0, because no segment may span the
+interface; `GE 0` rather than `GE 1`, which rejects anything at or below
+it; and z = 0 exactly must be avoided, since a wire lying *in* the
+interface returns 281 ohms where 1 cm above gives 2585 and 1 cm below
+gives 2123.
+
+Below the surface the answer is stable -- 2123, 2059, 2069, 2147 at 1,
+5, 10 and 50 cm down -- so this is a real regime rather than a numerical
+edge.  Comparing 5 cm above against 5 cm below across frequency, height
+and length:
+
+- near half- and full-wave multiples, where `|Zin|` is high and the
+  antenna wire dominates, burying the return moves it about 15 percent
+- at a quarter wave, where `|Zin|` is low and the return path dominates,
+  it moves it by up to **x5.02**
+
+The second is the one that matters, because that is the regime the
+length picker operates in.  So the standoff is not a harmless artifact;
+it is a modelling assumption with teeth, and it was adopted for a
+solver's convenience rather than for a physical reason.
+
+Neither position is the real one.  Coax lying on soil has its axis about
+one radius above the surface, seeing air above and soil below, while
+5 cm up is all air and 5 cm down is all soil.  The two bracket the truth
+rather than bounding it tightly, and what is established here is the
+size of that bracket, not which end to believe.
 
 ### Swept, and the model can absorb it
 
