@@ -216,7 +216,8 @@ Remaining:
       ground treatment was reworked for exactly the regime this model
       lives in.  So the coefficients could be better than they are.
 
-      Three costs to weigh first, none fatal but none free:
+      Speed is not a concern; that is decided.  Two things left to
+      weigh, neither fatal:
 
       - **Auditability.**  NEC-4 is licensed from LLNL and cannot be
         redistributed, so nobody without a licence could regenerate the
@@ -226,20 +227,21 @@ Remaining:
         Fitting against a solver most readers cannot run weakens that,
         though it does not void it: the decks are generated and the
         comparison against nec2++ stays reproducible.
-      - **Speed.**  `sweep.py` runs PyNEC in process, about 9 minutes on
-        16 cores.  NEC-4 is a binary driven by decks, one process per
-        solve, and it writes its Sommerfeld grid to `SOMD.NEC` in the
-        working directory, so each solve needs its own.  Expect a large
-        multiple of the current time.
-      - **How much it would move.**  Unmeasured, and cheap to find out:
-        solve the existing sweep points with both and compare, rather
-        than refitting first.  Where the page actually operates -- the
-        return at 0.0012 wl but the source 0.22 wl up -- nec2++ already
-        reaches the limit, so the gain may be small.  If it is, the
-        honest answer is to keep the current fit and cite NEC-4.2 as
+      - **How much it would move.**  The open question, and cheap to
+        find out: solve the existing sweep points with both and compare,
+        rather than refitting first.  Where the page actually operates --
+        the return at 0.0012 wl but the source 0.22 wl up -- nec2++
+        already reaches the limit, so the gain may be small.  If it is,
+        the honest answer is to keep the current fit and cite NEC-4.2 as
         corroboration instead.
 
-      Do the third of those before either of the others.
+      Measure the second before arguing the first.
+
+      One practical note for whoever drives it: NEC-4 writes its
+      Sommerfeld grid to `SOMD.NEC` in the working directory and reuses
+      it, so each solve needs its own directory or a sweep that varies
+      frequency or ground will silently reuse the wrong grid.
+      `sommerfeld_cross.py` already does this.
 - [ ] Decide the default return length.  25 ft is what a typical user's
       coax run is, and it gives the best agreement with the published
       tables of any value tried, but the ARRL specifies a quarter wave
