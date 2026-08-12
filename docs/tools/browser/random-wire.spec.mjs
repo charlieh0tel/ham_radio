@@ -179,69 +179,80 @@ test.describe('the tuner decides the verdicts', () => {
 });
 
 test.describe('the installation panel', () => {
-  test('the quarter-wave preset sets a quarter wave, not that plus the drop', async ({
-    page,
-  }) => {
-    await open(page);
-    await page.locator('button', { hasText: /λ\/4 on/ }).first().click();
-    const label = await page.locator('label', { hasText: 'Counterpoise' }).textContent();
-    const feet = Number.parseFloat(label.match(/([\d.]+)\s*ft/)[1]);
-    // A quarter wave on 40 m is about 35 ft.  Adding the wire height on top
-    // would put it near 65.
-    expect(feet).toBeGreaterThan(32);
-    expect(feet).toBeLessThan(38);
-  });
+  /** The counterpoise run laid on the ground, in feet. */
+  const groundRun = async (page) =>
+    Number.parseFloat(
+      (await page.locator('label', { hasText: 'Counterpoise' }).textContent()).match(
+        /Counterpoise on the ground:\s*([\d.]+)\s*ft/,
+      )[1],
+    );
 
-  test('every part of the return slider changes the return', async ({ page }) => {
-    await open(page);
-    const returnPath = page
-      .locator('label', { hasText: 'Counterpoise' })
-      .locator('input');
-    const readout = async () =>
-      Number.parseFloat(
-        (await page.locator('label', { hasText: 'Counterpoise' }).textContent()).match(
-          /([\d.]+)\s*ft/,
-        )[1],
-      );
+  /** The whole return conductor, drop included, as the hint reports it. */
+  const wholeConductor = async (page) =>
+    Number.parseFloat(
+      (await page.locator('label', { hasText: 'Counterpoise' }).textContent()).match(
+        /whole conductor is\s*([\d.]+)\s*ft/,
+      )[1],
+    );
 
-    const min = Number(await returnPath.getAttribute('min'));
-    const max = Number(await returnPath.getAttribute('max'));
-    const step = Number(await returnPath.getAttribute('step'));
-    // A range input steps from its own min, so only those values are legal.
-    const snap = (value) => min + Math.round((value - min) / step) * step;
-
-    // Anywhere the thumb can go, moving it must move the number.  A floor
-    // below the wire height would leave the bottom of the travel inert.
-    const seen = new Set();
-    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
-      await returnPath.fill(String(snap(min + (max - min) * fraction)));
-      seen.add(await readout());
-    }
-    expect(seen.size).toBe(5);
-  });
-
-  test('the return path is never shorter than the drop it starts with', async ({
-    page,
-  }) => {
-    await open(page);
-    const height = page.locator('label', { hasText: 'Wire height' }).locator('input');
-    const returnPath = page
-      .locator('label', { hasText: 'Counterpoise' })
-      .locator('input');
-    // Set a short return, then raise the wire above it.  The return has to
-    // follow, because the drop is part of it.
-    await returnPath.fill(await returnPath.getAttribute('min'));
-    await height.fill('25');
-    const readout = await page
-      .locator('label', { hasText: 'Counterpoise' })
-      .textContent();
-    const returnFeet = Number.parseFloat(readout.match(/([\d.]+)\s*ft/)[1]);
-    const heightFeet = Number.parseFloat(
+  /** The wire height, in feet. */
+  const wireHeight = async (page) =>
+    Number.parseFloat(
       (await page.locator('label', { hasText: 'Wire height' }).textContent()).match(
         /([\d.]+)\s*ft/,
       )[1],
     );
-    expect(returnFeet).toBeGreaterThanOrEqual(heightFeet - 0.1);
+
+  test('the quarter-wave preset resonates the whole conductor', async ({ page }) => {
+    await open(page);
+    await page.locator('button', { hasText: /λ\/4 on/ }).first().click();
+    // A quarter wave on 40 m is about 35 ft, and it is the whole conductor
+    // that resonates, so the drop is inside that figure rather than added to
+    // it.  The run on the ground is whatever is left over.
+    const whole = await wholeConductor(page);
+    expect(whole).toBeGreaterThan(32);
+    expect(whole).toBeLessThan(38);
+    expect(await groundRun(page)).toBeCloseTo(whole - (await wireHeight(page)), 1);
+  });
+
+  test('every part of the counterpoise slider changes the run', async ({ page }) => {
+    await open(page);
+    const slider = page.locator('label', { hasText: 'Counterpoise' }).locator('input');
+    const min = Number(await slider.getAttribute('min'));
+    const max = Number(await slider.getAttribute('max'));
+    const step = Number(await slider.getAttribute('step'));
+    // A range input steps from its own min, so only those values are legal.
+    const snap = (value) => min + Math.round((value - min) / step) * step;
+
+    const seen = new Set();
+    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
+      await slider.fill(String(snap(min + (max - min) * fraction)));
+      seen.add(await groundRun(page));
+    }
+    expect(seen.size).toBe(5);
+  });
+
+  test('the run starts at nothing on the ground, never below it', async ({ page }) => {
+    await open(page);
+    const slider = page.locator('label', { hasText: 'Counterpoise' }).locator('input');
+    await slider.fill('0');
+    expect(await groundRun(page)).toBeCloseTo(0, 1);
+    // With no run, the whole conductor is exactly the drop.
+    expect(await wholeConductor(page)).toBeCloseTo(await wireHeight(page), 1);
+  });
+
+  test('raising the wire lengthens the conductor, not the run', async ({ page }) => {
+    await open(page);
+    const height = page.locator('label', { hasText: 'Wire height' }).locator('input');
+    const slider = page.locator('label', { hasText: 'Counterpoise' }).locator('input');
+    await slider.fill('6');
+    const runBefore = await groundRun(page);
+    await height.fill('25');
+    expect(await groundRun(page)).toBeCloseTo(runBefore, 1);
+    expect(await wholeConductor(page)).toBeCloseTo(
+      runBefore + (await wireHeight(page)),
+      1,
+    );
   });
 });
 

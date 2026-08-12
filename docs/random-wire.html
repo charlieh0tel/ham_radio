@@ -2318,6 +2318,15 @@
        */
       const effectiveReturnM = Math.max(returnM, heightM);
 
+      /**
+       * The part of the return actually lying on the ground: what someone
+       * measures out and lays down, as against the whole conductor the model
+       * solves.  Zero means the coax drops to the feedpoint and no further.
+       *
+       * @type {Meters}
+       */
+      const groundRunM = effectiveReturnM - heightM;
+
       /** @type {Site} */
       const site = useMemo(
         () => ({ heightM, returnM: Math.max(returnM, heightM), soil }),
@@ -2688,9 +2697,15 @@
                            min={HEIGHT_RANGE_M.min} max={HEIGHT_RANGE_M.max}
                            step={HEIGHT_STEP_M}
                            value={heightM}
-                           onChange={(e) => set({
-                             heightM: clamp(Number(e.target.value),
-                                            HEIGHT_RANGE_M) })} />
+                           onChange={(e) => {
+                             const next = clamp(Number(e.target.value),
+                                                HEIGHT_RANGE_M);
+                             // The run on the ground is what was laid out;
+                             // raising the wire lengthens the drop, not it.
+                             set({ heightM: next,
+                                   returnM: clamp(next + groundRunM,
+                                                  RETURN_RANGE_M) });
+                           }} />
                     <div className="control-hint">
                       Height of the horizontal run. It matters most when the wire is
                       low in wavelengths, which on 160 m and 80 m means most
@@ -2700,17 +2715,18 @@
                 )}
                 {mode === 'impedance' && (
                   <label className="control-label">
-                    Counterpoise / return: <span className="control-value">
-                      {fmtLen(effectiveReturnM, units)}</span>
-                    {/* Floor the travel at the drop rather than letting the
-                        lower part of it move without changing anything. */}
+                    Counterpoise on the ground: <span className="control-value">
+                      {fmtLen(groundRunM, units)}</span>
+                    {/* The user lays out the run; the model wants the whole
+                        conductor, so the drop is added back on change. */}
                     <input className="control-slider" type="range"
-                           min={Math.max(RETURN_RANGE_M.min, heightM)}
-                           max={RETURN_RANGE_M.max}
+                           min={0}
+                           max={Math.max(RETURN_RANGE_M.max - heightM,
+                                         RETURN_STEP_M)}
                            step={RETURN_STEP_M}
-                           value={effectiveReturnM}
+                           value={groundRunM}
                            onChange={(e) => set({
-                             returnM: clamp(Number(e.target.value),
+                             returnM: clamp(heightM + Number(e.target.value),
                                             RETURN_RANGE_M) })} />
                     <div className="preset-row">
                       {quarterWaveReturnM !== null && (
@@ -2722,8 +2738,11 @@
                     </div>
                     <div className="control-hint">
                       Coax shield or counterpoise wire, whichever returns the
-                      current &mdash; measured from the feedpoint, so the drop
-                      down counts. Matters as much as the wire length.
+                      current. The whole conductor is{' '}
+                      {fmtLen(effectiveReturnM, units)} from the feedpoint
+                      including the {fmtLen(heightM, units)} drop, and it is
+                      that length which resonates &mdash; the preset sets it.
+                      Matters as much as the wire length.
                     </div>
                   </label>
                 )}
