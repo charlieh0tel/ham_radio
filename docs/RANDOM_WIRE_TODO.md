@@ -83,24 +83,6 @@ because the resonator includes the drop and the return path.
 
 Still open:
 
-- [x] Decide what the classical mode's default velocity factor should be.
-      It stays 0.95.  The classical mode's virtue is being checkable
-      against any published table, and those tables assume 0.95; moving
-      it to the 1.01 NEC measures would break that agreement and read as
-      the page being wrong.  The disagreement between the modes is
-      explained rather than removed.  Original reasoning:
-      It ships 0.95, which is what the published tables assume, but the
-      fitted model runs the antenna line at 1.00 and NEC backs it: 71 ft
-      is 8.7 percent clear of the 40 m half wave at 0.95 and only 3.2
-      percent clear at 1.00, and NEC rates it accordingly.  The two modes
-      now disagree about a staple length.  Changing the default moves
-      every classical recommendation and breaks agreement with tables the
-      user can look up, so this is a judgement call, not a bug fix.
-- [x] Re-run the margin calibration at the shipped 5 percent default.
-      Done: 5 percent buys about 3800 ohms and leaves a third of the axis,
-      against 2800 ohms and 23 percent at 8.  Weaker than the note
-      claimed, still inside what a wide-range tuner reaches through a
-      9:1, and now measured at the value the page uses.
 - [ ] Derive `marginPct` from a user-set `|Z|max` instead of a magic
       percentage.  Applies to the classical mode only.  Measured now, and
       the finding cuts both ways: 8 percent buys about 2800 ohms and
@@ -110,41 +92,14 @@ Still open:
       percent of the axis; 1000 ohms is unreachable at any margin.  So
       the feature is buildable and would be honest, and over much of its
       range the honest answer is that nothing qualifies.
-- [x] Validate the keep-out widths: confirm `marginPct` values match the
-      impedance excursions assumed.  Done, see the margin section of
-      `RANDOM_WIRE_MODEL.md`.  The default holds up; current behaviour
-      does not need to change.
-- [x] Expose conductor diameter.  Decided against, and it stays #14 AWG.
-      The gauge sweep unblocked it -- the shipped table predicts #12 to
-      #22 within x1.44 against x1.39 for #14 itself -- but that is the
-      argument for *not* having the control: the dependence is
-      logarithmic, about 5 percent in Z0 across the whole range, so a
-      control would invite tuning something that cannot change the
-      answer.  The assumption is stated in the page instead.
 
 ### Controls, decided
 
-The model gains parameters the user can actually measure, and loses one
-they cannot.  All four shipped in the page; the velocity factor survives
-in the classical mode only, where it is part of that method's checkable
+The model gained three parameters the user can actually measure --
+height, return-path length and soil type -- and lost one they cannot,
+the velocity factor.  All four shipped.  The velocity factor survives in
+the classical mode only, where it is part of that method's checkable
 arithmetic rather than a model parameter.
-
-- [x] **Height** becomes a user control.  It is the number people know.
-- [x] **Return-path length** becomes a user control: the coax run for a
-      shield-as-counterpoise install, or the wire length for a thrown-out
-      counterpoise.  NEC finding 4 promoted this from a correction to a
-      first-class parameter.  Default 25 ft.
-- [x] **Soil type** becomes a user control, the three standard soils.
-      Finding 6 is the caveat that rides with it: "better" ground does
-      not mean a better match, it means a sharper resonance, so the
-      labelling must not imply an ordering the physics does not have.
-- [x] **Velocity factor stops being a control.**  It is installation
-      dependent, users do not know it, and it is not an independent
-      physical quantity: it is the emergent consequence of diameter,
-      height, return path, insulation and sag.  It survives as a derived
-      value the fit produces, optionally displayed.  Keep reading `?vf=`
-      as an override so existing links resolve, per the `len`/`len_m`
-      precedent.
 
 Once height and diameter are explicit, leaving `vf` settable would let
 the user set the same physical effect twice and double-count it.
@@ -167,25 +122,6 @@ candidate length x band x frequency step.
 
 Use it instead as a one-time calibration and validation instrument.
 Results ship as constants and caveat text, never as code.
-
-- [x] Decide-first experiment.  Done, and the disagreement is material.
-      Findings below.
-- [x] Fit the model properly.  Done, `nec/random_wire/fit.py`: two lines
-      in series, the antenna and the return, each with its own `alpha`,
-      `beta` and `Z0` scale.  Both ends land at once, so the anchor
-      problem is gone -- no single anchor forces the other end to
-      `Z0^2 / (2 R)` any more.  `beta` is fitted rather than assumed,
-      and the return has its own resonance rather than a correction
-      folded into `alpha`.
-      Coefficients ship, not code, because the page has no business
-      solving a NEC model in the browser.  The modeller itself lives in
-      the repo; see the licence note in `nec/random_wire/README.md` for
-      why that is not a GPL problem.
-- [x] Bound the error across the parameter space.  Done: |Z| within
-      x1.35 worst case for `h/lambda >= 0.05`, degrading to x2.3 below
-      that, which is 160 m and 80 m with a low wire.  See the error
-      bound section of `RANDOM_WIRE_MODEL.md` for the per-band heights
-      and for two hypotheses that failed to improve the low region.
 
 Measured results are in `RANDOM_WIRE_MODEL.md`, under "What NEC
 measured".  The findings referenced by number above and below live
@@ -252,30 +188,6 @@ Remaining:
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
 
-- [x] **Report the nec2c near-ground bug upstream.**  Closed, because
-      there is no nec2c bug to report.  `nec/random_wire/nec2c_ground_bug.py`
-      now runs the comparison across PyNEC and any external binaries
-      given as `name=path`.
-
-      What we had: as sigma rises `GN 2` must converge on `GN 1`; at a
-      5 cm return nec2++ reaches that within 0.03 percent and nec2c
-      stops 29.6 percent above.  Read as a defect in nec2c.
-
-      What settled it: the nec2c maintainer's `validation` branch, which
-      carries two genuine `somnec.c` transcription slips *and* builds
-      `nec2dx`, the original NEC-2 FORTRAN.  The fixes move nec2c onto
-      the FORTRAN to five figures and leave the 29.6 percent untouched,
-      and `nec2dx` misses the limit by the same amount.  On the dipole
-      deck in `nec2-js/investigations/`, stock nec2c, fixed nec2c,
-      nec2dx and aegnec2 all sit at +91.9 percent; nec2++ is at +0.77.
-
-      So NEC-2's own Sommerfeld evaluation fails the limit near the
-      interface and nec2++ is the only implementation tried that passes;
-      what accounts for that is not established.  Still good news for this model, which
-      is fitted against nec2++ via PyNEC: the 4.6x return-height finding
-      stands unqualified.  See RANDOM_WIRE_MODEL.md, "It is the method,
-      not the port".
-
 - [ ] **Decide what the browser check runs on.**  Was "blocked until
       nec2c is fixed"; that framing is dead, since the gap is the method
       and no upstream fix will close it.  Running `nec2c-wasm` would show
@@ -328,12 +240,6 @@ Remaining:
         corroboration instead.
 
       Do the third of those before either of the others.
-- [x] Say something when a published length scores badly.  Done: the
-      impedance mode now carries a "Published lengths, scored" panel
-      running the standard table through the model at the user's own
-      site, with the velocity-factor difference named as the reason for
-      the disagreements.  At the defaults 8 of the 10 pass, which is what
-      makes the two that do not worth reading.
 - [ ] Decide the default return length.  25 ft is what a typical user's
       coax run is, and it gives the best agreement with the published
       tables of any value tried, but the ARRL specifies a quarter wave
@@ -342,37 +248,12 @@ Remaining:
       in the page rather than moving the default: a long counterpoise
       flattens the score curve, so length choice matters less, which is
       more useful than any single length.
-- [x] Have coefficients.py patch random-wire.html between marker
-      comments instead of printing a block to paste.  Done: `--write`
-      patches the page and writes coefficients.json beside the script,
-      and a test asserts the two agree, so the constants cannot drift
-      from the fit that produced them.
-- [x] Tabulate against return height and offer it as a control.  Done
-      and answered no.  The full sweep shows the two-line *form* failing
-      before the table does: given each group its own best coefficients
-      the error still reaches x1.60 median at a 2 m return, and a 2D
-      table measured x4.30 worst above 15 cm against x1.44 below it.
-      The return stays assumed to lie on the ground.
-- [x] Add a coupling term between the two lines.  Tried and not kept: a
-      mutual term scaling `sqrt(Za Zr)` with an exponential decay in
-      separation buys 9 percent at a 2 m return and nothing elsewhere,
-      with its two parameters either railed or zero.  A scalar mutual
-      term is too weak; an elevated return is a second radiator with its
-      own current distribution and wants a coupled two-port, which is a
-      different model rather than a term on this one.  Not worth doing
-      unless elevated counterpoises become the point of the page.
 - [ ] Exercise the page in a browser beyond the ribbon.  Checklist
       written: `RANDOM_WIRE_BROWSER_CHECKS.md`, covering the controls
       that changed, the verdicts, keyboard access, contrast, URL round
       trips, and the handful of things only a browser can catch.  Each
       item says what correct looks like, so it can be run without
       reading the code.
-
-- [x] Confirm the odd-`lambda/4` case is as bad as theory says before
-      building UI around it.  It is not: finding 2 measures 133-3500
-      ohms there, and the low-Z case the keep-out was meant to catch
-      mostly does not occur once a real return path exists.  Do not
-      build UI around it.
 
 Tooling: `nec/random_wire/`, Python + PyNEC, `uv`-managed.
 
