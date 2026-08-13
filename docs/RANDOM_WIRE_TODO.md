@@ -277,27 +277,28 @@ Remaining:
       good ground, which differ by 11 percent, so a port that ignores
       soil constants fails too.
 
-- [ ] **Decide what the browser check runs on.**  Was "blocked until
-      nec2c is fixed"; that framing is dead, since the gap is the method
-      and no upstream fix will close it.  Running `nec2c-wasm` would show
-      the user a number about 30 percent high in exactly the
-      configuration the page assumes, permanently.  Three ways out:
+- [ ] **Decide what the browser check runs on.**  Unblocked, and by a
+      measurement that overturns the reason it was blocked.
 
-      - wait for a nec2++ wasm build; `nec2-js`'s `packages/necpp-wasm`
-        has prebuilt wasm, a runner, bindings and tests, and nec2pp-wasm
-        is reported in good shape, so this is the likely answer and the
-        only option where both ends are right
-      - move the offline fit to nec2c, so both ends share a solver and
-        are wrong the same way -- cheap, and it discards the one
-        implementation that passes the limit test
-      - ship the button reporting a known implementation spread, which
-        was defensible while "which is right" had no answer and reads as
-        an excuse now that it does
+      It was held because `nec2c-wasm` would supposedly read about 30
+      percent high in exactly the configuration the page assumes.  It
+      does not.  In this geometry -- feedpoint 0.22 wavelengths up, only
+      the counterpoise near the ground -- nec2c agrees with NEC-4.2 to
+      within 1 percent at every counterpoise height down to a
+      centimetre, on average and good soil alike.  NEC-2's Sommerfeld
+      failure needs the *fed element* near the interface, which this
+      antenna does not have.
 
-      The measurement that decides it: run `sommerfeld.mjs` against the
-      necpp-wasm runner and confirm it reproduces the nec2++ column
-      rather than the nec2c one.  Small job.  See
-      `nec/random_wire/HANDOFF-nec2js.md` -- currently held.
+      So `nec2c-wasm` is a usable solver for the button, and the licence
+      question it raises is already settled: the page is
+      GPL-3.0-or-later for this reason.  `necpp-wasm` also now exists
+      and is reported in good shape, so either would do; nec2c-wasm is
+      the one already packaged and inlined.
+
+      What the button would still disagree with is the model rather than
+      the solver -- up to 2x near a half wave, and segmentation -- which
+      is the honest thing for it to show, since that is the model's real
+      error and a user comparing the two would be seeing it.
 
 - [ ] **Model the counterpoise in contact with the ground.**  Most
       people let the coax lie on the dirt.  The model holds it 5 cm up

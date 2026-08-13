@@ -1483,6 +1483,50 @@ cancels its coupling to the wire above.  Raised clear of the soil that
 cancellation weakens, so the bearing may matter more there than this
 table shows, and nothing has measured that.
 
+### Where NEC-2 is bad, and where it is not
+
+Two results that look contradictory until the regimes are separated, and
+the difference decides whether an exported deck can be trusted.
+
+**Fed element near the ground, at the conductivity limit.**  Every NEC-2
+descendant fails and fails hugely -- +91.9 percent at 0.02 wavelengths,
++46,608 at 0.002 -- while NEC-4.2 and nec2++ hold.  That is the table
+above, and it is why NEC-2 was distrusted near ground.
+
+**Source high, counterpoise near the ground, real soil.**  This is the
+antenna the page models: the feedpoint is 0.22 wavelengths up and only
+the return is low.  Running the page's own exported deck through both,
+at 7.15 MHz:
+
+| counterpoise z | z/lambda | NEC-4.2 | nec2c | ratio |
+|---|---|---|---|---|
+| 1.0 m | 0.0239 | 818 | 818 | 1.00 |
+| 0.25 m | 0.0060 | 1295 | 1300 | 1.00 |
+| 0.05 m | 0.0012 | 1969 | 1977 | 1.00 |
+| 0.02 m | 0.0005 | 2581 | 2574 | 1.00 |
+| 0.01 m | 0.0002 | 2585 | 2554 | 1.01 |
+
+Within one percent all the way down to a centimetre, on average and on
+good soil alike.  **NEC-2's Sommerfeld failure needs the fed element
+near the interface**, and a counterpoise there is a far milder case.
+
+Two things follow, and both correct earlier conclusions here.
+
+An exported NEC-2 deck agrees with this page, so the panel does not warn
+about the solver.  What it warns about is this model: up to 2x near a
+half wave, and a deck segmented for the shortest wavelength where the
+fit segmented per frequency.
+
+And the reason for fitting against NEC-4.2 is not the one recorded
+above.  In this geometry NEC-2 is fine and **nec2++ is the outlier** --
+1490 ohms against 2081 and 2090 for NEC-4.2 and nec2c on good soil at a
+5 cm counterpoise.  nec2++ passes the limit test and disagrees here by
+30 percent; NEC-4.2 is right in both regimes, which is the case for it.
+
+It also reopens the in-browser check, which was declared blocked on the
+grounds that nec2c-wasm would be about 30 percent off in exactly this
+configuration.  It would not be.  See RANDOM_WIRE_TODO.md.
+
 ## References
 
 Sources for the published length tables this page is measured against,
