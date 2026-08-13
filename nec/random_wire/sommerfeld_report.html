@@ -280,6 +280,8 @@
       <code>somnec.c</code> fixes on nec2c's <code>validation</code> branch are real and
       measurable &mdash; they move nec2c onto the FORTRAN to five figures &mdash; but they do
       not touch this regime, because the FORTRAN misses it too, and NEC-4.2 does not.
+      Then a second measurement, at the conductivity of real soil, ranks the same
+      codes differently, and only NEC-4.2 comes out of both intact.
     </p>
   </header>
 
@@ -311,6 +313,12 @@
       <li>
         <strong>nec2dxs segfaults</strong> on Sommerfeld ground below 0.5 wl, dying in the
         ground setup rather than returning a wrong number.
+      </li>
+      <li>
+        <strong>At real soil the ranking reverses.</strong> With the fed element well up
+        and only a counterpoise near the ground, nec2c tracks NEC-4.2 to 1% down to a
+        centimetre while nec2++ falls 50% away. Passing the limit does not predict
+        behaviour at the conductivity of actual earth.
       </li>
     </ol>
   </section>
@@ -431,10 +439,85 @@
       returns +0.05% at 0.02 wl.
     </p>
     <p class="note">
-      Same result on a second geometry. An end-fed 32.6 m wire 9.1 m up with a 7.6 m return
-      lying 5 cm off the soil, at 7.15 MHz, sigma 1000: nec2++ 1442.1 &Omega; against a
-      perfect-ground 1441.7, so it converges. nec2c master reads 1867.6, the branch 1868.3,
-      and nec2dx 1868.4, against a perfect-ground 1441.5 &mdash; 29.6% high, all three.
+      Same result on a second geometry, and still at the limit. An end-fed 32.6 m wire
+      9.1 m up with a 7.6 m return lying 5 cm off the soil, at 7.15 MHz, sigma 1000:
+      nec2++ 1442.1 &Omega; against a perfect-ground 1441.7, so it converges. nec2c master
+      reads 1867.6, the branch 1868.3, and nec2dx 1868.4, against a perfect-ground 1441.5
+      &mdash; 29.6% high, all three. Sigma 1000 is the operative words: the next section
+      runs the same antenna at the conductivity of real soil and the ranking does not
+      survive.
+    </p>
+  </section>
+
+  <section class="prose">
+    <h2>At the conductivity of real soil, the ranking reverses</h2>
+    <p>
+      The limit is a diagnostic, chosen because it has an exact answer. It is not the
+      regime anyone models. Running the same end-fed geometry at the soil constants a
+      real installation sits on &mdash; and with the fed element where a real end fed has
+      it, 0.22 wavelengths up, so that only the counterpoise is near the ground:
+    </p>
+  </section>
+
+  <div class="scroller wide">
+    <table>
+      <caption>
+        Feedpoint |Z|, ohms. A 32.6 m wire 9.1 m up with a 7.6 m counterpoise, 7.15 MHz,
+        average soil, as the counterpoise is brought down to the ground. Same deck, three
+        solvers.
+      </caption>
+      <thead>
+        <tr>
+          <th class="rowhead" scope="col">counterpoise height</th>
+          <th scope="col">z / lambda</th>
+          <th scope="col">NEC-4.2</th>
+          <th scope="col">nec2c</th>
+          <th scope="col">nec2++</th>
+          <th scope="col">nec2++ vs NEC-4.2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="rowhead" scope="row">1.0 m</th>
+          <td class="agree">0.0239</td><td>818</td><td class="agree">818</td>
+          <td>810</td><td class="agree">0.99</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.25 m</th>
+          <td class="agree">0.0060</td><td>1295</td><td class="agree">1300</td>
+          <td>1195</td><td class="near">0.92</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.05 m</th>
+          <td class="agree">0.0012</td><td>1969</td><td class="agree">1977</td>
+          <td>1406</td><td class="diverge">0.71</td>
+        </tr>
+        <tr>
+          <th class="rowhead" scope="row">0.01 m</th>
+          <td class="agree">0.0002</td><td>2585</td><td class="agree">2554</td>
+          <td>1297</td><td class="diverge">0.50</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="prose">
+    <p>
+      <strong>nec2c holds to one percent of NEC-4.2 all the way down; nec2++ falls to
+      half.</strong> That is the opposite of the table above, where nec2c is 91% out at
+      0.02 wl and nec2++ is fine.
+    </p>
+    <p>
+      The two are not in conflict, and the difference between them is what to take away.
+      NEC-2's Sommerfeld failure needs the <em>fed element</em> near the interface, which
+      is what the dipole sweep puts there. A counterpoise near the interface, with the
+      source well up, is a far milder case and NEC-2 handles it. So the dipole test
+      identifies a real defect and does not predict where it bites.
+    </p>
+    <p>
+      Which leaves NEC-4.2 as the only one of the three correct in both regimes, and it is
+      the reason to prefer it &mdash; rather than the limit test alone, which would have
+      recommended nec2++ and been wrong by a factor of two for this antenna.
     </p>
   </section>
 
@@ -508,9 +591,11 @@ Segmentation fault (core dumped)</code></pre>
       </li>
       <li>
         <strong>Not that passing the limit proves correctness over real soil.</strong> The test
-        only exercises the high-conductivity corner, where an exact answer exists. At the
-        conductivity of actual ground there is no oracle here, so passing is necessary rather
-        than sufficient.
+        only exercises the high-conductivity corner, where an exact answer exists. That was a
+        caveat when this was written and is now measured: nec2++ passes the limit and is a
+        factor of two out at a centimetre over average soil. Passing is necessary rather than
+        sufficient, and there is still no oracle at real soil &mdash; NEC-4.2 is preferred there
+        on its record in both regimes, not on a proof.
       </li>
     </ul>
   </section>
@@ -582,7 +667,8 @@ EN</code></pre>
     <p>
       Found while fitting a closed-form feedpoint model for an end-fed random wire against
       NEC, where the return path lies a few centimetres off the soil and the choice of
-      implementation moved the answer by a third.
+      implementation moved the answer by a third &mdash; in the direction the limit test
+      would not have predicted.
     </p>
   </footer>
 
