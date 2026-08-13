@@ -740,6 +740,15 @@
     const DEFAULT_BALUN_M = 0.61;           // a 2 ft stake
     const HEIGHT_RANGE_M = Object.freeze({ min: 1, max: 30 });
     const COUNTERPOISE_RANGE_M = Object.freeze({ min: 0, max: 50 });
+    /**
+     * Where a balun gets tied off: a stake at a foot, up to as high as
+     * someone can reach.  The bounds are the range the sensitivity was
+     * measured over rather than a guess at what is possible.  Held fixed in
+     * the fit, because the balun height is the drop and the drop is already
+     * part of the return conductor; over this range that leaves at most
+     * 1.08x, and above it the geometry stops being a sloper -- 3 m is 0.14
+     * wavelengths on 10 m, which is no longer near the ground.
+     */
     const BALUN_RANGE_M = Object.freeze({ min: 0.3, max: 2 });
 
     /**
