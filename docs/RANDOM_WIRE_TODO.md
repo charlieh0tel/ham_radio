@@ -135,12 +135,18 @@ Remaining:
       return is dominated by the drop from h.  Same control, different
       line.
 
-      The balun height does not need to be an axis.  Measured against a
-      1.5 m reference it stays within x1.2 from 0.5 to 2 m, inside the
-      model's own bound, and runs away above that -- x1.83 at 3 m on
-      20 m, where 3 m is 0.14 wavelengths and the balun is no longer
-      electrically near the ground.  So fix it near 1.5 m and state the
-      geometry as valid to about 2 m.
+      The balun height is fixed rather than swept, on practice: it gets
+      tied off at reach height, so 0.5 to 2 m covers what people build.
+      Above that the model would be badly wrong -- x1.83 at 3 m on 20 m,
+      where 3 m is 0.14 wavelengths and the balun is no longer
+      electrically near the ground -- so the geometry is stated as valid
+      to about 2 m and degrades sharply rather than gracefully past it.
+
+      That fixing is not free, and the cost goes in the sloper's error
+      budget rather than being written off as inside the existing bound.
+      Against a 1.5 m reference the deviation across the practical range
+      is x1.06 to x1.20, and it *adds* to the fit error rather than
+      hiding under it.
 
       That leaves the sloper with the same axes as the flat top: apex
       height, counterpoise height, counterpoise length, soil.  The sweep
