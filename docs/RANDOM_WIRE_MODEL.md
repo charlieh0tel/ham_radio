@@ -1527,6 +1527,23 @@ It also reopens the in-browser check, which was declared blocked on the
 grounds that nec2c-wasm would be about 30 percent off in exactly this
 configuration.  It would not be.  See RANDOM_WIRE_TODO.md.
 
+The exported deck needs no variant per solver: it is plain NEC-2 cards
+and NEC-4 reads them, so one file serves all three.  What differs is
+which to trust.  The same deck, average soil, 7.15 MHz:
+
+| counterpoise z | NEC-4.2 | nec2c | nec2++ |
+|---|---|---|---|
+| 1.0 m | 818 | 818 | 810 |
+| 0.25 m | 1295 | 1300 | 1195 |
+| 0.05 m | 1969 | 1977 | 1406 |
+| 0.01 m | 2585 | 2554 | 1297 |
+
+nec2c holds to 1 percent of NEC-4.2 throughout.  nec2++ falls away as the
+counterpoise descends -- 29 percent low at the shipped 5 cm default, and
+half at a centimetre.  So **nec2++ is the one to avoid for this antenna**,
+which is the reverse of what the limit test alone would suggest, and the
+reverse of what this note said before the geometries were separated.
+
 ## References
 
 Sources for the published length tables this page is measured against,
