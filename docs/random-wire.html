@@ -1055,6 +1055,15 @@
      */
     const DECK_SOMMERFELD_Z_OVER_LAM = 0.01;
 
+    /**
+     * The modelling note, which the page points at whenever it says
+     * something the reader might reasonably want the workings for.  On
+     * GitHub rather than beside the page: the note is a companion document
+     * and is not served with the site.
+     */
+    const MODEL_NOTE_URL =
+      'https://github.com/charlieh0tel/ham_radio/blob/master/docs/RANDOM_WIRE_MODEL.md';
+
     const MODEL_TYPICAL_FACTOR = 1.25;
     const MODEL_BOUND_FACTOR = 1.35;
 
@@ -3169,7 +3178,8 @@
                 </div>
                 {mode === 'impedance' && (
                   <div className="control-hint" style={{ marginBottom: '10px' }}>
-                    Fitted against NEC-4.2,
+                    <a href={MODEL_NOTE_URL} target="_blank"
+                       rel="noopener">Fitted against NEC-4.2</a>,
                     {' '}{MODEL_FIT_RANGE_HZ.min / 1e6}&ndash;
                     {MODEL_FIT_RANGE_HZ.max / 1e6} MHz, #14 AWG. |Z| within
                     {' '}{MODEL_TYPICAL_FACTOR}x typically and
@@ -3625,8 +3635,9 @@
                       {' '}wavelengths up on {lowestBandM} m, where NEC-2 is
                       wrong by tens of percent, so expect either file to
                       disagree with this page. Raise the counterpoise or drop
-                      the lowest band to leave that regime; see
-                      RANDOM_WIRE_MODEL.md.
+                      the lowest band to leave that regime; see the{' '}
+                      <a href={MODEL_NOTE_URL} target="_blank"
+                         rel="noopener">modelling note</a>.
                     </div>
                   )}
                   <div className="control-hint">
