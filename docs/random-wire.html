@@ -1040,22 +1040,6 @@
      * below it; see docs/RANDOM_WIRE_MODEL.md.
      */
     /**
-     * Below this many wavelengths of counterpoise height, a NEC-2 solver
-     * disagrees with this page for a reason the user cannot see: NEC-2's own
-     * Sommerfeld evaluation fails near the interface, and the coefficients
-     * here are fitted against NEC-4.2, which does not.  Measured on the
-     * page's default site at 7.15 MHz, comparing the two:
-     *
-     *     z/lambda   0.00024   0.0012   0.0036   0.0119
-     *     disagree      98 %     40 %     13 %     1.7 %
-     *
-     * So the gap is gone by about a hundredth of a wavelength and severe an
-     * order of magnitude below that.  The exported deck is worth warning
-     * about under it; see docs/RANDOM_WIRE_MODEL.md.
-     */
-    const DECK_SOMMERFELD_Z_OVER_LAM = 0.01;
-
-    /**
      * The modelling note, which the page points at whenever it says
      * something the reader might reasonably want the workings for.  On
      * GitHub rather than beside the page: the note is a companion document
@@ -2792,6 +2776,15 @@
        */
       const shortfallM = riseShortfallM(site, wireLenM);
 
+      /**
+       * The drop from the feedpoint down to the counterpoise, which is part
+       * of the return conductor and therefore the floor of it.
+       *
+       * @type {Meters}
+       */
+      const dropM = Math.max(feedHeightM(site) - counterpoiseZM, 0);
+
+
 
       /**
        * The velocity factor whatever is on screen should be drawn against.
@@ -2889,24 +2882,6 @@
        * only exist in that mode, so a deck offered beside the classical rule
        * would be built from numbers the user was never shown.
        */
-      /**
-       * How high the counterpoise sits in wavelengths on the lowest band
-       * asked for, when that is low enough for a NEC-2 solver to disagree
-       * with the page.  Null when the exported deck can be trusted.
-       *
-       * The lowest band is the worst case: the wavelength is longest there,
-       * so the same counterpoise is fewest wavelengths up.
-       *
-       * @type {?number}
-       */
-      const deckSommerfeldRisk = useMemo(() => {
-        if (solution.bands.length === 0) return null;
-        const lowest = solution.bands.reduce((a, b) => (a.m > b.m ? a : b));
-        const zOverLam = counterpoiseZM
-          * bandEdgesHz(lowest, segment)[0] / C_SPEED;
-        return zOverLam < DECK_SOMMERFELD_Z_OVER_LAM ? zOverLam : null;
-      }, [solution.bands, segment, counterpoiseZM]);
-
       const deck = useMemo(
         () => (mode === 'impedance'
           ? buildNecDeck(wireLenM, solution.bands, segment, site, WIRE_RADIUS_M)
@@ -3234,34 +3209,36 @@
                 )}
                 {mode === 'impedance' && (
                   <label className="control-label">
-                    Counterpoise: <span className="control-value">
-                      {fmtLen(counterpoiseM, units)}</span>
+                    Counterpoise / return: <span className="control-value">
+                      {fmtLen(returnConductorM(site), units)}</span>
+                    {/* The whole conductor is what resonates and what the
+                        model solves, so it is what the control sets.  Its
+                        floor is the drop, which is already part of it. */}
                     <input className="control-slider" type="range"
-                           min={COUNTERPOISE_RANGE_M.min}
-                           max={COUNTERPOISE_RANGE_M.max}
+                           min={dropM}
+                           max={Math.max(COUNTERPOISE_RANGE_M.max,
+                                         dropM + COUNTERPOISE_STEP_M)}
                            step={COUNTERPOISE_STEP_M}
-                           value={counterpoiseM}
+                           value={returnConductorM(site)}
                            onChange={(e) => set({
-                             counterpoiseM: clamp(Number(e.target.value),
+                             counterpoiseM: clamp(Number(e.target.value) - dropM,
                                                   COUNTERPOISE_RANGE_M) })} />
                     <div className="preset-row">
                       {quarterWaveReturnM !== null && (
                         <button className="btn preset-btn"
                                 onClick={() => set({
                                   counterpoiseM: Math.max(
-                                    quarterWaveReturnM
-                                      - Math.max(feedHeightM(site)
-                                                 - counterpoiseZM, 0),
-                                    0) })}>
+                                    quarterWaveReturnM - dropM, 0) })}>
                           &#955;/4 on {lowestBandM} m
                         </button>
                       )}
                     </div>
                     <div className="control-hint">
                       Coax shield or counterpoise, whichever returns the
-                      current. With the drop that is{' '}
-                      {fmtLen(returnConductorM(site), units)} of conductor, and
-                      all of it resonates &mdash; which is what the preset sets.
+                      current, measured from the feedpoint so the{' '}
+                      {fmtLen(dropM, units)} drop counts. All of it resonates,
+                      which is what the preset sets; {fmtLen(counterpoiseM, units)}
+                      {' '}of it lies on the ground.
                     </div>
                   </label>
                 )}
@@ -3629,17 +3606,15 @@
                       .antennasim for AntennaSim
                     </button>
                   </div>
-                  {deckSommerfeldRisk !== null && (
-                    <div className="control-hint deck-warning">
-                      The counterpoise is {deckSommerfeldRisk.toFixed(4)}
-                      {' '}wavelengths up on {lowestBandM} m, where NEC-2 is
-                      wrong by tens of percent, so expect either file to
-                      disagree with this page. Raise the counterpoise or drop
-                      the lowest band to leave that regime; see the{' '}
-                      <a href={MODEL_NOTE_URL} target="_blank"
-                         rel="noopener">modelling note</a>.
-                    </div>
-                  )}
+                  <div className="control-hint deck-warning">
+                    Expect a solver to disagree with this page, by up to about
+                    2x near a half wave and on wires much shorter than one.
+                    That is this model, not the deck: its peaks are too sharp,
+                    and it is fitted at a coarser segmentation than the deck
+                    asks for. See the{' '}
+                    <a href={MODEL_NOTE_URL} target="_blank"
+                       rel="noopener">modelling note</a>.
+                  </div>
                   <div className="control-hint">
                     This installation, swept across the bands you picked.
                     Neither carries the {ununRatio}:1, so both report the bare

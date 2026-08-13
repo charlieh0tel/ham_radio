@@ -187,74 +187,72 @@ test.describe('the installation panel', () => {
       )[1],
     );
 
-  /** The whole return conductor, as the counterpoise hint reports it. */
-  const wholeConductor = async (page) =>
+  /** How much of the return lies on the ground, from the hint. */
+  const onTheGround = async (page) =>
     Number.parseFloat(
-      (await page.locator('label', { hasText: 'Counterpoise:' }).textContent()).match(
-        /that is\s*([\d.]+)\s*ft\s*of conductor/,
-      )[1],
+      (await page.locator('label', { hasText: 'Counterpoise / return' }).first()
+        .textContent()).match(/([\d.]+)\s*ft\s*of it lies on the ground/)[1],
     );
 
   const slider = (page, label) =>
     page.locator('label', { hasText: label }).first().locator('input');
 
-  test('the quarter-wave preset resonates the whole conductor', async ({ page }) => {
+  test('the preset sets the whole conductor it names', async ({ page }) => {
     await open(page);
     await page.locator('button', { hasText: /λ\/4 on/ }).first().click();
-    // A quarter wave on 40 m is about 35 ft, and it is the whole conductor
-    // that resonates, so the drop is inside that figure rather than added to
-    // it.  The counterpoise laid out is whatever is left over.
-    const whole = await wholeConductor(page);
+    // A quarter wave on 40 m is about 35 ft, and the control reads the whole
+    // return, so the number the button names is the number that moves.
+    const whole = await readout(page, 'Counterpoise / return');
     expect(whole).toBeGreaterThan(32);
     expect(whole).toBeLessThan(38);
   });
 
-  test('every part of the counterpoise slider changes it', async ({ page }) => {
+  test('every part of the return slider changes it', async ({ page }) => {
     await open(page);
-    const control = slider(page, 'Counterpoise');
+    const control = slider(page, 'Counterpoise / return');
     const min = Number(await control.getAttribute('min'));
     const max = Number(await control.getAttribute('max'));
     const step = Number(await control.getAttribute('step'));
-    // A range input steps from its own min, so only those values are legal.
-    const snap = (value) => min + Math.round((value - min) / step) * step;
+    // A range input steps from its own min, so only those values are legal,
+    // and max need not land on that grid -- rounding up would overshoot it.
+    const snap = (value) =>
+      min + Math.floor((Math.min(value, max) - min) / step) * step;
 
     const seen = new Set();
     for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
       await control.fill(String(snap(min + (max - min) * fraction)));
-      seen.add(await readout(page, 'Counterpoise'));
+      seen.add(await readout(page, 'Counterpoise / return'));
     }
     expect(seen.size).toBe(5);
   });
 
-  test('the counterpoise starts at nothing', async ({ page }) => {
+  test('the return cannot be shorter than the drop it starts with', async ({
+    page,
+  }) => {
     await open(page);
-    await slider(page, 'Counterpoise').fill('0');
-    expect(await readout(page, 'Counterpoise')).toBeCloseTo(0, 1);
-    // With no counterpoise the whole conductor is just the drop.
-    expect(await wholeConductor(page)).toBeCloseTo(
+    const control = slider(page, 'Counterpoise / return');
+    await control.fill(await control.getAttribute('min'));
+    // At the floor the whole conductor is the drop and nothing is on the
+    // ground, which is the coax reaching the feedpoint and going no further.
+    expect(await onTheGround(page)).toBeCloseTo(0, 1);
+    expect(await readout(page, 'Counterpoise / return')).toBeCloseTo(
       await readout(page, 'Wire height'),
       0,
     );
   });
 
-  test('raising the wire lengthens the drop, not the counterpoise', async ({
-    page,
-  }) => {
+  test('raising the wire lengthens the drop, not the run', async ({ page }) => {
     await open(page);
-    await slider(page, 'Counterpoise').fill('6');
-    const before = await readout(page, 'Counterpoise');
+    const before = await onTheGround(page);
     await slider(page, 'Wire height').fill('25');
-    expect(await readout(page, 'Counterpoise')).toBeCloseTo(before, 1);
-    expect(await wholeConductor(page)).toBeCloseTo(
-      before + (await readout(page, 'Wire height')),
-      0,
-    );
+    expect(await onTheGround(page)).toBeCloseTo(before, 1);
   });
 
   test('the counterpoise cannot be raised above the feedpoint', async ({ page }) => {
     await open(page);
     const height = await readout(page, 'Wire height');
-    const ceiling = Number(await slider(page, 'Counterpoise height').getAttribute('max'));
+    const ceiling = Number(
+      await slider(page, 'Counterpoise height').getAttribute('max'));
     // It hangs from the feedpoint, and the fit reaches half the wire height.
     expect(ceiling).toBeLessThanOrEqual(height * 0.3048 / 2 + 1e-6);
   });
