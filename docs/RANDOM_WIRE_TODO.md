@@ -135,24 +135,18 @@ Remaining:
       return is dominated by the drop from h.  Same control, different
       line.
 
-      The balun height is fixed rather than swept, on practice: it is
-      tied to a stake a foot or two up, at most as high as someone can
-      reach.  So the reference is a 2 ft stake, not reach height -- that
-      is the common install, and anchoring there puts the small errors
-      where most antennas are.
+      The balun height needs no axis and no fixed value.  It looked
+      like it did -- deviation up to x1.44 on 10 m across a stake-to-reach
+      range -- but that measurement was confounded.  The balun height is
+      the drop, the drop is part of the return conductor, and the model
+      already solves the whole conductor analytically.  Holding the total
+      return constant while moving the balun collapses the deviation to
+      x1.08 worst, over every band and the whole range.
 
-      Fixing it is not free, and the cost belongs in the sloper's error
-      budget rather than under the fit error.  Referenced to 0.61 m, the
-      deviation up to reach height is at most x1.18 on 40 m and x1.23 on
-      20 m, and reaches **x1.38 on 10 m**, which alone is the whole
-      model bound.  That is the fixed height being more wavelengths as
-      frequency rises: 0.61 m is 0.014 wavelengths on 40 m and 0.06 on
-      10 m.  So a fixed balun is comfortable low down and not on 10 m,
-      and if that is not acceptable the parameter has to be tabulated
-      against `z/lambda` as height already is.
-
-      Past about 2 m it degrades sharply rather than gracefully, x1.83 at
-      3 m on 20 m, so the geometry is stated as valid to roughly reach.
+      So the page computes the return as `(balun height - counterpoise
+      height) + run`, which is structurally what the flat top already
+      does with wire height in place of balun height.  Nothing new is
+      tabulated for it.
 
 - [ ] **A sloper's wire has to be longer than the rise it climbs.**  Not
       a modelling choice but geometry: a wire from a 0.6 m balun to a
