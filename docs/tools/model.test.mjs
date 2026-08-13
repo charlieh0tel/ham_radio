@@ -931,7 +931,8 @@ test('the deck describes the geometry the model was fitted at', async () => {
   const fixture = JSON.parse(await readFile(url, 'utf8'));
 
   close(m.WIRE_RADIUS_M, fixture.wire_radius_m, 5e-7, 'wire radius');
-  close(m.DECK_RETURN_HEIGHT_M, fixture.return_height_m, 1e-12, 'return height');
+  close(m.DEFAULT_COUNTERPOISE_Z_M, fixture.return_height_m, 1e-12,
+    'the default counterpoise height is the one the fixture was solved at');
   assert.equal(m.DECK_SEGMENTS_PER_WAVELENGTH, fixture.segments_per_wavelength,
     'segmentation rule');
 
@@ -941,7 +942,7 @@ test('the deck describes the geometry the model was fitted at', async () => {
     const runM = m.fromDisplay(kase.return_ft, 'ft');
     const lenM = m.fromDisplay(kase.length_ft, 'ft');
     const site = { geometry: 'flatTop', heightM, balunM: m.DEFAULT_BALUN_M,
-                   counterpoiseM: runM, counterpoiseZM: m.DECK_RETURN_HEIGHT_M,
+                   counterpoiseM: runM, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M,
                    soil: kase.soil };
     const deck = m.buildNecDeck(lenM, bands, 'full', site, m.WIRE_RADIUS_M);
 
@@ -953,11 +954,11 @@ test('the deck describes the geometry the model was fitted at', async () => {
     close(at(antenna, 9), m.WIRE_RADIUS_M, 5e-7, `${kase.name}: radius`);
 
     close(at(drop, 5), heightM, 5e-4, `${kase.name}: drop starts at the feedpoint`);
-    close(at(drop, 8), m.DECK_RETURN_HEIGHT_M, 5e-4, `${kase.name}: drop ends low`);
+    close(at(drop, 8), m.DEFAULT_COUNTERPOISE_Z_M, 5e-4, `${kase.name}: drop ends low`);
 
-    close(at(run, 5), m.DECK_RETURN_HEIGHT_M, 5e-4, `${kase.name}: run is low`);
+    close(at(run, 5), m.DEFAULT_COUNTERPOISE_Z_M, 5e-4, `${kase.name}: run is low`);
     close(at(run, 6), runM, 5e-4, `${kase.name}: run length`);
-    close(at(run, 8), m.DECK_RETURN_HEIGHT_M, 5e-4, `${kase.name}: run is level`);
+    close(at(run, 8), m.DEFAULT_COUNTERPOISE_Z_M, 5e-4, `${kase.name}: run is level`);
     // Same direction as the antenna, per the fixture's geometry note.
     assert.ok(at(run, 6) > 0, `${kase.name}: run heads along the wire`);
 

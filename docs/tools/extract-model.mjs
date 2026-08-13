@@ -51,7 +51,7 @@ const EXPORTS = [
   'solveImpedance', 'worstSuggestedSwr',
   // NEC deck
   'buildNecDeck', 'buildAntennaSimProject', 'deckWires', 'deckSweep',
-  'deckSegments', 'DECK_RETURN_HEIGHT_M', 'ANTENNASIM_SCHEMA_VERSION',
+  'deckSegments', 'ANTENNASIM_SCHEMA_VERSION',
   'DECK_SWEEP_POINTS', 'DECK_MAX_SEGMENTS', 'DECK_SEGMENTS_PER_WAVELENGTH',
   // display
   'toDisplay', 'fromDisplay', 'fmtLen', 'fmtBandEdges', 'tickStep',
