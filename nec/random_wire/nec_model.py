@@ -63,12 +63,15 @@ RETURN_HEIGHT_M = 0.05
 #: its coupling to the elevated wire.
 RETURN_DIRECTION = 1
 
-#: Where a sloper's balun hangs.  It gets tied to a stake or a post, from
-#: about a foot up to as high as someone can reach, and its exact height
-#: is not a free parameter: the balun height is the drop, the drop is part
-#: of the return conductor, and the model already solves that.  Holding
-#: the total return fixed while moving the balun over that whole range
-#: moves the feedpoint by at most 1.08x.
+#: Where a sloper's balun hangs by default: a 2 ft stake, the common
+#: case.  It is a caller's parameter, not a property of the antenna --
+#: someone knows what they tied the balun to and the drop follows from
+#: it.  What it does not need is coefficients of its own: the balun
+#: height *is* the drop, the drop is part of the return conductor, and
+#: the model already solves that whole conductor.  Holding the conductor
+#: fixed while moving the balun from a stake to reach height moves the
+#: feedpoint by at most 1.08x, so nothing is tabulated against it.  This
+#: constant exists so the sweeps can hold it while measuring the rest.
 BALUN_HEIGHT_M = 0.61
 
 
