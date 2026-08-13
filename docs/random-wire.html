@@ -3622,23 +3622,21 @@
                   {deckSommerfeldRisk !== null && (
                     <div className="control-hint deck-warning">
                       The counterpoise is {deckSommerfeldRisk.toFixed(4)}
-                      {' '}wavelengths up on {lowestBandM} m. A NEC-2 solver is
-                      wrong by tens of percent that close to the ground, so
-                      expect either file to disagree with this page. Raising
-                      the counterpoise, or dropping the lowest band, moves it
-                      out of that regime.
+                      {' '}wavelengths up on {lowestBandM} m, where NEC-2 is
+                      wrong by tens of percent, so expect either file to
+                      disagree with this page. Raise the counterpoise or drop
+                      the lowest band to leave that regime; see
+                      RANDOM_WIRE_MODEL.md.
                     </div>
                   )}
                   <div className="control-hint">
-                    This installation, swept across the selected bands: NEC-2
-                    cards for any solver, or a project for{' '}
+                    This installation, swept across the bands you picked.
+                    Neither carries the {ununRatio}:1, so both report the bare
+                    feedpoint. Give{' '}
                     <a href="https://ea1fuo.github.io/AntennaSim/"
-                       target="_blank" rel="noopener">AntennaSim</a>, which is
-                    the one that keeps the soil constants. Neither carries the
-                    {' '}{ununRatio}:1, so both report the bare feedpoint.
-                    These coefficients are fitted against NEC-4.2, whose
-                    Sommerfeld ground is the one that holds near the surface;
-                    see RANDOM_WIRE_MODEL.md.
+                       target="_blank" rel="noopener">AntennaSim</a> the
+                    project rather than the deck: its .nec importer drops the
+                    soil constants and simulates medium soil instead.
                   </div>
                 </div>
               )}
