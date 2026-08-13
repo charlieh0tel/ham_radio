@@ -63,6 +63,14 @@ RETURN_HEIGHT_M = 0.05
 #: its coupling to the elevated wire.
 RETURN_DIRECTION = 1
 
+#: Where a sloper's balun hangs.  It gets tied to a stake or a post, from
+#: about a foot up to as high as someone can reach, and its exact height
+#: is not a free parameter: the balun height is the drop, the drop is part
+#: of the return conductor, and the model already solves that.  Holding
+#: the total return fixed while moving the balun over that whole range
+#: moves the feedpoint by at most 1.08x.
+BALUN_HEIGHT_M = 0.61
+
 
 def _segments(length_m, wavelength_m):
     """Segment count for a wire, odd so a centre segment exists."""
@@ -142,6 +150,54 @@ def end_fed_deck(
             f"{x2:.9g} {y2:.9g} {z2:.9g} {radius:.9g}"
         )
     lines += [
+        "GE 1",
+        f"GN 2 0 0 0 {eps:.9g} {sigma:.9g}",
+        "EX 0 1 1 0 1.0 0.0",
+        f"FR 0 1 0 0 {freq_hz / 1e6:.9g} 0",
+        "XQ",
+        "EN",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def sloper_deck(
+    slant_m,
+    freq_hz,
+    apex_m,
+    return_len_m,
+    balun_m=BALUN_HEIGHT_M,
+    ground="average",
+    radius_m=WIRE_RADIUS_M,
+    return_height_m=RETURN_HEIGHT_M,
+):
+    """The other geometry: fed low, rising to a high free end.
+
+    A sloper is fed at the balun, which gets tied to a stake or a post at
+    somewhere between a foot and head height, and the wire climbs from
+    there to whatever support is available.  The coax or counterpoise
+    leaves the balun, drops to `return_height_m` and runs away.
+
+    Returns None when the wire is shorter than the rise it has to climb,
+    which is unbuildable rather than merely inaccurate.
+    """
+    rise_m = apex_m - balun_m
+    if slant_m <= rise_m * 1.02:
+        return None
+    wavelength_m = C / freq_hz
+    eps, sigma = GROUNDS[ground]
+    reach_m = float(np.sqrt(slant_m**2 - rise_m**2))
+    drop_m = max(balun_m - return_height_m, 0.1)
+    lines = [
+        "CM end-fed sloper, fed at the balun near the ground",
+        "CE",
+        f"GW 1 {_segments(slant_m, wavelength_m)} 0 0 {balun_m:.9g} "
+        f"{reach_m:.9g} 0 {apex_m:.9g} {radius_m:.9g}",
+        f"GW 2 {_segments(drop_m, wavelength_m)} 0 0 {balun_m:.9g} "
+        f"0 0 {return_height_m:.9g} {radius_m:.9g}",
+        # Away from the wire: the coax heads back to the station.
+        f"GW 3 {_segments(return_len_m, wavelength_m)} 0 0 "
+        f"{return_height_m:.9g} {-return_len_m:.9g} 0 {return_height_m:.9g} "
+        f"{radius_m:.9g}",
         "GE 1",
         f"GN 2 0 0 0 {eps:.9g} {sigma:.9g}",
         "EX 0 1 1 0 1.0 0.0",
