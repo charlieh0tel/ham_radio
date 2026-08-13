@@ -280,8 +280,9 @@
       <code>somnec.c</code> fixes on nec2c's <code>validation</code> branch are real and
       measurable &mdash; they move nec2c onto the FORTRAN to five figures &mdash; but they do
       not touch this regime, because the FORTRAN misses it too, and NEC-4.2 does not.
-      Then a second measurement, at the conductivity of real soil, ranks the same
-      codes differently, and only NEC-4.2 comes out of both intact.
+      Then a second measurement, at the conductivity of real soil, pairs the same codes
+      differently &mdash; and there, where no exact answer exists, only NEC-4.2 is neither
+      wrong nor the odd one out.
     </p>
   </header>
 
@@ -315,10 +316,11 @@
         ground setup rather than returning a wrong number.
       </li>
       <li>
-        <strong>At real soil the ranking reverses.</strong> With the fed element well up
-        and only a counterpoise near the ground, nec2c tracks NEC-4.2 to 1% down to a
-        centimetre while nec2++ falls 50% away. Passing the limit does not predict
-        behaviour at the conductivity of actual earth.
+        <strong>At real soil the pairing reverses, with nothing to arbitrate it.</strong>
+        With the fed element well up and only a counterpoise near the ground, nec2c tracks
+        NEC-4.2 to 1% down to a centimetre while nec2++ departs by 50%. No exact answer
+        exists there, so this says who agrees, not who is right &mdash; but it does say
+        that passing the limit predicts nothing about the soil anyone has.
       </li>
     </ol>
   </section>
@@ -450,12 +452,14 @@
   </section>
 
   <section class="prose">
-    <h2>At the conductivity of real soil, the ranking reverses</h2>
+    <h2>At the conductivity of real soil, nothing arbitrates</h2>
     <p>
       The limit is a diagnostic, chosen because it has an exact answer. It is not the
-      regime anyone models. Running the same end-fed geometry at the soil constants a
-      real installation sits on &mdash; and with the fed element where a real end fed has
-      it, 0.22 wavelengths up, so that only the counterpoise is near the ground:
+      regime anyone models, and in that regime there is no exact answer to appeal to.
+      What follows is therefore about who agrees with whom, not about who is right.
+      The same end-fed geometry at the soil constants a real installation sits on, with
+      the fed element where a real end fed has it &mdash; 0.22 wavelengths up, so that
+      only the counterpoise is near the ground:
     </p>
   </section>
 
@@ -463,8 +467,9 @@
     <table>
       <caption>
         Feedpoint |Z|, ohms. A 32.6 m wire 9.1 m up with a 7.6 m counterpoise, 7.15 MHz,
-        average soil, as the counterpoise is brought down to the ground. Same deck, three
-        solvers.
+        average soil, as the counterpoise is brought down to the ground. Same deck, four
+        solvers. There is no exact answer at this conductivity, so the last column is a
+        distance between implementations and not an error.
       </caption>
       <thead>
         <tr>
@@ -472,6 +477,7 @@
           <th scope="col">z / lambda</th>
           <th scope="col">NEC-4.2</th>
           <th scope="col">nec2c</th>
+          <th scope="col">aegnec2</th>
           <th scope="col">nec2++</th>
           <th scope="col">nec2++ vs NEC-4.2</th>
         </tr>
@@ -480,22 +486,22 @@
         <tr>
           <th class="rowhead" scope="row">1.0 m</th>
           <td class="agree">0.0239</td><td>818</td><td class="agree">818</td>
-          <td>810</td><td class="agree">0.99</td>
+          <td class="agree">819</td><td>810</td><td class="agree">0.99</td>
         </tr>
         <tr>
           <th class="rowhead" scope="row">0.25 m</th>
           <td class="agree">0.0060</td><td>1295</td><td class="agree">1300</td>
-          <td>1195</td><td class="near">0.92</td>
+          <td class="agree">1300</td><td>1195</td><td class="near">0.92</td>
         </tr>
         <tr>
           <th class="rowhead" scope="row">0.05 m</th>
           <td class="agree">0.0012</td><td>1969</td><td class="agree">1977</td>
-          <td>1406</td><td class="diverge">0.71</td>
+          <td class="agree">1978</td><td>1406</td><td class="diverge">0.71</td>
         </tr>
         <tr>
           <th class="rowhead" scope="row">0.01 m</th>
           <td class="agree">0.0002</td><td>2585</td><td class="agree">2554</td>
-          <td>1297</td><td class="diverge">0.50</td>
+          <td class="agree">2554</td><td>1297</td><td class="diverge">0.50</td>
         </tr>
       </tbody>
     </table>
@@ -503,9 +509,9 @@
 
   <section class="prose">
     <p>
-      <strong>nec2c holds to one percent of NEC-4.2 all the way down; nec2++ falls to
-      half.</strong> That is the opposite of the table above, where nec2c is 91% out at
-      0.02 wl and nec2++ is fine.
+      <strong>nec2c holds to one percent of NEC-4.2 all the way down; nec2++ departs to
+      half.</strong> Which is the opposite pairing to the table above, where nec2c is 91%
+      out at 0.02 wl and nec2++ is fine.
     </p>
     <p>
       The two are not in conflict, and the difference between them is what to take away.
@@ -515,9 +521,21 @@
       identifies a real defect and does not predict where it bites.
     </p>
     <p>
-      Which leaves NEC-4.2 as the only one of the three correct in both regimes, and it is
-      the reason to prefer it &mdash; rather than the limit test alone, which would have
-      recommended nec2++ and been wrong by a factor of two for this antenna.
+      <strong>None of this says nec2++ is wrong here.</strong> There is no exact answer at
+      real soil, so a two-against-one split is not a verdict. It is also weaker evidence
+      than it looks: NEC-4 is Burke's successor to NEC-2, so the two that agree are
+      relatives, while nec2++ is the one whose Sommerfeld evaluation appears to have been
+      reworked. Relatives agreeing against an outsider is what one would expect either
+      way, and aegnec2 does not break the tie: it links the original SOMNEC, and it
+      reproduces nec2c to four figures at every height. That is a fourth vote from the
+      same lineage, not a third opinion.
+    </p>
+    <p>
+      What can be said is narrower. NEC-4.2 is right where correctness is decidable, and
+      is not the outlier where it is not. That is the case for preferring it, and it is
+      weaker than "correct in both regimes" &mdash; but it is more than the limit test
+      alone supports, which would have recommended nec2++ on evidence that says nothing
+      about the soil anyone has.
     </p>
   </section>
 
