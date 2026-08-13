@@ -101,8 +101,17 @@ def weighted_median(values, weights):
     return values[order][np.searchsorted(cumulative, cumulative[-1] / 2.0)]
 
 
-def build(groups, n_soils, second=None, second_nodes=None):
+#: Which coefficients get the second axis.  alpha_r, vf_r and kr describe
+#: the return line and move most with its height; alpha_a and ka describe
+#: the antenna and barely move, so giving them the axis costs parameters
+#: for nothing.  RETURN_ONLY is the cheap table, ALL the full one.
+RETURN_ONLY = (2, 3, 4)
+ALL_PARAMS = tuple(range(len(TABLE_PARAMS)))
+
+
+def build(groups, n_soils, second=None, second_nodes=None, on=None):
     """A table over h/lambda, and optionally over a second coordinate."""
+    on = ALL_PARAMS if on is None else on
     shape = (n_soils, len(NODES), len(TABLE_PARAMS))
     if second is not None:
         shape = (n_soils, len(NODES), len(second_nodes), len(TABLE_PARAMS))
@@ -125,7 +134,10 @@ def build(groups, n_soils, second=None, second_nodes=None):
                 if w.sum() <= 0:
                     w = w_h
                 for pi, source in enumerate(SOURCE_INDEX):
-                    table[si, ni, mi, pi] = weighted_median(params[:, source], w)
+                    # A coefficient left off the second axis takes the same
+                    # value at every node of it.
+                    weights = w if pi in on else w_h
+                    table[si, ni, mi, pi] = weighted_median(params[:, source], weights)
     return table
 
 
@@ -222,6 +234,15 @@ if __name__ == "__main__":
     report(
         "2-D with z/h",
         error(data, build(groups, n_soils, "z_h", Z_H_NODES), "z_h", Z_H_NODES),
+    )
+    report(
+        "return-only z/lam",
+        error(
+            data,
+            build(groups, n_soils, "z_lam", Z_LAM_NODES, RETURN_ONLY),
+            "z_lam",
+            Z_LAM_NODES,
+        ),
     )
     print(
         "\nThe shipped 1-D table, fitted and measured on a fixed 5 cm return,\n"
