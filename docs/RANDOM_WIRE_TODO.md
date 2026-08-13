@@ -128,12 +128,24 @@ Remaining:
       is frequency dependent (2.5 m at 7.15 MHz against 1.0 m at 14.175
       for the same antenna), and the page scores several bands at once.
 
-      So it wants modelling.  Spike it as counterpoise height was spiked:
-      sweep it, fit per group, and ask separately whether the form
-      carries it and whether the coefficients tabulate.  A sloper's
-      return really is different -- counterpoise at the feed, no drop --
-      so a second geometry with its own table is likelier to be right
-      than another axis on this one.
+      So it wants modelling, as a second geometry with its own table
+      rather than another axis on this one.  A sloper's return really is
+      different: the balun is already low, so there is almost no drop and
+      the return is essentially just the counterpoise, where a flat top's
+      return is dominated by the drop from h.  Same control, different
+      line.
+
+      The balun height does not need to be an axis.  Measured against a
+      1.5 m reference it stays within x1.2 from 0.5 to 2 m, inside the
+      model's own bound, and runs away above that -- x1.83 at 3 m on
+      20 m, where 3 m is 0.14 wavelengths and the balun is no longer
+      electrically near the ground.  So fix it near 1.5 m and state the
+      geometry as valid to about 2 m.
+
+      That leaves the sloper with the same axes as the flat top: apex
+      height, counterpoise height, counterpoise length, soil.  The sweep
+      is `nec4_return_height_sweep.py` pointed at a sloper deck, and the
+      page gains a geometry selector.
 
 - [ ] **Counterpoise height as a control.**  Spiked and it works:
       `spike_return_height.py` fits NEC-4.2 across the axis from the
