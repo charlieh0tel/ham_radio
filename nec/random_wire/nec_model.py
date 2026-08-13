@@ -74,6 +74,10 @@ RETURN_DIRECTION = 1
 #: constant exists so the sweeps can hold it while measuring the rest.
 BALUN_HEIGHT_M = 0.61
 
+#: Shorter than this and the drop is not a wire worth having: a
+#: counterpoise level with the balun leaves none at all.
+MIN_DROP_M = 0.05
+
 
 def _segments(length_m, wavelength_m):
     """Segment count for a wire, odd so a centre segment exists."""
@@ -189,17 +193,26 @@ def sloper_deck(
     wavelength_m = C / freq_hz
     eps, sigma = GROUNDS[ground]
     reach_m = float(np.sqrt(slant_m**2 - rise_m**2))
-    drop_m = max(balun_m - return_height_m, 0.1)
+    drop_m = balun_m - return_height_m
     lines = [
         "CM end-fed sloper, fed at the balun near the ground",
         "CE",
         f"GW 1 {_segments(slant_m, wavelength_m)} 0 0 {balun_m:.9g} "
         f"{reach_m:.9g} 0 {apex_m:.9g} {radius_m:.9g}",
-        f"GW 2 {_segments(drop_m, wavelength_m)} 0 0 {balun_m:.9g} "
-        f"0 0 {return_height_m:.9g} {radius_m:.9g}",
+    ]
+    # A counterpoise strung out at the balun's own height leaves no drop,
+    # and a wire with both ends in the same place is not a wire.
+    if drop_m > MIN_DROP_M:
+        lines.append(
+            f"GW 2 {_segments(drop_m, wavelength_m)} 0 0 {balun_m:.9g} "
+            f"0 0 {return_height_m:.9g} {radius_m:.9g}"
+        )
+    lines += [
         # Away from the wire: the coax heads back to the station.
         f"GW 3 {_segments(return_len_m, wavelength_m)} 0 0 "
-        f"{return_height_m:.9g} {-return_len_m:.9g} 0 {return_height_m:.9g} "
+        f"{return_height_m if drop_m > MIN_DROP_M else balun_m:.9g} "
+        f"{-return_len_m:.9g} 0 "
+        f"{return_height_m if drop_m > MIN_DROP_M else balun_m:.9g} "
         f"{radius_m:.9g}",
         "GE 1",
         f"GN 2 0 0 0 {eps:.9g} {sigma:.9g}",
