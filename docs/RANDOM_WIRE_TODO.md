@@ -141,16 +141,22 @@ Remaining:
       x1.19 median with only 0.9h degrading.  That reverses the earlier
       rejection, which was measured against PyNEC.
 
-      To carry it through:
+      Swept on the table's own axes and it holds: per-group error x1.19
+      to x1.24 median from the ground to half the wire height, level with
+      the shipped model's x1.25.  `alpha_r`'s bound is lowered and no
+      longer rails.
 
-      - lower `alpha_r`'s bound in fit.py.  It rails at 0.0010 for a
-        counterpoise clear of the soil, which is a fence rather than a
-        measurement, and a low-loss line there is what physics expects.
-      - sweep the axis crossed with the existing grid, against NEC-4.2,
-        which is roughly seven times a 77-minute run
-      - tabulate against it as `h/lambda` is tabulated, and refit
-      - then the page gains the control, and the model gains a regime
-        where NEC-4.2 is measurably the better target
+      Only two of the six coefficients move along the axis, both
+      monotonically -- `alpha_r` by x2.9 as the counterpoise sheds ground
+      loss, `vf_r` from 0.82 towards 0.995 as it approaches free space.
+      So what is left is:
+
+      - decide the shape: a third table dimension, or a 1-D correction on
+        `alpha_r` and `vf_r` against z/h.  The latter looks sufficient
+        and is a far smaller change to the page.
+      - fit it, ship the coefficients, and add the control
+      - the model then has a regime where NEC-4.2 is measurably the
+        better target, which is what would justify refitting on it
 
 - [ ] Optional on-demand NEC run once a length is chosen, against the
       height, return path and soil already entered.  Different from the

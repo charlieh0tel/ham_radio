@@ -1401,6 +1401,54 @@ heights, one return length and one soil, so it establishes feasibility
 and not coefficients.  And a real fit needs this axis crossed with the
 existing grid, which multiplies a 77-minute sweep by about seven.
 
+### Counterpoise height, on the table's own axes
+
+The spike said the form carries this axis on two frequencies and one
+soil.  `nec4_return_height_sweep.py` asks the same on every axis the
+coefficient table indexes -- 138,240 NEC-4.2 solves, 67 minutes, none
+refused.
+
+Per-group error, each step given its own coefficients, n=96 apiece:
+
+| counterpoise height | median | 90th | h/lambda >= 0.05 median | 90th |
+|---|---|---|---|---|
+| ground (1 cm) | x1.20 | x1.34 | x1.21 | x1.35 |
+| 0.02h | x1.19 | x1.27 | x1.20 | x1.27 |
+| 0.05h | x1.20 | x1.26 | x1.21 | x1.26 |
+| 0.1h | x1.20 | x1.27 | x1.21 | x1.27 |
+| 0.25h | x1.22 | x1.28 | x1.24 | x1.28 |
+| 0.5h | x1.24 | x1.32 | x1.24 | x1.33 |
+
+Flat from the ground to half the wire height, and level with the shipped
+model's own x1.25 median and x1.32 at the 90th.  Raising the counterpoise
+costs the fit nothing.
+
+The coefficients are the better news.  Only two of the six move, and both
+monotonically:
+
+| step | alpha_a | vf_a | ka | alpha_r | vf_r | kr |
+|---|---|---|---|---|---|---|
+| ground | 0.1168 | 1.0000 | 0.7780 | 0.5383 | 0.8244 | 0.7698 |
+| 0.02h | 0.1100 | 1.0000 | 0.7729 | 0.3701 | 0.9139 | 0.8084 |
+| 0.05h | 0.1094 | 1.0000 | 0.7921 | 0.2773 | 0.9510 | 0.7760 |
+| 0.1h | 0.1083 | 1.0000 | 0.7778 | 0.2375 | 0.9621 | 0.7756 |
+| 0.25h | 0.1071 | 1.0000 | 0.7577 | 0.2026 | 0.9849 | 0.7968 |
+| 0.5h | 0.1048 | 1.0000 | 0.7275 | 0.1888 | 0.9950 | 0.8096 |
+
+`alpha_r` falls by x2.9 as the counterpoise rises, which is the return
+line shedding ground loss, and `vf_r` climbs from 0.82 towards 0.995,
+which is the same line approaching free space as it leaves the soil.
+Both are physically legible rather than fitted noise.  `alpha_a`, `ka`
+and `kr` are flat to within a few percent, and `vf_a` is railed at unity
+as it is everywhere else.
+
+Two things follow.  `alpha_r` reads 0.1888 at the top rather than sitting
+on its bound, so lowering that floor from 1e-3 to 1e-6 was necessary and
+is now vindicated.  And because only two coefficients carry the axis,
+this may not need a third table dimension: a one-dimensional correction
+on `alpha_r` and `vf_r` against z/h could be enough, which is a much
+smaller change to the page than a 3-D table would be.
+
 ## References
 
 Sources for the published length tables this page is measured against,
