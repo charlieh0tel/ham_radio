@@ -23,6 +23,8 @@ set -- each entry sensible, the vector not a fit of anything.
 
 import argparse
 import itertools
+import json
+from pathlib import Path
 
 import numpy as np
 from scipy.optimize import least_squares
@@ -42,6 +44,10 @@ SLOPER = ("apex_m", BALUN_HEIGHT_M)
 #: Counterpoise height in wavelengths.  Four nodes, log spaced over what
 #: a real installation reaches, held flat outside as h/lambda is.
 Z_NODES = np.array([1e-4, 1e-3, 8e-3, 6e-2])
+
+#: Written beside this script, as coefficients.json is, so the shipped
+#: numbers have a checkable original outside the page.
+DATA = Path(__file__).resolve().parent / "coefficients2d.json"
 
 #: Indices into TABLE_PARAMS that carry the second axis.
 TWO_D = RETURN_ONLY
@@ -189,6 +195,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sweep", default="nec4_return_height_sweep.npz")
     parser.add_argument("--max-nfev", type=int, default=600)
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="write the fitted table into coefficients2d.json",
+    )
     args = parser.parse_args()
 
     data = np.load(args.sweep, allow_pickle=False)
@@ -200,4 +211,30 @@ if __name__ == "__main__":
     table = build(groups, len(data["soil_names"]), "z_lam", Z_NODES, TWO_D)
     report("unrefined", measure(data, table, geometry))
     table = refine(table, data, geometry, args.max_nfev)
-    report("refined", measure(data, table, geometry))
+    factors = measure(data, table, geometry)
+    report("refined", factors)
+
+    if args.write:
+        name = "sloper" if geometry is SLOPER else "flat_top"
+        DATA.parent.mkdir(exist_ok=True)
+        existing = json.loads(DATA.read_text()) if DATA.exists() else {}
+        existing.update(
+            {
+                "h_nodes": NODES.tolist(),
+                "z_nodes": Z_NODES.tolist(),
+                "params": list(TABLE_PARAMS),
+                "two_d_params": [TABLE_PARAMS[i] for i in TWO_D],
+                "vf_a": VF_A,
+                "soils": [str(s) for s in data["soil_names"]],
+                name: {
+                    "table": table.tolist(),
+                    "error": {
+                        "median": float(np.median(factors)),
+                        "p90": float(np.percentile(factors, 90)),
+                        "worst": float(factors.max()),
+                    },
+                },
+            }
+        )
+        DATA.write_text(json.dumps(existing, indent=1) + "\n")
+        print(f"\nwrote {name} into {DATA.name}")
