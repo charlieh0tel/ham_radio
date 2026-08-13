@@ -179,80 +179,116 @@ test.describe('the tuner decides the verdicts', () => {
 });
 
 test.describe('the installation panel', () => {
-  /** The counterpoise run laid on the ground, in feet. */
-  const groundRun = async (page) =>
+  /** A labelled slider's readout, in feet. */
+  const readout = async (page, label) =>
     Number.parseFloat(
-      (await page.locator('label', { hasText: 'Counterpoise' }).textContent()).match(
-        /Counterpoise on the ground:\s*([\d.]+)\s*ft/,
+      (await page.locator('label', { hasText: label }).first().textContent()).match(
+        new RegExp(`${label}:\\s*([\\d.]+)\\s*ft`),
       )[1],
     );
 
-  /** The whole return conductor, drop included, as the hint reports it. */
+  /** The whole return conductor, as the counterpoise hint reports it. */
   const wholeConductor = async (page) =>
     Number.parseFloat(
-      (await page.locator('label', { hasText: 'Counterpoise' }).textContent()).match(
-        /whole conductor is\s*([\d.]+)\s*ft/,
+      (await page.locator('label', { hasText: 'Counterpoise:' }).textContent()).match(
+        /that is\s*([\d.]+)\s*ft\s*of conductor/,
       )[1],
     );
 
-  /** The wire height, in feet. */
-  const wireHeight = async (page) =>
-    Number.parseFloat(
-      (await page.locator('label', { hasText: 'Wire height' }).textContent()).match(
-        /([\d.]+)\s*ft/,
-      )[1],
-    );
+  const slider = (page, label) =>
+    page.locator('label', { hasText: label }).first().locator('input');
 
   test('the quarter-wave preset resonates the whole conductor', async ({ page }) => {
     await open(page);
     await page.locator('button', { hasText: /λ\/4 on/ }).first().click();
     // A quarter wave on 40 m is about 35 ft, and it is the whole conductor
     // that resonates, so the drop is inside that figure rather than added to
-    // it.  The run on the ground is whatever is left over.
+    // it.  The counterpoise laid out is whatever is left over.
     const whole = await wholeConductor(page);
     expect(whole).toBeGreaterThan(32);
     expect(whole).toBeLessThan(38);
-    expect(await groundRun(page)).toBeCloseTo(whole - (await wireHeight(page)), 1);
   });
 
-  test('every part of the counterpoise slider changes the run', async ({ page }) => {
+  test('every part of the counterpoise slider changes it', async ({ page }) => {
     await open(page);
-    const slider = page.locator('label', { hasText: 'Counterpoise' }).locator('input');
-    const min = Number(await slider.getAttribute('min'));
-    const max = Number(await slider.getAttribute('max'));
-    const step = Number(await slider.getAttribute('step'));
+    const control = slider(page, 'Counterpoise');
+    const min = Number(await control.getAttribute('min'));
+    const max = Number(await control.getAttribute('max'));
+    const step = Number(await control.getAttribute('step'));
     // A range input steps from its own min, so only those values are legal.
     const snap = (value) => min + Math.round((value - min) / step) * step;
 
     const seen = new Set();
     for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
-      await slider.fill(String(snap(min + (max - min) * fraction)));
-      seen.add(await groundRun(page));
+      await control.fill(String(snap(min + (max - min) * fraction)));
+      seen.add(await readout(page, 'Counterpoise'));
     }
     expect(seen.size).toBe(5);
   });
 
-  test('the run starts at nothing on the ground, never below it', async ({ page }) => {
+  test('the counterpoise starts at nothing', async ({ page }) => {
     await open(page);
-    const slider = page.locator('label', { hasText: 'Counterpoise' }).locator('input');
-    await slider.fill('0');
-    expect(await groundRun(page)).toBeCloseTo(0, 1);
-    // With no run, the whole conductor is exactly the drop.
-    expect(await wholeConductor(page)).toBeCloseTo(await wireHeight(page), 1);
+    await slider(page, 'Counterpoise').fill('0');
+    expect(await readout(page, 'Counterpoise')).toBeCloseTo(0, 1);
+    // With no counterpoise the whole conductor is just the drop.
+    expect(await wholeConductor(page)).toBeCloseTo(
+      await readout(page, 'Wire height'),
+      0,
+    );
   });
 
-  test('raising the wire lengthens the conductor, not the run', async ({ page }) => {
+  test('raising the wire lengthens the drop, not the counterpoise', async ({
+    page,
+  }) => {
     await open(page);
-    const height = page.locator('label', { hasText: 'Wire height' }).locator('input');
-    const slider = page.locator('label', { hasText: 'Counterpoise' }).locator('input');
-    await slider.fill('6');
-    const runBefore = await groundRun(page);
-    await height.fill('25');
-    expect(await groundRun(page)).toBeCloseTo(runBefore, 1);
+    await slider(page, 'Counterpoise').fill('6');
+    const before = await readout(page, 'Counterpoise');
+    await slider(page, 'Wire height').fill('25');
+    expect(await readout(page, 'Counterpoise')).toBeCloseTo(before, 1);
     expect(await wholeConductor(page)).toBeCloseTo(
-      runBefore + (await wireHeight(page)),
-      1,
+      before + (await readout(page, 'Wire height')),
+      0,
     );
+  });
+
+  test('the counterpoise cannot be raised above the feedpoint', async ({ page }) => {
+    await open(page);
+    const height = await readout(page, 'Wire height');
+    const ceiling = Number(await slider(page, 'Counterpoise height').getAttribute('max'));
+    // It hangs from the feedpoint, and the fit reaches half the wire height.
+    expect(ceiling).toBeLessThanOrEqual(height * 0.3048 / 2 + 1e-6);
+  });
+});
+
+test.describe('geometry', () => {
+  const pick = (page, name) =>
+    page.locator('.geometry-btn', { hasText: name });
+
+  test('both arrangements are offered, with a picture each', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('.geometry-btn')).toHaveCount(2);
+    await expect(page.locator('.geometry-btn svg')).toHaveCount(2);
+    await expect(pick(page, 'Flat top')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('choosing a sloper swaps in its own controls', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('label', { hasText: 'Balun height' })).toHaveCount(0);
+    await pick(page, 'Sloper').click();
+    await expect(pick(page, 'Sloper')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('label', { hasText: 'Balun height' })).toHaveCount(1);
+    await expect(page.locator('label', { hasText: 'Free end' })).toHaveCount(1);
+  });
+
+  test('a sloper whose wire cannot reach its support says so', async ({ page }) => {
+    await open(page);
+    await pick(page, 'Sloper').click();
+    // The free end well above the balun, with a wire far too short to climb.
+    await page.locator('label', { hasText: 'Free end' }).first().locator('input')
+      .fill('25');
+    await page.locator('input[type=number]').fill('10');
+    await expect(page.locator('.verdict')).toContainText('does not reach');
+    await expect(page.locator('.verdict')).toHaveClass(/bad/);
   });
 });
 

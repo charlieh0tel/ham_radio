@@ -28,15 +28,26 @@ const EXPORTS = [
   // constants
   'C_SPEED', 'FT_PER_M', 'UNITS', 'SOILS', 'REGIONS', 'SEGMENTS', 'MODES',
   'MODEL_H_NODES', 'MODEL_COEFFS', 'MODEL_VF_A', 'WIRE_RADIUS_M',
-  'DEFAULT_VELOCITY_FACTOR', 'DEFAULT_HEIGHT_M', 'DEFAULT_RETURN_M',
+  'DEFAULT_VELOCITY_FACTOR', 'DEFAULT_HEIGHT_M', 'DEFAULT_COUNTERPOISE_M',
+  'DEFAULT_COUNTERPOISE_Z_M',
+  'DEFAULT_BALUN_M',
+  'GEOMETRIES',
+  'DEFAULT_GEOMETRY',
+  'returnConductorM',
+  'feedHeightM',
+  'riseShortfallM',
   'DEFAULT_SOIL', 'DEFAULT_UNUN_RATIO', 'UNUN_RATIOS', 'Z_SYSTEM_OHMS',
   'PUBLISHED_FT', 'TUNERS', 'DEFAULT_TUNER', 'isGoodScore',
-  'HEIGHT_RANGE_M', 'RETURN_RANGE_M', 'MODEL_FIT_RANGE_HZ',
+  'HEIGHT_RANGE_M', 'COUNTERPOISE_RANGE_M',
+  'COUNTERPOISE_Z_RANGE_M',
+  'BALUN_RANGE_M', 'MODEL_FIT_RANGE_HZ',
   // length math
   'halfWaveM', 'bandsIn', 'bandEdgesHz', 'resonanceInterval', 'avoidIntervals',
   'tooShortM', 'solve', 'judgeLength',
   // impedance model
-  'wireZ0', 'interpCoeff', 'lineZ', 'endFedZin', 'swrAtRadio', 'scoreLength',
+  'wireZ0', 'interpCoeff',
+  'interpCoeff2',
+  'MODEL_Z_NODES', 'lineZ', 'endFedZin', 'swrAtRadio', 'scoreLength',
   'solveImpedance', 'worstSuggestedSwr',
   // NEC deck
   'buildNecDeck', 'buildAntennaSimProject', 'deckWires', 'deckSweep',
@@ -46,6 +57,8 @@ const EXPORTS = [
   'toDisplay', 'fromDisplay', 'fmtLen', 'fmtBandEdges', 'tickStep',
   // URL and state helpers
   'clamp', 'parseNum', 'isKeyOf', 'entriesOf', 'readWireLenM',
+  'readCounterpoiseM',
+  'LEGACY_RETURN_KEY',
   'URL_KEYS', 'DEFAULTS', 'LEGACY_LEN_FT_KEY',
   // classical internals worth exercising directly
   'pickInSpan', 'mergeIntervals', 'usableIntervals', 'bestFeasibleMargin',

@@ -46,22 +46,46 @@ test('SWR is symmetric in impedance ratio', () => {
 });
 
 test('coefficient table is well formed', () => {
-  // The constants were hand-copied from coefficients.py once.  A short or
-  // misaligned row would interpolate silently against the wrong node.
-  for (const [soil, coeffs] of Object.entries(m.MODEL_COEFFS)) {
-    assert.ok(soil in m.SOILS, `${soil} is a known soil`);
-    for (const [name, values] of Object.entries(coeffs)) {
-      assert.equal(values.length, m.MODEL_H_NODES.length,
-        `${soil}.${name} has one value per node`);
-      assert.ok(values.every(Number.isFinite), `${soil}.${name} is all finite`);
+  // Generated into the page, so a short or misaligned row would interpolate
+  // silently against the wrong node.  Stored sparsely: the two antenna-line
+  // coefficients are one row along h/lambda, the three return-line ones a
+  // row per node pair, because only they vary with counterpoise height.
+  const ONE_D = ['alphaA', 'kA'];
+  const TWO_D = ['alphaR', 'vfR', 'kR'];
+  for (const [geometry, soils] of Object.entries(m.MODEL_COEFFS)) {
+    assert.ok(geometry in m.GEOMETRIES, `${geometry} is a known geometry`);
+    for (const soil of Object.keys(m.SOILS)) {
+      assert.ok(soil in soils, `${geometry}.${soil} has coefficients`);
+    }
+    for (const [soil, coeffs] of Object.entries(soils)) {
+      assert.ok(soil in m.SOILS, `${soil} is a known soil`);
+      for (const name of ONE_D) {
+        const values = coeffs[name];
+        assert.equal(values.length, m.MODEL_H_NODES.length,
+          `${geometry}.${soil}.${name} has one value per height node`);
+        assert.ok(values.every(Number.isFinite),
+          `${geometry}.${soil}.${name} is all finite`);
+      }
+      for (const name of TWO_D) {
+        const rows = coeffs[name];
+        assert.equal(rows.length, m.MODEL_H_NODES.length,
+          `${geometry}.${soil}.${name} has one row per height node`);
+        for (const row of rows) {
+          assert.equal(row.length, m.MODEL_Z_NODES.length,
+            `${geometry}.${soil}.${name} has one column per counterpoise node`);
+          assert.ok(row.every(Number.isFinite),
+            `${geometry}.${soil}.${name} is all finite`);
+        }
+      }
     }
   }
-  for (const soil of Object.keys(m.SOILS)) {
-    assert.ok(soil in m.MODEL_COEFFS, `${soil} has coefficients`);
+  for (const geometry of Object.keys(m.GEOMETRIES)) {
+    assert.ok(geometry in m.MODEL_COEFFS, `${geometry} has coefficients`);
   }
-  const rising = m.MODEL_H_NODES.every(
-    (v, i) => i === 0 || v > m.MODEL_H_NODES[i - 1]);
-  assert.ok(rising, 'nodes ascend, as interpCoeff assumes');
+  for (const nodes of [m.MODEL_H_NODES, m.MODEL_Z_NODES]) {
+    assert.ok(nodes.every((v, i) => i === 0 || v > nodes[i - 1]),
+      'nodes ascend, as the interpolation assumes');
+  }
 });
 
 test('coefficients interpolate between nodes and clamp outside them', () => {
@@ -84,7 +108,7 @@ test('feedpoint impedance peaks where the model puts its half wave', () => {
   // antenna line at MODEL_VF_A, so its peaks sit there and not at the
   // classical 0.95.  Drawing half waves at the wrong one put the table 5
   // percent away from the curve.
-  const site = { heightM: 9.144, returnM: 7.62, soil: 'average' };
+  const site = { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' };
   const freqHz = 14.175e6;
   const expected = m.halfWaveM(freqHz, m.MODEL_VF_A);
   let bestLen = 0;
@@ -102,7 +126,7 @@ test('feedpoint impedance peaks where the model puts its half wave', () => {
 });
 
 test('a quarter wave is not a high-impedance point', () => {
-  const site = { heightM: 9.144, returnM: 7.62, soil: 'average' };
+  const site = { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' };
   const freqHz = 14.175e6;
   const quarter = m.halfWaveM(freqHz, m.MODEL_VF_A) / 2;
   const z = m.endFedZin(quarter, freqHz, site, m.WIRE_RADIUS_M);
@@ -115,15 +139,15 @@ test('raising the wire changes the answer', () => {
   const freqHz = 7.15e6;
   const lenM = 21.6;
   const low = m.endFedZin(lenM, freqHz,
-    { heightM: 3, returnM: 7.62, soil: 'average' }, m.WIRE_RADIUS_M);
+    { geometry: 'flatTop', heightM: 3, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' }, m.WIRE_RADIUS_M);
   const high = m.endFedZin(lenM, freqHz,
-    { heightM: 20, returnM: 7.62, soil: 'average' }, m.WIRE_RADIUS_M);
+    { geometry: 'flatTop', heightM: 20, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' }, m.WIRE_RADIUS_M);
   assert.ok(Math.abs(Math.hypot(low.re, low.im) - Math.hypot(high.re, high.im)) > 1,
     'height moves the feedpoint');
 });
 
 test('suggested lengths are ordered, distinct and long enough', () => {
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const out = m.solveImpedance('us', [80, 40, 20, 15, 10], 'full', site,
     m.WIRE_RADIUS_M, 9, 60, 'ft');
@@ -139,7 +163,7 @@ test('suggested lengths are ordered, distinct and long enough', () => {
 });
 
 test('no bands selected yields no suggestions rather than throwing', () => {
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const out = m.solveImpedance('us', [], 'full', site, m.WIRE_RADIUS_M, 9, 30,
     'ft');
@@ -295,7 +319,7 @@ test('Schelkunoff Z0 rises with length and falls with radius', () => {
 });
 
 test('feedpoint impedance is finite and positive-real everywhere sampled', () => {
-  const site = { heightM: 9.144, returnM: 7.62, soil: 'average' };
+  const site = { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' };
   for (const mhz of [1.9, 3.75, 7.15, 14.175, 21.225, 28.85]) {
     for (let lenM = 2; lenM <= 60; lenM += 0.5) {
       const z = m.endFedZin(lenM, mhz * 1e6, site, m.WIRE_RADIUS_M);
@@ -309,7 +333,7 @@ test('feedpoint impedance is finite and positive-real everywhere sampled', () =>
 test('every soil produces a usable model', () => {
   const freqHz = 14.175e6;
   for (const soil of Object.keys(m.SOILS)) {
-    const z = m.endFedZin(20, freqHz, { heightM: 9.144, returnM: 7.62, soil },
+    const z = m.endFedZin(20, freqHz, { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil },
       m.WIRE_RADIUS_M);
     assert.ok(Number.isFinite(z.re) && z.re > 0, `${soil} gives a real impedance`);
   }
@@ -329,7 +353,7 @@ test('SWR matches the closed form either side of a match', () => {
 });
 
 test('scoring a length returns a mean bounded by its own worst case', () => {
-  const site = { heightM: 9.144, returnM: 7.62, soil: 'average' };
+  const site = { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 7.62, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' };
   const bands = m.bandsIn('us').filter(b => [40, 20, 10].includes(b.m));
   const scored = m.scoreLength(21.6, bands, 'full', site, m.WIRE_RADIUS_M, 9);
   assert.ok(scored !== null, 'a score comes back');
@@ -343,9 +367,9 @@ test('a longer return path changes the score', () => {
   // it as a passive ground would return the same number twice.
   const bands = m.bandsIn('us').filter(b => [40, 20].includes(b.m));
   const short = m.scoreLength(21.6, bands, 'full',
-    { heightM: 9.144, returnM: 3, soil: 'average' }, m.WIRE_RADIUS_M, 9);
+    { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 3, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' }, m.WIRE_RADIUS_M, 9);
   const long = m.scoreLength(21.6, bands, 'full',
-    { heightM: 9.144, returnM: 30, soil: 'average' }, m.WIRE_RADIUS_M, 9);
+    { geometry: 'flatTop', heightM: 9.144, balunM: m.DEFAULT_BALUN_M, counterpoiseM: 30, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, soil: 'average' }, m.WIRE_RADIUS_M, 9);
   assert.ok(Math.abs(short.swr - long.swr) > 0.01, 'return length matters');
 });
 
@@ -382,23 +406,41 @@ test('feet and inches never shows twelve inches', () => {
 
 test('inlined coefficients match the fitted table they were generated from', async () => {
   // The page must stay self-contained, so its coefficients are inlined rather
-  // than imported.  nec/random_wire/coefficients.json is the original, and
+  // than imported.  nec/random_wire/coefficients2d.json is the original, and
   // this is what stops the two drifting: regenerate with
-  // `uv run coefficients.py --write` and both move together.
+  // `uv run coefficients2d.py --write-page` and both move together.
   const { readFile } = await import('node:fs/promises');
-  const url = new URL('../../nec/random_wire/coefficients.json', import.meta.url);
+  const url = new URL('../../nec/random_wire/coefficients2d.json', import.meta.url);
   const data = JSON.parse(await readFile(url, 'utf8'));
 
-  assert.deepEqual([...m.MODEL_H_NODES], data.nodes_h_over_lambda,
-    'node positions agree');
+  assert.deepEqual([...m.MODEL_H_NODES], data.h_nodes, 'height nodes agree');
+  assert.deepEqual([...m.MODEL_Z_NODES], data.z_nodes, 'counterpoise nodes agree');
   close(m.MODEL_VF_A, data.vf_a, 1e-12, 'antenna velocity factor');
-  assert.deepEqual(Object.keys(m.MODEL_COEFFS).sort(),
-    Object.keys(data.soils).sort(), 'the same soils');
-  for (const [soil, coeffs] of Object.entries(data.soils)) {
-    for (const [name, values] of Object.entries(coeffs)) {
-      assert.deepEqual([...m.MODEL_COEFFS[soil][name]], values,
-        `${soil}.${name} matches the fit`);
-    }
+
+  // The json carries a dense (soil, height, counterpoise, parameter) array;
+  // the page stores the two antenna coefficients once, since they do not
+  // vary along the counterpoise axis.
+  const JS = { alpha_a_lam: 'alphaA', ka: 'kA', alpha_r_lam: 'alphaR',
+               vf_r: 'vfR', kr: 'kR' };
+  const round = (v) => Math.round(v * 1e4) / 1e4;
+  for (const [key, geometry] of [['flat_top', 'flatTop'], ['sloper', 'sloper']]) {
+    const table = data[key].table;
+    data.soils.forEach((soil, si) => {
+      data.params.forEach((param, pi) => {
+        const name = JS[param];
+        const inlined = m.MODEL_COEFFS[geometry][soil][name];
+        if (data.two_d_params.includes(param)) {
+          table[si].forEach((row, ni) => {
+            assert.deepEqual([...inlined[ni]], row.map((cell) => round(cell[pi])),
+              `${geometry}.${soil}.${name} row ${ni} matches the fit`);
+          });
+          return;
+        }
+        assert.deepEqual([...inlined],
+          table[si].map((row) => round(row[0][pi])),
+          `${geometry}.${soil}.${name} matches the fit`);
+      });
+    });
   }
 });
 
@@ -406,15 +448,18 @@ test('the fitted coefficients are physically plausible', () => {
   // Loss cannot be negative, a velocity factor above one is a wave outrunning
   // light, and a Z0 scale far from unity means the line form has stopped
   // describing a wire.  A bad sweep point reaching the fit shows up here.
-  for (const [soil, coeffs] of Object.entries(m.MODEL_COEFFS)) {
-    for (const alpha of [...coeffs.alphaA, ...coeffs.alphaR]) {
-      assert.ok(alpha > 0 && alpha < 5, `${soil}: alpha ${alpha} in range`);
-    }
-    for (const vf of coeffs.vfR) {
-      assert.ok(vf > 0.3 && vf <= 1.0001, `${soil}: vf_r ${vf} at or below unity`);
-    }
-    for (const k of [...coeffs.kA, ...coeffs.kR]) {
-      assert.ok(k > 0.2 && k < 2, `${soil}: Z0 scale ${k} near unity`);
+  for (const [geometry, soils] of Object.entries(m.MODEL_COEFFS)) {
+    for (const [soil, coeffs] of Object.entries(soils)) {
+      const where = `${geometry}.${soil}`;
+      for (const alpha of [...coeffs.alphaA, ...coeffs.alphaR.flat()]) {
+        assert.ok(alpha > 0 && alpha < 5, `${where}: alpha ${alpha} in range`);
+      }
+      for (const vf of coeffs.vfR.flat()) {
+        assert.ok(vf > 0.3 && vf <= 1.0001, `${where}: vf_r ${vf} at or below unity`);
+      }
+      for (const k of [...coeffs.kA, ...coeffs.kR.flat()]) {
+        assert.ok(k > 0.2 && k < 2, `${where}: Z0 scale ${k} near unity`);
+      }
     }
   }
 });
@@ -436,7 +481,7 @@ test('the fitted coefficients are physically plausible', () => {
 const AT_MODEL_VF = { region: 'us', segment: 'full', marginPct: 8 };
 
 test('the classical avoid zones bracket the modelled impedance peaks', () => {
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bandM = 20;
   const band = m.bandsIn(AT_MODEL_VF.region).find(b => b.m === bandM);
@@ -471,7 +516,7 @@ test('lengths the classical rule rejects score worse than ones it accepts', () =
   // The two methods are independent: one is arithmetic on wavelength, the
   // other a fitted impedance model.  If the proxy is sound they should rank
   // the same lengths the same way.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bandsM = [40, 20, 15];
   const bands = m.bandsIn(AT_MODEL_VF.region).filter(b => bandsM.includes(b.m));
@@ -499,7 +544,7 @@ test('the two modes recommend lengths that are mutually acceptable', () => {
   // ruled out.  Checked on a band set where the classical rule still has room
   // to have an opinion -- see the saturation test below for why that
   // qualifier is needed rather than a way of ducking the comparison.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bandsM = [40, 20];
   const bands = m.bandsIn(AT_MODEL_VF.region).filter(b => bandsM.includes(b.m));
@@ -532,7 +577,7 @@ test('the classical rule saturates once enough bands are asked for', () => {
   assert.ok(widest < 5, `widest usable span is only ${widest.toFixed(2)} m`);
 
   // The impedance mode still returns a ranking over the same input.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const scored = m.solveImpedance('us', [40, 20, 15, 10], 'full', site,
     m.WIRE_RADIUS_M, 9, 60, 'ft');
@@ -544,7 +589,7 @@ test('the published lengths are scored rather than omitted', () => {
   // The page shows what it thinks of the standard tables, including where it
   // disagrees.  A user who knows 71 ft will otherwise read its absence from
   // the suggestions as a broken tool.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bands = m.bandsIn('us').filter(b => [80, 40, 20, 15, 10].includes(b.m));
   assert.ok(m.PUBLISHED_FT.includes(71), '71 ft is among the lengths shown');
@@ -572,7 +617,7 @@ test('the worst-band gate is what separates the published lengths', () => {
   // is 80 m that does it: a random wire is electrically short there and the
   // match is genuinely hard.  Recorded as a test because the default band set
   // includes 80 m, so this is what a first-time visitor sees.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   // Against a wide-range tuner, not the default: with a rig ATU almost
   // nothing passes either way and the comparison says nothing.
@@ -611,7 +656,7 @@ test('impedance suggestions are round numbers whose score matches the length', (
   // artefact of SCORE_SAMPLES rather than a length to cut wire to.  Each
   // suggestion must round in the display unit and carry the score of the
   // rounded length, not of the sample it came from.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bandsM = [40, 20, 15, 10];
   for (const units of Object.keys(m.UNITS)) {
@@ -638,7 +683,7 @@ test('impedance suggestions are round numbers whose score matches the length', (
 // ---------------------------------------------------------------------------
 
 /** The default site, spelled once. */
-const SITE = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+const SITE = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
   soil: m.DEFAULT_SOIL };
 
 test('judgeLength calls a length inside an avoid zone bad', () => {
@@ -821,7 +866,7 @@ test('isKeyOf keeps a bad URL parameter out of a lookup table', () => {
 test('the tuner preset decides what counts as a good length', () => {
   // The gates are the point of the preset, so a stricter tuner must accept a
   // subset of what a looser one does -- never something different.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bands = m.bandsIn('us').filter(b => m.DEFAULTS.bands.includes(b.m));
   const scored = m.PUBLISHED_FT.map(ft => m.scoreLength(
@@ -869,7 +914,7 @@ const cardsOf = (deck, name) => deck.split('\n')
   .map(line => line.split(/\s+/));
 
 const defaultDeck = () => {
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bands = m.bandsIn('us').filter(b => m.DEFAULTS.bands.includes(b.m));
   return m.buildNecDeck(m.fromDisplay(71, 'ft'), bands, 'full', site,
@@ -880,8 +925,7 @@ test('the deck describes the geometry the model was fitted at', async () => {
   // Checked against the fixture the browser run was always meant to be held
   // to, nec/random_wire/reference_cases.json, so the deck and the PyNEC runs
   // behind the coefficients describe one antenna.  Its return_ft is the
-  // horizontal run alone; the page's returnM is the whole conductor, drop
-  // included, so the site here adds the two.
+  // horizontal run alone, which is exactly what counterpoiseM is.
   const { readFile } = await import('node:fs/promises');
   const url = new URL('../../nec/random_wire/reference_cases.json', import.meta.url);
   const fixture = JSON.parse(await readFile(url, 'utf8'));
@@ -896,7 +940,9 @@ test('the deck describes the geometry the model was fitted at', async () => {
     const heightM = m.fromDisplay(kase.height_ft, 'ft');
     const runM = m.fromDisplay(kase.return_ft, 'ft');
     const lenM = m.fromDisplay(kase.length_ft, 'ft');
-    const site = { heightM, returnM: heightM + runM, soil: kase.soil };
+    const site = { geometry: 'flatTop', heightM, balunM: m.DEFAULT_BALUN_M,
+                   counterpoiseM: runM, counterpoiseZM: m.DECK_RETURN_HEIGHT_M,
+                   soil: kase.soil };
     const deck = m.buildNecDeck(lenM, bands, 'full', site, m.WIRE_RADIUS_M);
 
     const [antenna, drop, run] = cardsOf(deck, 'GW');
@@ -968,7 +1014,7 @@ test('segments are odd, bounded, and short against the shortest wave', () => {
   // where segments are electrically longest.  The source sits on segment 1 of
   // tag 1, so a wire described by too few segments moves the feedpoint.
   const bands = m.bandsIn('us').filter(b => [40, 10].includes(b.m));
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const deck = m.buildNecDeck(m.fromDisplay(203, 'ft'), bands, 'full', site,
                               m.WIRE_RADIUS_M);
@@ -1003,7 +1049,7 @@ test('the deck feeds the end of the antenna wire and ends properly', () => {
 });
 
 test('a deck needs a length and a band', () => {
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bands = m.bandsIn('us').filter(b => b.m === 20);
   assert.equal(m.buildNecDeck(0, bands, 'full', site, m.WIRE_RADIUS_M), null,
@@ -1016,7 +1062,8 @@ test('a deck needs a length and a band', () => {
 test('the AntennaSim project describes the same antenna as the deck', () => {
   // Two exports, one geometry.  They share deckWires precisely so this can
   // never drift, and this is what says so.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', heightM: m.DEFAULT_HEIGHT_M, balunM: m.DEFAULT_BALUN_M,
+    counterpoiseM: m.DEFAULT_COUNTERPOISE_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M,
     soil: 'poor' };
   const bands = m.bandsIn('us').filter(b => [40, 20, 15, 10].includes(b.m));
   const lenM = m.fromDisplay(71, 'ft');
@@ -1064,7 +1111,7 @@ test('the AntennaSim project carries the fields its loader demands', () => {
   // will not reject, mode "editor", at least one wire, and a junctions array.
   // Nothing here can catch a schema change upstream -- see the note in the
   // page -- but a field dropped on this side is caught.
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bands = m.bandsIn('us').filter(b => b.m === 20);
   const project = JSON.parse(m.buildAntennaSimProject(
@@ -1085,7 +1132,7 @@ test('the AntennaSim project carries the fields its loader demands', () => {
 });
 
 test('the project file needs a length and a band, as the deck does', () => {
-  const site = { heightM: m.DEFAULT_HEIGHT_M, returnM: m.DEFAULT_RETURN_M,
+  const site = { geometry: 'flatTop', balunM: m.DEFAULT_BALUN_M, counterpoiseZM: m.DEFAULT_COUNTERPOISE_Z_M, heightM: m.DEFAULT_HEIGHT_M, counterpoiseM: m.DEFAULT_COUNTERPOISE_M,
     soil: m.DEFAULT_SOIL };
   const bands = m.bandsIn('us').filter(b => b.m === 20);
   const at = '2026-01-01T00:00:00.000Z';

@@ -1449,6 +1449,40 @@ this may not need a third table dimension: a one-dimensional correction
 on `alpha_r` and `vf_r` against z/h could be enough, which is a much
 smaller change to the page than a 3-D table would be.
 
+### The two geometries disagree about where the counterpoise runs
+
+Not by design, and it is recorded rather than fixed.  The flat top runs
+its counterpoise along the antenna, `RETURN_DIRECTION = 1`, which is 0
+degrees of bearing.  The sloper deck was written with it heading away,
+180 degrees.  So the two tables were fitted under different conventions.
+
+`geometry_check.py` measures what bearing is worth, at the page's
+default site with the counterpoise on the ground:
+
+| band | 0 deg | 45 | 90 | 135 | 180 | spread |
+|---|---|---|---|---|---|---|
+| 80 m | 7.4 | 7.2 | 6.7 | 6.3 | 6.2 | 1.20x |
+| 40 m | 10.9 | 10.7 | 10.5 | 10.3 | 10.3 | 1.06x |
+| 20 m | 5.6 | 5.7 | 5.9 | 6.0 | 6.1 | 1.07x |
+| 15 m | 5.8 | 5.7 | 5.6 | 5.6 | 5.6 | 1.03x |
+| 10 m | 5.3 | 5.2 | 5.2 | 5.1 | 5.1 | 1.04x |
+
+Square, back-angled and straight away cluster -- 6.7, 6.3, 6.2 on 80 m
+-- and **running underneath is the outlier** at 7.4.  So the flat top is
+fitted at the unusual bearing and the sloper at the typical one.
+
+Left as it is for now, on three grounds.  The spread is only material on
+80 m, which is not in the default band set; it is under 1.1x everywhere
+else; and making them agree means re-sweeping, which moves shipped
+numbers for an effect smaller than the model's own bound.  The page says
+so in the geometry panel rather than leaving it implicit.
+
+Worth revisiting if the counterpoise axis is used in anger: bearing was
+measured with the counterpoise on the ground, where its image largely
+cancels its coupling to the wire above.  Raised clear of the soil that
+cancellation weakens, so the bearing may matter more there than this
+table shows, and nothing has measured that.
+
 ## References
 
 Sources for the published length tables this page is measured against,

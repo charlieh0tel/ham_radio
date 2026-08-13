@@ -24,6 +24,7 @@ set -- each entry sensible, the vector not a fit of anything.
 import argparse
 import itertools
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -48,6 +49,11 @@ Z_NODES = np.array([1e-4, 1e-3, 8e-3, 6e-2])
 #: Written beside this script, as coefficients.json is, so the shipped
 #: numbers have a checkable original outside the page.
 DATA = Path(__file__).resolve().parent / "coefficients2d.json"
+
+#: The page, and the block this script owns in it.
+PAGE = Path(__file__).resolve().parents[2] / "docs" / "random-wire.html"
+BEGIN = "// BEGIN GENERATED COEFFICIENTS"
+END = "// END GENERATED COEFFICIENTS"
 
 #: Indices into TABLE_PARAMS that carry the second axis.
 TWO_D = RETURN_ONLY
@@ -184,6 +190,70 @@ def measure(data, table, geometry):
     return np.array(factors)
 
 
+def render(tables, soils):
+    """The generated block, in the page's own style.
+
+    Stored sparsely: `alpha_a` and `ka` are one row per h/lambda node,
+    because they do not vary with counterpoise height, while the three
+    return coefficients carry a row per node pair.  Dense storage would
+    repeat the first two at every counterpoise node for nothing.
+    """
+    names = {"flat_top": "flatTop", "sloper": "sloper"}
+    js = {
+        "alpha_a_lam": "alphaA",
+        "ka": "kA",
+        "alpha_r_lam": "alphaR",
+        "vf_r": "vfR",
+        "kr": "kR",
+    }
+    out = [
+        f"    const MODEL_H_NODES = Object.freeze("
+        f"{[round(float(v), 4) for v in NODES]});",
+        f"    const MODEL_Z_NODES = Object.freeze("
+        f"{[round(float(v), 5) for v in Z_NODES]});",
+        "    const MODEL_COEFFS = Object.freeze({",
+    ]
+    for key, table in tables.items():
+        out.append(f"      {names[key]}: Object.freeze({{")
+        for si, soil in enumerate(soils):
+            out.append(f"        {soil}: Object.freeze({{")
+            for pi, name in enumerate(TABLE_PARAMS):
+                if pi in ONE_D:
+                    row = [round(float(v), 4) for v in table[si, :, 0, pi]]
+                    out.append(f"          {js[name]}: {row},")
+                    continue
+                out.append(f"          {js[name]}: [")
+                for ni in range(len(NODES)):
+                    row = [round(float(v), 4) for v in table[si, ni, :, pi]]
+                    out.append(f"            {row},")
+                out.append("          ],")
+            out.append("        }),")
+        out.append("      }),")
+    out.append("    });")
+    return "\n".join(out)
+
+
+def patch_page(block, path=PAGE):
+    """Replace the marked block in the page.  True if it changed."""
+    text = path.read_text()
+    pattern = re.compile(
+        rf"(^[ \t]*{re.escape(BEGIN)}[^\n]*\n)(.*?)(^[ \t]*{re.escape(END)})",
+        re.S | re.M,
+    )
+    match = pattern.search(text)
+    if match is None:
+        raise SystemExit(f"{path} has no {BEGIN} / {END} markers")
+    updated = (
+        text[: match.start()]
+        + f"{match.group(1)}{block}\n{match.group(3)}"
+        + text[match.end() :]
+    )
+    if updated == text:
+        return False
+    path.write_text(updated)
+    return True
+
+
 def report(name, factors):
     print(
         f"  {name:<12} n={len(factors):4d}  median x{np.median(factors):.2f}  "
@@ -200,7 +270,22 @@ if __name__ == "__main__":
         action="store_true",
         help="write the fitted table into coefficients2d.json",
     )
+    parser.add_argument(
+        "--write-page",
+        action="store_true",
+        help="patch both geometries into docs/random-wire.html from the json",
+    )
     args = parser.parse_args()
+
+    if args.write_page:
+        stored = json.loads(DATA.read_text())
+        missing = [k for k in ("flat_top", "sloper") if k not in stored]
+        if missing:
+            raise SystemExit(f"{DATA.name} has no {', '.join(missing)} yet")
+        tables = {k: np.array(stored[k]["table"]) for k in ("flat_top", "sloper")}
+        changed = patch_page(render(tables, stored["soils"]))
+        print(f"{'patched' if changed else 'unchanged'} {PAGE.name}")
+        raise SystemExit(0)
 
     data = np.load(args.sweep, allow_pickle=False)
     geometry = SLOPER if "apex_m" in data.files else FLAT_TOP

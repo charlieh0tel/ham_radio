@@ -15,6 +15,10 @@ export default defineConfig({
   testDir: './browser',
   testMatch: '**/*.spec.mjs',
   fullyParallel: true,
+  // The page transpiles itself with Babel standalone on every load, so a
+  // browser per core starves them all and the waits time out on a page that
+  // is merely slow.  Four leaves the machine room to serve them.
+  workers: 4,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   reporter: process.env.CI ? 'list' : [['list', { printSteps: false }]],
