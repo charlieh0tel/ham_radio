@@ -117,6 +117,40 @@ there.
 
 Remaining:
 
+- [ ] **Ship the two geometries.**  Modelling is done and measured;
+      what is left is the page.  Refined, for `h/lambda >= 0.05`:
+
+      | | median | 90th | worst |
+      |---|---|---|---|
+      | flat top | x1.25 | x1.33 | x1.62 |
+      | sloper | x1.15 | x1.21 | x1.27 |
+      | shipped today | x1.25 | x1.32 | -- |
+
+      So the flat top matches what is live while gaining counterpoise
+      height as a real axis, and the sloper is better than either.
+      Coefficients are in `nec/random_wire/coefficients2d.json`.
+
+      Decided:
+
+      - **Inline, stored sparsely.**  `alpha_a` and `ka` once per
+        `h/lambda` node rather than repeated across every counterpoise
+        node, which is 672 numbers instead of 960.  The page stays one
+        self-contained file.
+      - **New URL keys, old ones still read.**  `ret_m` means the whole
+        return conductor and cannot keep that meaning, so the page
+        writes the counterpoise run and height separately and still
+        accepts `ret_m`, backing out the run on the assumption the
+        counterpoise lay on the ground.  An old link resolves to the
+        antenna it always meant, per the `len`/`len_m` precedent.
+      - **Refuse unbuildable slopers.**  The wire must be longer than
+        the rise from balun to apex, and the check is on the physical
+        length rather than per band.  Say so, and say what length would
+        reach, rather than modelling something that cannot be put up.
+      - **Ribbon stays on both, text updated.**  Its first stated reason
+        was an unswept return height, and that is now swept and
+        tabulated.  The other two stand, and neither geometry has been
+        checked against anything but NEC.
+
 - [ ] **Slopers.**  Measured as not covered: against the flat model a
       sloper runs x1.57 to x5.72 median depending on which equivalent
       height is tried, and no substitution is consistent.  A common
