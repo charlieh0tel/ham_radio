@@ -26,7 +26,7 @@ the old URL are out in the world; it carries the query string over.
   its keys to `string` and defeats the narrowing that keeps a bad URL
   parameter out of the table.
 
-## Type Checking
+## Checks and Tests
 
 `docs/tools/` holds the dev-time checks. It is not part of the site:
 nothing there is served, and the pages still run Babel standalone in the
@@ -34,8 +34,10 @@ browser exactly as before. `tsc` and eslint both cover both pages.
 
 ```sh
 npm --prefix docs/tools install   # once
+npx --prefix docs/tools playwright install chromium   # once
 npm --prefix docs/tools run check   # tsc and eslint
 npm --prefix docs/tools run lint    # eslint alone
+npm --prefix docs/tools test        # Playwright, both pages
 ```
 
 `check` runs eslint after `tsc`, over the same extracted `.jsx`.  The rule
@@ -52,14 +54,20 @@ traced back to it.  And `MODE_MAP` is indexed at runtime, so the app
 cannot prove it holds a mode's own result type; that is asserted once,
 with a cast, at `const modeDef = ...`.
 
-Neither page has any test.  The only automated coverage is this check.
+`npm test` drives both pages in a real Chromium via Playwright, served
+over HTTP from `docs/`.  The CDN dependencies are not stubbed -- that is
+how the pages actually run -- but `sherwood.html`'s data fetch is, since
+those tests are about the table parser, not about sherweng.com being up.
+The case most worth keeping covered is the URL round trip: each mode
+serializes its own subset of the state, so a key added to one mode and
+not to its `serializeUrl` silently drops out of a shared link.
 
 `tools/extract.mjs` pulls the `<script type="text/babel">` body into a
 gitignored `.check/` directory, padded so a diagnostic's line number
 matches the HTML. `tsc` then checks it with `checkJs` and `strict`.
 
-The check must pass before committing and before pushing. A `pre-push`
-hook is in `githooks/`; enable it with
+The check and the tests must pass before committing and before pushing.
+A `pre-push` hook is in `githooks/`; enable it with
 `git config core.hooksPath githooks`. CI runs the same commands on any
 push or PR touching `docs/`.
 
@@ -68,11 +76,12 @@ push or PR touching `docs/`.
 Before proposing a commit, always:
 
 1. **Type check**: `npm --prefix docs/tools run check` must pass clean.
-2. **Syntax check**: Verify the HTML is well-formed and all `<script>` blocks have valid JavaScript/JSX syntax.
-3. **Style review**: Ensure code follows the style guidelines above. No unused variables, no console.log left behind, no commented-out dead code.
-4. **Lint**: `npm --prefix docs/tools run lint`. It covers both pages,
+2. **Test**: `npm --prefix docs/tools test` must pass clean.
+3. **Syntax check**: Verify the HTML is well-formed and all `<script>` blocks have valid JavaScript/JSX syntax.
+4. **Style review**: Ensure code follows the style guidelines above. No unused variables, no console.log left behind, no commented-out dead code.
+5. **Lint**: `npm --prefix docs/tools run lint`. It covers both pages,
    and must be clean: no warnings, not just no errors.
-5. **Math verification**: Pay special attention to:
+6. **Math verification**: Pay special attention to:
    - Complex number operations (conjugates, magnitudes, phases)
    - Impedance / admittance conversions
    - Gamma (reflection coefficient) calculations
@@ -92,11 +101,12 @@ python3 -m http.server 8000
 # then visit http://localhost:8000/antenna-matching.html
 ```
 
-Verify:
-- The page loads without console errors (check browser DevTools)
+`npm test` covers the console-error, mode-switch, preset, auto-tune and
+URL round-trip cases.  What it does not judge is whether the result looks
+right, so by hand verify:
 - Smith chart renders correctly with proper aspect ratio
 - Sliders respond and update the chart in real time
-- Presets load and auto-tune produces reasonable matching networks
+- Auto-tune produces a physically reasonable matching network
 - All three modes (Gamma, Hairpin, OCFD) draw their overlays
 
 ## Deployment

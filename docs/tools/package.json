@@ -2,14 +2,16 @@
   "name": "ham-radio-docs-tools",
   "private": true,
   "type": "module",
-  "description": "Dev-time type checking for the single-file pages in docs/.",
+  "description": "Dev-time checks for the single-file pages in docs/: types, lint, browser tests.",
   "scripts": {
     "extract": "node extract.mjs ../antenna-matching.html .check/antenna-matching.jsx && node extract.mjs ../sherwood.html .check/sherwood.jsx",
     "check": "npm run extract && tsc -p tsconfig.check.json && eslint --max-warnings 0 .check/antenna-matching.jsx .check/sherwood.jsx",
-    "lint": "npm run extract && eslint --max-warnings 0 .check/antenna-matching.jsx .check/sherwood.jsx"
+    "lint": "npm run extract && eslint --max-warnings 0 .check/antenna-matching.jsx .check/sherwood.jsx",
+    "test": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "eslint": "^10.8.1",
