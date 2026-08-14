@@ -21,6 +21,7 @@
     "allowUmdGlobalAccess": true
   },
   "include": [
+    ".check/antenna-matching.jsx",
     ".check/sherwood.jsx",
     "globals.d.ts"
   ]

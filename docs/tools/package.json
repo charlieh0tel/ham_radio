@@ -6,7 +6,6 @@
   "scripts": {
     "extract": "node extract.mjs ../antenna-matching.html .check/antenna-matching.jsx && node extract.mjs ../sherwood.html .check/sherwood.jsx",
     "check": "npm run extract && tsc -p tsconfig.check.json && eslint --max-warnings 0 .check/antenna-matching.jsx .check/sherwood.jsx",
-    "check:all": "npm run extract && tsc -p tsconfig.all.json",
     "lint": "npm run extract && eslint --max-warnings 0 .check/antenna-matching.jsx .check/sherwood.jsx"
   },
   "devDependencies": {

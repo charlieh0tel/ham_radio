@@ -28,12 +28,9 @@ the old URL are out in the world; it carries the query string over.
 
 ## Type Checking
 
-`docs/tools/` holds a dev-time type checker. It is not part of the site:
+`docs/tools/` holds the dev-time checks. It is not part of the site:
 nothing there is served, and the pages still run Babel standalone in the
-browser exactly as before. eslint lints both pages; `tsc` checks
-`sherwood.html` only. Getting `antenna-matching.html` past `tsc` needs
-tighter ambient declarations for `mathjs` and `fmin` than `globals.d.ts`
-has, so it stays out of `tsconfig.check.json`.
+browser exactly as before. `tsc` and eslint both cover both pages.
 
 ```sh
 npm --prefix docs/tools install   # once
@@ -46,6 +43,14 @@ it exists for is `react-hooks/exhaustive-deps`: a dependency array that
 lists a derived object rather than the inputs behind it is a class of bug
 nothing but a linter finds.  It applies to `antenna-matching.html`, the
 page with hooks; `sherwood.html` gets the recommended rules only.
+
+The pages carry JSDoc types, checked under `strict` with `checkJs`.  Two
+things there are worth knowing.  `@type {Object}` on an object literal is
+worse than no annotation at all: it erases the shape `tsc` would infer,
+and 225 of the 318 errors in the first pass over `antenna-matching.html`
+traced back to it.  And `MODE_MAP` is indexed at runtime, so the app
+cannot prove it holds a mode's own result type; that is asserted once,
+with a cast, at `const modeDef = ...`.
 
 Neither page has any test.  The only automated coverage is this check.
 
@@ -62,12 +67,12 @@ push or PR touching `docs/`.
 
 Before proposing a commit, always:
 
-0. **Type check**: `npm --prefix docs/tools run check` must pass clean.
-1. **Syntax check**: Verify the HTML is well-formed and all `<script>` blocks have valid JavaScript/JSX syntax.
-2. **Style review**: Ensure code follows the style guidelines above. No unused variables, no console.log left behind, no commented-out dead code.
-3. **Lint**: `npm --prefix docs/tools run lint`. It covers both pages,
+1. **Type check**: `npm --prefix docs/tools run check` must pass clean.
+2. **Syntax check**: Verify the HTML is well-formed and all `<script>` blocks have valid JavaScript/JSX syntax.
+3. **Style review**: Ensure code follows the style guidelines above. No unused variables, no console.log left behind, no commented-out dead code.
+4. **Lint**: `npm --prefix docs/tools run lint`. It covers both pages,
    and must be clean: no warnings, not just no errors.
-4. **Math verification**: Pay special attention to:
+5. **Math verification**: Pay special attention to:
    - Complex number operations (conjugates, magnitudes, phases)
    - Impedance / admittance conversions
    - Gamma (reflection coefficient) calculations
@@ -92,7 +97,7 @@ Verify:
 - Smith chart renders correctly with proper aspect ratio
 - Sliders respond and update the chart in real time
 - Presets load and auto-tune produces reasonable matching networks
-- Both Gamma match and Hairpin match modes work
+- All three modes (Gamma, Hairpin, OCFD) draw their overlays
 
 ## Deployment
 

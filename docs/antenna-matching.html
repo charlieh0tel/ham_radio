@@ -483,6 +483,8 @@
      * @typedef {Object} Impedance
      * @property {number} r - Resistance in ohms
      * @property {number} x - Reactance in ohms (positive = inductive, negative = capacitive)
+     * @property {function(): string} format - "73.0 + j43.0", for body text
+     * @property {function(): string} formatLabel - "73+j43Ω", for chart labels
      */
 
     /**
@@ -498,6 +500,18 @@
      */
 
     /**
+     * The shunt arc walked along a constant-conductance circle, plus what the
+     * overlay needs to draw it and point an arrowhead along it.
+     *
+     * @typedef {Object} ShuntArc
+     * @property {ScreenPoint} startPt - Where the arc begins
+     * @property {ScreenPoint} endPt - Where it ends
+     * @property {Impedance} endZ - Impedance at the end of the arc
+     * @property {string} arcPath - SVG path data for the arc
+     * @property {number} arrowAngle - Arrowhead rotation, degrees
+     */
+
+    /**
      * @typedef {Object} GammaMatchResult
      * @property {ScreenPoint} origPt - Original impedance point
      * @property {ScreenPoint} afterTapPt - Point after tap ratio transformation
@@ -507,7 +521,7 @@
      * @property {Impedance} afterShunt - Impedance after shunt inductance
      * @property {Impedance} finalZ - Final matched impedance
      * @property {ScreenPoint[]} tapPath - Path for tap ratio transformation
-     * @property {ScreenPoint[]} shuntPath - Path for shunt inductance
+     * @property {ShuntArc} shuntArc - Arc for the shunt (gamma rod) inductance
      * @property {ScreenPoint[]} seriesPath - Path for series capacitor
      * @property {number} swr - Standing wave ratio
      */
@@ -520,23 +534,131 @@
      * @property {Impedance} afterShorten - Impedance after shortening
      * @property {Impedance} finalZ - Final matched impedance
      * @property {ScreenPoint[]} shortenPath - Path for shortening transformation
-     * @property {ScreenPoint[]} hpPath - Path for hairpin inductance
+     * @property {ShuntArc} hpArc - Arc for the hairpin inductance
      * @property {number} swr - Standing wave ratio
      */
 
     /**
+     * @typedef {Object} OcfdMatchResult
+     * @property {Impedance} centerZ - Impedance at the center of the dipole
+     * @property {Impedance} feedZ - Impedance at the offset feed point
+     * @property {ScreenPoint} centerPt - Center impedance point
+     * @property {ScreenPoint} feedPt - Feed impedance point
+     * @property {Array<{z0: number, swr: number}>} swrs - SWR into each candidate feedline
+     * @property {number} swr - SWR into the selected feedline
+     * @property {number} z0 - Selected feedline impedance in ohms
+     * @property {ScreenPoint[]} trajectoryPath - Impedance as the offset sweeps to its current value
+     */
+
+    /**
+     * @typedef {GammaMatchResult|HairpinMatchResult|OcfdMatchResult} MatchResult
+     */
+
+    /**
      * @typedef {Object} SmithChartGeometry
-     * @property {function(number, number): ScreenPoint} zToScreen - Convert impedance to screen coordinates
+     * @property {function(Impedance): ScreenPoint} zToScreen - Convert impedance to screen coordinates
      * @property {Array<{r: number, cx: number, radius: number}>} rCircles - Constant resistance circles
      * @property {Array<{x: number, cx: number, cy: number, radius: number}>} xArcs - Constant reactance arcs
      * @property {function(number, number, number, number): ScreenPoint[]} createXArc - Create points for reactance arc
      */
 
     /**
+     * A one-click antenna impedance.  The OCFD presets carry two extra keys:
+     * a ground type, and a height as a fraction of a wavelength, which the
+     * handler turns into a height in metres once a frequency is known.
+     *
      * @typedef {Object} Preset
      * @property {string} label - Display label
      * @property {number} r - Resistance value
      * @property {number} x - Reactance value
+     * @property {GroundTypeKey} [groundType] - Ground the impedance assumes
+     * @property {number} [heightFraction] - Height above ground, in wavelengths
+     */
+
+    /**
+     * Keys of the two lookup tables that a URL parameter can select.  They
+     * are `keyof typeof` rather than `string` on purpose: widening either
+     * would let a bad URL parameter index the table unchecked.
+     *
+     * @typedef {keyof typeof GROUND_TYPES} GroundTypeKey
+     * @typedef {typeof MODES[keyof typeof MODES]} Mode
+     */
+
+    /**
+     * The whole app state.  It round-trips through the URL, so every key here
+     * needs an entry in URL_KEYS and in each mode's serializeUrl; the two
+     * leading-underscore keys are the exception, being scratch state for the
+     * dipole calculator rather than anything a link should carry.
+     *
+     * @typedef {Object} Params
+     * @property {Mode} mode - Which match is being designed
+     * @property {number} antR - Antenna resistance, ohms (gamma and hairpin)
+     * @property {number} antX - Antenna reactance, ohms (gamma and hairpin)
+     * @property {number} tapRatio - Gamma match tap ratio
+     * @property {number} gammaRodX - Gamma rod reactance, ohms
+     * @property {number} seriesCapX - Series capacitor reactance, ohms
+     * @property {number} shortening - Hairpin element shortening, ohms of reactance
+     * @property {number} hairpinX - Hairpin reactance, ohms
+     * @property {string} freqMHz - Frequency in MHz, as typed (empty when unset)
+     * @property {string} elementDiamMm - Element diameter in mm, as typed
+     * @property {number} ocfdR - OCFD center resistance, ohms
+     * @property {number} ocfdX - OCFD center reactance, ohms
+     * @property {number} feedOffset - OCFD feed offset, percent of half-length
+     * @property {number} feedlineZ0 - Feedline impedance, ohms
+     * @property {string} heightM - Height above ground in metres, as typed
+     * @property {GroundTypeKey} groundType - Ground under the antenna
+     * @property {number} calcOpen - Dipole calculator disclosure state
+     * @property {number} [_appliedCalcR] - Resistance last applied from the calculator
+     * @property {number} [_appliedCalcX] - Reactance last applied from the calculator
+     */
+
+    /**
+     * Makes an onChange handler that writes one Params key.  The event is
+     * typed by the only thing the handlers read, so one factory serves both
+     * <input> and <select>.
+     *
+     * @typedef {(key: keyof Params) => (e: {target: {value: string}}) => void} InputHandlerFactory
+     */
+
+    /**
+     * Which two Params keys a mode reads its antenna impedance from.  Gamma
+     * and hairpin share antR/antX; OCFD has its own pair.
+     *
+     * @typedef {{r: 'antR'|'ocfdR', x: 'antX'|'ocfdX'}} ImpedanceKeys
+     */
+
+    /**
+     * Wavelength, derived from frequency alone and shared by every mode.
+     *
+     * @typedef {Object} BasePhysical
+     * @property {number} lambda - Wavelength in metres
+     * @property {number} lambdaMm - Wavelength in mm
+     */
+
+    /**
+     * What each mode adds to BasePhysical.  A field is null when the inputs
+     * it needs are missing or the geometry makes it meaningless.
+     *
+     * @typedef {BasePhysical & {capPf: ?number, tapDistMm: number}} GammaPhysical
+     * @typedef {BasePhysical & {shortenMm: ?number, shortenPct: ?number}} HairpinPhysical
+     * @typedef {BasePhysical & {ocfdL1Mm: number, ocfdL2Mm: number}} OcfdPhysical
+     */
+
+    /**
+     * The props every mode's Controls panel takes.  `state` is the whole app
+     * state rather than a slice of it because the panels read across modes
+     * (frequency, element diameter, ground) as well as their own fields.
+     *
+     * @template R
+     * @template P
+     * @typedef {Object} ControlsProps
+     * @property {Params} state - Current app state
+     * @property {R} result - This mode's match result
+     * @property {?P} physical - This mode's physical dimensions, null without a frequency
+     * @property {InputHandlerFactory} setNum - Numeric input handler factory
+     * @property {function(Partial<Params>): void} set - Merge an update into state
+     * @property {InputHandlerFactory} setStr - Text input handler factory
+     * @property {function(Impedance): void} onApplyZ - Apply a computed impedance
      */
 
     // ============================================================
@@ -558,7 +680,7 @@
     /** @type {number} Smith chart radius */
     const RADIUS = SIZE / 2 - 45;
 
-    /** @type {Object} Color palette */
+    /** Color palette */
     const COLORS = Object.freeze({
       orig: '#ff6b6b',
       step1: '#ffa94d',
@@ -577,24 +699,24 @@
       wire: '#888'
     });
 
-    /** @type {number[]} Feedline impedances for OCFD SWR calculations */
+    /** Feedline impedances for OCFD SWR calculations */
     const FEEDLINE_IMPEDANCES = Object.freeze([50, 75, 100, 150, 300, 450]);
 
-    /** @type {Preset[]} Gamma match antenna presets */
+    /** Gamma match antenna presets */
     const GAMMA_PRESETS = Object.freeze([
       { label: 'Resonant Dipole (67Ω)', r: 67, x: 0 },
       { label: 'Yagi (25Ω)', r: 25, x: 0 },
       { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 },
     ]);
 
-    /** @type {Preset[]} Hairpin match antenna presets */
+    /** Hairpin match antenna presets */
     const HAIRPIN_PRESETS = Object.freeze([
       { label: 'Yagi (25Ω)', r: 25, x: 0 },
       { label: 'Low-Z Yagi (18−j10Ω)', r: 18, x: -10 },
       { label: 'Resonant Dipole (67Ω)', r: 67, x: 0 },
     ]);
 
-    /** @type {Preset[]} OCFD center impedance presets (includes feedOffset) */
+    /** OCFD center impedance presets (includes feedOffset) */
     const OCFD_PRESETS = Object.freeze([
       { label: 'Free-Space λ/2 (73+j43Ω)', r: 73, x: 43, groundType: 'free' },
       { label: 'Resonant, λ/2 AGL, Average Ground', r: 67, x: 0, groundType: 'average',
@@ -603,10 +725,10 @@
         heightFraction: 0.25 },
     ]);
 
-    /** @type {number[]} Normalized resistance values for Smith chart circles */
+    /** Normalized resistance values for Smith chart circles */
     const R_VALUES = Object.freeze([0, 0.2, 0.5, 1, 2, 5]);
 
-    /** @type {number[]} Normalized reactance values for Smith chart arcs */
+    /** Normalized reactance values for Smith chart arcs */
     const X_VALUES = Object.freeze([0.2, 0.5, 1, 2, 5]);
 
     /** @type {number} Speed of light in m/s */
@@ -624,21 +746,21 @@
     /** Maximum displayable SWR (returned when reflection coefficient >= 1) */
     const SWR_MAX = 99;
 
-    /** @type {Object} SWR thresholds for color coding */
+    /** SWR thresholds for color coding */
     const SWR_THRESHOLDS = Object.freeze({
       excellent: 1.2,
       good: 1.5,
       ok: 2.0
     });
 
-    /** @type {Object} Match mode constants */
+    /** Match mode constants */
     const MODES = Object.freeze({
       GAMMA: 'gamma',
       HAIRPIN: 'hairpin',
       OCFD: 'ocfd'
     });
 
-    /** @type {Object} URL parameter keys */
+    /** URL parameter keys */
     const URL_KEYS = Object.freeze({
       mode: 'mode',
       antR: 'r',
@@ -668,7 +790,7 @@
      * where verbosity would hurt readability.
      * @param {number} r - Resistance
      * @param {number} x - Reactance
-     * @returns {Object} Complex number
+     * @returns {Complex}
      */
     const C = (r, x) => complex(r, x);
 
@@ -681,10 +803,12 @@
     const Z = (r, x) => ({
       r, x,
       format() {
+        /** @param {number} v */
         const fmtNum = (v) => !isFinite(v) || Math.abs(v) >= 1e9 ? '∞' : v.toFixed(1);
         return `${fmtNum(this.r)} ${this.x >= 0 ? '+' : '−'} j${fmtNum(Math.abs(this.x))}`;
       },
       formatLabel() {
+        /** @param {number} v */
         const fmtNum = (v) => !isFinite(v) || Math.abs(v) >= 1e9 ? '∞' : Math.round(v);
         return `${fmtNum(this.r)}${this.x >= 0 ? '+' : ''}j${fmtNum(this.x)}Ω`;
       }
@@ -692,7 +816,7 @@
 
     /**
      * Convert complex number to impedance object
-     * @param {Object} z - Complex number
+     * @param {Complex} z
      * @returns {Impedance}
      */
     const toRX = (z) => Z(z.re, z.im);
@@ -933,7 +1057,7 @@
     // Ground Reflection
     // ============================================================
 
-    /** @type {Object} Ground type parameters (ε_r, σ in S/m) */
+    /** Ground type parameters (ε_r, σ in S/m) */
     const GROUND_TYPES = Object.freeze({
       free:    { label: 'Free space', er: null, sigma: null },
       perfect: { label: 'Perfect', er: Infinity, sigma: Infinity },
@@ -992,16 +1116,22 @@
      * @param {number} heightM - Height above ground in meters
      * @param {number} [wireDiamMm] - Wire diameter in mm (computes resonant
      *   length via IEMF if provided; otherwise uses half-wave approximation)
-     * @param {string} [groundType='perfect'] - Key into GROUND_TYPES
+     * @param {GroundTypeKey} [groundType] - Key into GROUND_TYPES; an unknown
+     *   or absent key falls back to a perfect ground (PEC, gamma = -1)
      * @returns {(Impedance & { lengthM: number, K: number })|null}
      */
     const calcDipoleOverGround = (freqMHz, heightM, wireDiamMm, groundType) => {
-      const freq = parseFloat(freqMHz);
+      const freq = freqMHz;
       if (!freq || freq <= 0) return null;
 
       const lambda = C_SPEED / (freq * 1e6);
-      const diam = parseFloat(wireDiamMm);
-      let zSelf, lengthM, K;
+      const diam = wireDiamMm ?? 0;
+      /** @type {Impedance} */
+      let zSelf;
+      /** @type {number} */
+      let lengthM;
+      /** @type {number} */
+      let K;
       if (diam > 0) {
         const res = calcDipoleResonant(freq, diam);
         zSelf = res.z;
@@ -1015,10 +1145,10 @@
       }
 
       // Free space: no ground image, just Z_self
-      const gnd = GROUND_TYPES[groundType];
+      const gnd = groundType ? GROUND_TYPES[groundType] : undefined;
       if (gnd && gnd.er === null) return { ...zSelf, lengthM, K };
 
-      const h = parseFloat(heightM);
+      const h = heightM;
       if (!h || h <= 0) return null;
 
       const beta = 2 * Math.PI / lambda;
@@ -1177,6 +1307,7 @@
           const midAngleDirect = (angle1 + angle2) / 2;
           const midAngleAlt = midAngleDirect + (midAngleDirect > 0 ? -Math.PI : Math.PI);
 
+          /** @param {number} angle */
           const testMid = (angle) => {
             const gx = (arcCx + arcRadius * Math.cos(angle) - CX) / RADIUS;
             const gy = (CY - (arcCy + arcRadius * Math.sin(angle))) / RADIUS;
@@ -1259,6 +1390,13 @@
      * (center feed) from wire geometry and ground conditions using the
      * induced EMF method with image theory. Displays shortening factor
      * K and Ω'. Available in all modes (gamma, hairpin, OCFD).
+     *
+     * @param {Object} props
+     * @param {Params} props.state
+     * @param {function(Partial<Params>): void} props.set
+     * @param {InputHandlerFactory} props.setStr
+     * @param {function(Impedance): void} props.onApplyZ
+     * @param {ImpedanceKeys} props.impedanceKeys
      */
     const DipoleCalculator = ({ state, set, setStr, onApplyZ, impedanceKeys }) => {
       const [open, setOpen] = useState(state.calcOpen > 0);
@@ -1352,7 +1490,8 @@
                 </label>
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-                {Object.entries(GROUND_TYPES).map(([key, { label }]) => (
+                {/** @type {[GroundTypeKey, {label: string}][]} */
+                  (Object.entries(GROUND_TYPES)).map(([key, { label }]) => (
                   <button key={key}
                     className={`btn preset-btn ${state.groundType === key ? 'active' : ''}`}
                     style={{ padding: '4px 8px', fontSize: 12 }}
@@ -1392,7 +1531,7 @@
                   <button
                     className="btn auto-tune-btn ocfd"
                     style={{ marginTop: 4, width: '100%', opacity: groundZ && !alreadyApplied ? 1 : 0.4 }}
-                    disabled={!groundZ || alreadyApplied}
+                    disabled={!groundZ || !!alreadyApplied}
                     onClick={() => groundZ && onApplyZ(groundZ)}
                     data-tooltip={alreadyApplied
                       ? 'Already applied'
@@ -1430,8 +1569,12 @@
       diagramTitle: 'GAMMA MATCH PHYSICAL ARRANGEMENT',
       hasAutoTune: true,
       presets: GAMMA_PRESETS,
-      impedanceKeys: { r: 'antR', x: 'antX' },
+      impedanceKeys: /** @type {ImpedanceKeys} */ ({ r: 'antR', x: 'antX' }),
 
+      /**
+       * @param {Params} p
+       * @returns {Object<string, string|number>}
+       */
       serializeUrl(p) {
         return {
           [URL_KEYS.antR]: Math.round(p.antR),
@@ -1442,6 +1585,10 @@
         };
       },
 
+      /**
+       * @param {Impedance} z - Antenna impedance to match
+       * @returns {Partial<Params>} The parameters that minimize SWR
+       */
       tune(z) {
         const bounds = {
           tap: { min: 1, max: 2.5 },
@@ -1465,6 +1612,11 @@
         };
       },
 
+      /**
+       * @param {Params} p
+       * @param {function(Impedance): ScreenPoint} zToScreen
+       * @returns {GammaMatchResult}
+       */
       calc(p, zToScreen) {
         const antZ = Z(p.antR, p.antX);
         // Tap ratio path
@@ -1502,6 +1654,11 @@
         };
       },
 
+      /**
+       * @param {Params} p
+       * @param {BasePhysical} base
+       * @returns {Omit<GammaPhysical, keyof BasePhysical>}
+       */
       physical(p, base) {
         const capPf = p.seriesCapX > 0
           ? 1e12 / (2 * Math.PI * parseFloat(p.freqMHz) * 1e6 * p.seriesCapX)
@@ -1510,6 +1667,7 @@
         return { capPf, tapDistMm };
       },
 
+      /** @param {{result: GammaMatchResult, state: Params}} props */
       SmithOverlay: ({ result, state }) => (
         <>
           {/* Tap ratio path */}
@@ -1565,6 +1723,7 @@
         </>
       ),
 
+      /** @param {ControlsProps<GammaMatchResult, GammaPhysical>} props */
       Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
         <>
           <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE'} tooltip="Starting impedance of the antenna feedpoint">
@@ -1712,8 +1871,12 @@
       diagramTitle: 'BETA (HAIRPIN) MATCH PHYSICAL ARRANGEMENT',
       hasAutoTune: true,
       presets: HAIRPIN_PRESETS,
-      impedanceKeys: { r: 'antR', x: 'antX' },
+      impedanceKeys: /** @type {ImpedanceKeys} */ ({ r: 'antR', x: 'antX' }),
 
+      /**
+       * @param {Params} p
+       * @returns {Object<string, string|number>}
+       */
       serializeUrl(p) {
         return {
           [URL_KEYS.antR]: Math.round(p.antR),
@@ -1723,6 +1886,10 @@
         };
       },
 
+      /**
+       * @param {Impedance} z - Antenna impedance to match
+       * @returns {Partial<Params>} The parameters that minimize SWR
+       */
       tune(z) {
         const bounds = {
           shorten: { min: 0, max: 60 },
@@ -1743,6 +1910,11 @@
         };
       },
 
+      /**
+       * @param {Params} p
+       * @param {function(Impedance): ScreenPoint} zToScreen
+       * @returns {HairpinMatchResult}
+       */
       calc(p, zToScreen) {
         const antZ = Z(p.antR, p.antX);
         // Shortening path
@@ -1766,6 +1938,11 @@
         };
       },
 
+      /**
+       * @param {Params} p
+       * @param {BasePhysical} base
+       * @returns {Omit<HairpinPhysical, keyof BasePhysical>}
+       */
       physical(p, base) {
         const diam = parseFloat(p.elementDiamMm);
         let shortenMm = null;
@@ -1783,6 +1960,7 @@
         return { shortenMm, shortenPct };
       },
 
+      /** @param {{result: HairpinMatchResult, state: Params}} props */
       SmithOverlay: ({ result, state }) => (
         <>
           {/* Shortening path */}
@@ -1822,6 +2000,7 @@
         </>
       ),
 
+      /** @param {ControlsProps<HairpinMatchResult, HairpinPhysical>} props */
       Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
         <>
           <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE'} tooltip="Starting impedance of the antenna feedpoint">
@@ -1857,7 +2036,7 @@
                 className="control-slider" style={{ accentColor: COLORS.step1 }} />
             </label>
             <div className="control-result">{'\u2192'} {result.afterShorten.format()} {'\u03A9'}</div>
-            {physical && physical.shortenMm !== null ? (
+            {physical && physical.shortenMm !== null && physical.shortenPct !== null ? (
               <div className="physical-hint">
                 {'\u2248'} {physical.shortenMm.toFixed(1)} mm per side ({physical.shortenPct.toFixed(1)}% of {'\u03BB'}/2)
               </div>
@@ -1934,8 +2113,12 @@
       diagramTitle: 'OFF-CENTER FED DOUBLET',
       hasAutoTune: false,
       presets: OCFD_PRESETS,
-      impedanceKeys: { r: 'ocfdR', x: 'ocfdX' },
+      impedanceKeys: /** @type {ImpedanceKeys} */ ({ r: 'ocfdR', x: 'ocfdX' }),
 
+      /**
+       * @param {Params} p
+       * @returns {Object<string, string|number>}
+       */
       serializeUrl(p) {
         return {
           [URL_KEYS.ocfdR]: Math.round(p.ocfdR),
@@ -1947,6 +2130,11 @@
 
       tune: null,
 
+      /**
+       * @param {Params} p
+       * @param {function(Impedance): ScreenPoint} zToScreen
+       * @returns {OcfdMatchResult}
+       */
       calc(p, zToScreen) {
         const centerZ = Z(p.ocfdR, p.ocfdX);
         const z0 = p.feedlineZ0;
@@ -1973,6 +2161,11 @@
         return { centerZ, feedZ, centerPt, feedPt, swrs, swr: selectedSwr, z0, trajectoryPath };
       },
 
+      /**
+       * @param {Params} p
+       * @param {BasePhysical} base
+       * @returns {Omit<OcfdPhysical, keyof BasePhysical>}
+       */
       physical(p, base) {
         const alpha = p.feedOffset / 100;
         const halfDipole = base.lambdaMm / 2;
@@ -1982,6 +2175,7 @@
         };
       },
 
+      /** @param {{result: OcfdMatchResult}} props */
       SmithOverlay: ({ result }) => (
         <>
           {/* Trajectory path from center to feed point */}
@@ -2006,6 +2200,7 @@
         </>
       ),
 
+      /** @param {ControlsProps<OcfdMatchResult, OcfdPhysical>} props */
       Controls: ({ state, result, physical, setNum, set, setStr, onApplyZ }) => (
           <>
             <ControlPanel color={COLORS.orig} title={'\u2460 ANTENNA IMPEDANCE (CENTER FED)'} tooltip="Impedance at the center of the dipole (source of truth for matching)">
@@ -2086,6 +2281,7 @@
           </>
       ),
 
+      /** @param {{state: Params, physical: ?OcfdPhysical}} props */
       Diagram: ({ state, physical }) => {
         const alpha = state.feedOffset / 100;
         const wireLeft = 50;
@@ -2164,7 +2360,36 @@
       ),
     };
 
-    /** @type {Object} Per-mode object map */
+    /**
+     * A mode as the app sees it, once it no longer knows which one it holds.
+     * Each mode object is more precise than this internally -- its calc and
+     * its panels are written against its own result type -- but MODE_MAP is
+     * indexed at runtime, so at the point of use the result is only known to
+     * be one of the three.  Pairing a mode with its own result is a runtime
+     * invariant tsc cannot see; the single cast below is where that is
+     * asserted.
+     *
+     * @typedef {Object} ModeDef
+     * @property {string} key
+     * @property {string} title
+     * @property {string} buttonLabel
+     * @property {string} activeClass
+     * @property {string} diagramTitle
+     * @property {boolean} hasAutoTune
+     * @property {readonly Preset[]} presets
+     * @property {ImpedanceKeys} impedanceKeys
+     * @property {function(Params): Object<string, string|number>} serializeUrl
+     * @property {?function(Impedance): Partial<Params>} tune
+     * @property {function(Params, function(Impedance): ScreenPoint): MatchResult} calc
+     * @property {function(Params, BasePhysical): Object} physical
+     * @property {function(any): JSX.Element} SmithOverlay
+     * @property {function(any): JSX.Element} Controls
+     * @property {function(any): JSX.Element} Info
+     * @property {function(any): JSX.Element} Legend
+     * @property {function(any): JSX.Element} Diagram
+     */
+
+    /** Per-mode object map */
     const MODE_MAP = Object.freeze({
       [MODES.GAMMA]: gammaMode,
       [MODES.HAIRPIN]: hairpinMode,
@@ -2174,7 +2399,7 @@
     /**
      * Calculate base physical parameters from frequency
      * @param {string} freqMHz - Frequency in MHz
-     * @returns {Object|null} { lambda, lambdaMm } or null if no valid frequency
+     * @returns {?BasePhysical} null if no valid frequency
      */
     const calcBasePhysical = (freqMHz) => {
       const freq = parseFloat(freqMHz);
@@ -2199,7 +2424,26 @@
       return isNaN(n) ? def : n;
     };
 
-    /** @type {Object} Default parameter values */
+    /**
+     * Is this URL parameter a key of GROUND_TYPES?  Written as a type guard
+     * so the narrowing survives into the state object; a bare `in` test would
+     * leave the value a string and let an unknown key through.
+     *
+     * @param {string|null} val
+     * @returns {val is GroundTypeKey}
+     */
+    const isGroundType = (val) => val !== null && val in GROUND_TYPES;
+
+    /**
+     * Is this URL parameter one of the match modes?
+     *
+     * @param {string|null} val
+     * @returns {val is Mode}
+     */
+    const isMode = (val) =>
+      val !== null && /** @type {string[]} */ (Object.values(MODES)).includes(val);
+
+    /** Default parameter values */
     const DEFAULTS = Object.freeze({
       mode: MODES.GAMMA,
       antR: 73,
@@ -2222,21 +2466,23 @@
 
     /**
      * Check if all values match defaults
-     * @param {Object} values - Current state values
+     * @param {Params} values - Current state values
      * @returns {boolean}
      */
     const isAtDefaults = (values) =>
-      Object.keys(DEFAULTS).every(key => values[key] === DEFAULTS[key]);
+      /** @type {(keyof typeof DEFAULTS)[]} */ (Object.keys(DEFAULTS))
+        .every(key => values[key] === DEFAULTS[key]);
 
     /**
      * Read initial state from URL parameters
-     * @returns {Object} Initial state values from URL
+     * @returns {Params} Initial state values from URL
      */
     const getUrlParams = () => {
       const params = new URLSearchParams(window.location.search);
       const modeParam = params.get(URL_KEYS.mode);
+      const groundParam = params.get(URL_KEYS.groundType);
       return {
-        mode: Object.values(MODES).includes(modeParam) ? modeParam : DEFAULTS.mode,
+        mode: isMode(modeParam) ? modeParam : DEFAULTS.mode,
         antR: parseParam(params.get(URL_KEYS.antR), DEFAULTS.antR),
         antX: parseParam(params.get(URL_KEYS.antX), DEFAULTS.antX),
         tapRatio: parseParam(params.get(URL_KEYS.tapRatio), DEFAULTS.tapRatio),
@@ -2251,8 +2497,7 @@
         feedOffset: parseParam(params.get(URL_KEYS.feedOffset), DEFAULTS.feedOffset),
         feedlineZ0: parseParam(params.get(URL_KEYS.feedlineZ0), DEFAULTS.feedlineZ0),
         heightM: params.get(URL_KEYS.heightM) || DEFAULTS.heightM,
-        groundType: (params.get(URL_KEYS.groundType) in GROUND_TYPES)
-          ? params.get(URL_KEYS.groundType) : DEFAULTS.groundType,
+        groundType: isGroundType(groundParam) ? groundParam : DEFAULTS.groundType,
         calcOpen: 0
       };
     };
@@ -2277,16 +2522,17 @@
 
     function AntennaMatching() {
       const [p, setP] = useState(initialParams);
+      /** @param {Partial<Params>} updates */
       const set = (updates) => setP(prev => ({ ...prev, ...updates }));
 
-      /** Helper for numeric input onChange handlers */
+      /** Helper for numeric input onChange handlers @type {InputHandlerFactory} */
       const setNum = (key) => (e) => set({ [key]: Number(e.target.value) });
 
-      /** Helper for string input onChange handlers */
+      /** Helper for string input onChange handlers @type {InputHandlerFactory} */
       const setStr = (key) => (e) => set({ [key]: e.target.value });
 
       const { mode, freqMHz } = p;
-      const modeDef = MODE_MAP[mode];
+      const modeDef = /** @type {ModeDef} */ (MODE_MAP[mode]);
 
       // Update URL when state changes
       useEffect(() => {
@@ -2298,7 +2544,7 @@
         const params = new URLSearchParams();
         params.set(URL_KEYS.mode, p.mode);
         const modeParams = modeDef.serializeUrl(p);
-        Object.entries(modeParams).forEach(([k, v]) => params.set(k, v));
+        Object.entries(modeParams).forEach(([k, v]) => params.set(k, String(v)));
         if (p.freqMHz) params.set(URL_KEYS.freqMHz, p.freqMHz);
         if (p.elementDiamMm && p.elementDiamMm !== DEFAULTS.elementDiamMm) params.set(URL_KEYS.elementDiamMm, p.elementDiamMm);
         if (p.heightM) params.set(URL_KEYS.heightM, p.heightM);
@@ -2322,8 +2568,11 @@
       const handleAutoTune = useCallback(() => {
         if (modeDef.tune) {
           const { r: rKey, x: xKey } = modeDef.impedanceKeys;
+          // Captured before setP: inside the updater tsc no longer sees the
+          // guard above.
+          const tune = modeDef.tune;
           setP(prev => {
-            const tuned = modeDef.tune(Z(prev[rKey], prev[xKey]));
+            const tuned = tune(Z(prev[rKey], prev[xKey]));
             return { ...prev, ...tuned };
           });
         }
@@ -2337,6 +2586,7 @@
         }
       }, [handleAutoTune, modeDef]);
 
+      /** @param {Preset} preset */
       const handlePreset = (preset) => {
         const { r, x, label, heightFraction, ...extra } = preset;
         const { r: rKey, x: xKey } = modeDef.impedanceKeys;
@@ -2365,13 +2615,15 @@
         }
       };
 
+      /** @param {Preset} preset */
       const isPresetActive = (preset) => {
         const { r: rKey, x: xKey } = modeDef.impedanceKeys;
         if ('heightFraction' in preset) {
           if (p.groundType !== preset.groundType) return false;
           const freq = parseFloat(p.freqMHz);
           if (!freq || freq <= 0) return false;
-          const expectedHeight = (preset.heightFraction * C_SPEED / (freq * 1e6)).toFixed(1);
+          const expectedHeight =
+            (/** @type {number} */ (preset.heightFraction) * C_SPEED / (freq * 1e6)).toFixed(1);
           return parseFloat(p.heightM).toFixed(1) === expectedHeight;
         }
         if (p[rKey] !== preset.r || p[xKey] !== preset.x) return false;
@@ -2380,7 +2632,10 @@
         return true;
       };
 
-      /** Apply computed dipole impedance to the mode's R/X sliders + auto-tune */
+      /**
+       * Apply computed dipole impedance to the mode's R/X sliders + auto-tune
+       * @param {Impedance} computedZ
+       */
       const handleApplyCalculatedZ = (computedZ) => {
         const { r: rKey, x: xKey } = modeDef.impedanceKeys;
         const updates = {
@@ -2396,7 +2651,7 @@
           {mode === 'ocfd' && <div className="experimental-banner">Experimental</div>}
           {/* Mode Toggle */}
           <div className="mode-toggle">
-            {Object.entries(MODE_MAP).map(([modeKey, def]) => (
+            {/** @type {[Mode, ModeDef][]} */ (Object.entries(MODE_MAP)).map(([modeKey, def]) => (
               <button
                 key={modeKey}
                 className={`btn mode-btn ${mode === modeKey ? def.activeClass : ''}`}
@@ -2554,7 +2809,9 @@
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<AntennaMatching />);
+    const rootEl = document.getElementById('root');
+    if (!rootEl) throw new Error('missing #root');
+    ReactDOM.createRoot(rootEl).render(<AntennaMatching />);
   </script>
 </body>
 </html>
