@@ -10,6 +10,9 @@
   already have these capabilities built-in.
 - Prefer ASCII in all code and user-facing strings (logs, CLI output,
   error messages).  Ask before using Unicode.
+- Use US spellings only, in code, comments, docs and user-facing
+  strings: color, behavior, normalize, meter, analyze.  Text quoted or
+  transcribed from a source keeps that source's spelling.
 
 
 ## Documentation
@@ -83,7 +86,7 @@
   runs under `strict`, so an unannotated parameter is an error.
 - A unit alias declared with `@typedef {number}` documents intent but
   does not enforce it: `tsc` sees it as `number` and will not catch
-  metres added to hertz.  Treat one as naming discipline, not a type
+  meters added to hertz.  Treat one as naming discipline, not a type
   system.
 - Use `npm` (the committed `package-lock.json`) for dependency management.
 - Type check with `npm --prefix docs/tools run check` after changes,

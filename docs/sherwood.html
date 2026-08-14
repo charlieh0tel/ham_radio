@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sherwood Receiver Performance Table</title>
-<meta name="description" content="Interactive visualisation of Rob Sherwood NC0B's HF receiver test data — dynamic range, blocking, LO noise, and front-end selectivity for 140+ radios.">
+<meta name="description" content="Interactive visualization of Rob Sherwood NC0B's HF receiver test data — dynamic range, blocking, LO noise, and front-end selectivity for 140+ radios.">
 <meta property="og:title" content="Sherwood Receiver Performance Table">
-<meta property="og:description" content="Interactive visualisation of Rob Sherwood NC0B's HF receiver test data — sortable, filterable, with charts.">
+<meta property="og:description" content="Interactive visualization of Rob Sherwood NC0B's HF receiver test data — sortable, filterable, with charts.">
 <meta property="og:type" content="website">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -148,7 +148,7 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
     <h1>Sherwood Receiver Performance Table</h1>
     <p>This page fetches the latest HF receiver test data directly from
       <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com</a>,
-      maintained by Rob Sherwood NC0B. All data and measurements belong to Sherwood Engineering — this tool only visualises it.
+      maintained by Rob Sherwood NC0B. All data and measurements belong to Sherwood Engineering — this tool only visualizes it.
     </p>
     <div class="notice">
       Since sherweng.com is plain HTTP, a CORS proxy is needed to relay the request from this HTTPS page.
@@ -367,6 +367,7 @@ const PROXIES = [
 ];
 
 // ── Footnote definitions (from Sherwood's key) ──────────────────────────
+// Transcribed verbatim.  Leave the wording and the spelling as he wrote it.
 const FN_DEFS = {
   'a':  'Measured with SSB filter',
   'b0': 'No preamp actuated',
