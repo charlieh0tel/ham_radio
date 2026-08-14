@@ -30,10 +30,10 @@ the old URL are out in the world; it carries the query string over.
 
 `docs/tools/` holds a dev-time type checker. It is not part of the site:
 nothing there is served, and the pages still run Babel standalone in the
-browser exactly as before. `tsc` checks `sherwood.html`; eslint lints
-`antenna-matching.html`, which is the page with hooks. Neither covers
-the other, and getting `antenna-matching.html` past `tsc` needs tighter
-ambient declarations for `mathjs` and `fmin` than `globals.d.ts` has.
+browser exactly as before. eslint lints both pages; `tsc` checks
+`sherwood.html` only. Getting `antenna-matching.html` past `tsc` needs
+tighter ambient declarations for `mathjs` and `fmin` than `globals.d.ts`
+has, so it stays out of `tsconfig.check.json`.
 
 ```sh
 npm --prefix docs/tools install   # once
@@ -44,7 +44,10 @@ npm --prefix docs/tools run lint    # eslint alone
 `check` runs eslint after `tsc`, over the same extracted `.jsx`.  The rule
 it exists for is `react-hooks/exhaustive-deps`: a dependency array that
 lists a derived object rather than the inputs behind it is a class of bug
-nothing but a linter finds.
+nothing but a linter finds.  It applies to `antenna-matching.html`, the
+page with hooks; `sherwood.html` gets the recommended rules only.
+
+Neither page has any test.  The only automated coverage is this check.
 
 `tools/extract.mjs` pulls the `<script type="text/babel">` body into a
 gitignored `.check/` directory, padded so a diagnostic's line number
@@ -62,9 +65,8 @@ Before proposing a commit, always:
 0. **Type check**: `npm --prefix docs/tools run check` must pass clean.
 1. **Syntax check**: Verify the HTML is well-formed and all `<script>` blocks have valid JavaScript/JSX syntax.
 2. **Style review**: Ensure code follows the style guidelines above. No unused variables, no console.log left behind, no commented-out dead code.
-3. **Lint**: `npm --prefix docs/tools run lint`. It covers
-   `antenna-matching.html` only; for `sherwood.html`, review by hand for
-   missing semicolons, unclosed brackets and undeclared variables.
+3. **Lint**: `npm --prefix docs/tools run lint`. It covers both pages,
+   and must be clean: no warnings, not just no errors.
 4. **Math verification**: Pay special attention to:
    - Complex number operations (conjugates, magnitudes, phases)
    - Impedance / admittance conversions

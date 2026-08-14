@@ -291,6 +291,11 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 </div><!-- /#dashboard -->
 
 <script>
+// Several functions below are called only from inline on* attributes in the
+// markup above, so nothing in this script references them.  Each carries an
+// eslint-disable for no-unused-vars: the checker extracts this block as a
+// module, where the `/* exported */` marker that would say so is inert.
+
 const TARGET = 'http://www.sherweng.com/table.html';
 
 /**
@@ -428,6 +433,7 @@ let LOC = null;
 
 /** @type {?ReturnType<typeof setTimeout>} */
 let _debounceTimer = null;
+// eslint-disable-next-line no-unused-vars -- called from oninput
 function debouncedUpdate() {
   if (_debounceTimer !== null) clearTimeout(_debounceTimer);
   _debounceTimer = setTimeout(update, 150);
@@ -443,12 +449,14 @@ function show(id) {
   el.style.display = id === 'loading-screen' ? 'flex' : 'block';
 }
 
+// eslint-disable-next-line no-unused-vars -- called from onclick
 function showNoConsent() {
   byId('permission-screen').innerHTML =
     '<div class="card"><h2>No problem</h2><p>Visit the original table at <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com/table.html</a>.</p><div class="btn-row"><button class="btn" onclick="location.reload()">Go back</button></div></div>';
 }
 
 // ── Fetch ────────────────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars -- called from onclick
 async function startFetch() {
   show('loading-screen');
   const errors = [];
@@ -499,7 +507,7 @@ function parseSherwoodHTML(html) {
     const dateMatch = raw.match(/(?:Added|Updated|Corrected|Edited)\s+([\d]{1,2}\/[\d]{1,2}\/[\d]{2,4})/i);
     const dateAdded = dateMatch ? parseDateStr(dateMatch[1]) : null;
 
-    const modelRaw = cleanModelName(raw.replace(/^(Added|Updated|Corrected|Edited)\s+[\d\/]+\s*/i, '').trim());
+    const modelRaw = cleanModelName(raw.replace(/^(Added|Updated|Corrected|Edited)\s+[\d/]+\s*/i, '').trim());
     if (!modelRaw) continue;
 
     /** @param {Element} cell @returns {?number} */
@@ -638,6 +646,7 @@ function getFiltered() {
 }
 
 /** @param {keyof Radio} col */
+// eslint-disable-next-line no-unused-vars -- called from onclick
 function setSort(col) {
   sortAsc = sortCol === col ? !sortAsc : col === 'model' || col === 'dateAdded';
   sortCol = col;
@@ -702,6 +711,7 @@ function setHighlight(model) {
   updateSelBadge();
 }
 
+// eslint-disable-next-line no-unused-vars -- called from onclick
 function clearSelection() {
   selectedModels.clear();
   document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('highlighted'));

@@ -473,7 +473,7 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useMemo, useCallback, useEffect, useRef } = React;
-    const { complex, add, subtract, multiply, divide } = math;
+    const { complex, add, subtract, divide } = math;
 
     // ============================================================
     // JSDoc Type Definitions
@@ -2306,7 +2306,7 @@
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
         window.history.replaceState(null, '', newUrl);
-      }, [p]);
+      }, [modeDef, p]);
 
       // Hooks
       const { zToScreen, rCircles, xArcs, createXArc } = useSmithChart();
