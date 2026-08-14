@@ -1,8 +1,10 @@
 // antenna-matching.html.
 //
-// Ported from the Puppeteer suite that lived in .claude/skills/test-page/,
-// which the test plan in antenna-matching-tests.md describes.  The sections
-// below follow that plan's numbering so the two stay readable together.
+// Ported from a Puppeteer suite that lived in .claude/skills/test-page/,
+// paired with a prose test plan.  Both are gone: this file is the record of
+// what the page is expected to do, and being executable it cannot drift from
+// itself the way the plan drifted from the suite.  The section numbering is
+// the plan's, kept because the sections are a reasonable grouping.
 //
 // Each test navigates for itself.  The Puppeteer suite drove one page in
 // order, so some of its cases depended on the state a previous case left
