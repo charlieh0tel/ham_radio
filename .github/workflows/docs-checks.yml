@@ -5,11 +5,11 @@ on:
     branches: [master]
     paths:
       - 'docs/**'
-      - '.github/workflows/docs-typecheck.yml'
+      - '.github/workflows/docs-checks.yml'
   pull_request:
     paths:
       - 'docs/**'
-      - '.github/workflows/docs-typecheck.yml'
+      - '.github/workflows/docs-checks.yml'
 
 jobs:
   typecheck:
@@ -39,7 +39,23 @@ jobs:
           cache-dependency-path: docs/tools/package-lock.json
       - run: npm ci
         working-directory: docs/tools
-      - run: npx playwright install --with-deps chromium
+      # Cache the browser download, which is most of this job's runtime.  The
+      # key is the Playwright version: a browser build is pinned to it, so a
+      # stale cache would be a browser the runner cannot drive.
+      - id: playwright-version
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+        working-directory: docs/tools
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: docs/tools
+      # The browser is cached but its apt dependencies are not.
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
         working-directory: docs/tools
       - run: npm test
         working-directory: docs/tools
