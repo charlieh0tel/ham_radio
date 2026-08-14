@@ -521,6 +521,21 @@ for (const [label, value] of [
   });
 }
 
+test('12.2b a center-fed doublet is its own feed point', async ({ page }) => {
+  // At 0% offset the cos-squared factor is 1, so the feed impedance is the
+  // center impedance.  Displayed to one decimal, so compare loosely.
+  await page.goto(`${PAGE}?mode=ocfd&ocr=73&ocx=0&off=0`);
+  expect(await readResistance(page)).toBeCloseTo(73, 0);
+});
+
+test('12.3b feed resistance rises with the offset', async ({ page }) => {
+  await page.goto(`${PAGE}?mode=ocfd&ocr=73&ocx=0&off=0`);
+  const atZero = await readResistance(page);
+
+  await setSlider(page, 'Feed offset', 20);
+  await expect.poll(() => readResistance(page)).toBeGreaterThan(atZero);
+});
+
 test('12.4 the feedline selector changes the SWR', async ({ page }) => {
   await page.goto(`${PAGE}?mode=ocfd&ocr=73&ocx=0&off=33`);
   const swr50 = await readSWR(page);
