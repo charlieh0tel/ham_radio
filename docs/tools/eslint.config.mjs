@@ -6,9 +6,10 @@
 // diagnostic's line number matches the HTML.
 //
 // The rule this exists for is react-hooks/exhaustive-deps.  A dependency array
-// that quietly listed a derived object rather than the inputs behind it let
-// switching display units discard the user's wire length; nothing but a linter
-// finds that class of bug.
+// that quietly lists a derived object rather than the inputs behind it is a
+// class of bug nothing but a linter finds.  antenna-matching.html is the page
+// with hooks, so it is the one linted; sherwood.html is plain JS and does not
+// pass yet.
 
 import js from '@eslint/js';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -23,7 +24,8 @@ export default [
       globals: { React: 'readonly', ReactDOM: 'readonly', window: 'readonly',
                  document: 'readonly', URLSearchParams: 'readonly',
                  URL: 'readonly', Blob: 'readonly',
-                 console: 'readonly', Chart: 'readonly', math: 'readonly',
+                 console: 'readonly', navigator: 'readonly',
+                 Chart: 'readonly', math: 'readonly',
                  fmin: 'readonly' },
     },
     plugins: { 'react-hooks': reactHooks },

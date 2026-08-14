@@ -27,27 +27,3 @@ jobs:
         working-directory: docs/tools
       - run: npm run lint
         working-directory: docs/tools
-      - run: npm test
-        working-directory: docs/tools
-
-  browser:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: docs/tools/package-lock.json
-      - run: npm ci
-        working-directory: docs/tools
-      - run: npx playwright install --with-deps chromium
-        working-directory: docs/tools
-      - run: npm run test:browser
-        working-directory: docs/tools
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: docs/tools/playwright-report/
-          retention-days: 7

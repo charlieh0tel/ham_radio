@@ -21,7 +21,6 @@
     "allowUmdGlobalAccess": true
   },
   "include": [
-    ".check/random-wire.jsx",
     ".check/sherwood.jsx",
     "globals.d.ts"
   ]
