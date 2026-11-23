@@ -1,8 +1,4 @@
 import dataclasses
-import enum
-import io
-import struct
-import time
 
 import numpy as np
 import pandas as pd
@@ -10,7 +6,6 @@ import pandas as pd
 import pymeasure
 import pymeasure.instruments
 import pymeasure.instruments.validators
-import pyvisa.errors
 
 import ablock
 

@@ -39,7 +39,7 @@ def freq(mem):
     digits = [chr(48 + bcd_digit) for bcd_digit in bcd_digits]
     try:
         return float("".join(digits[0:3]) + "." + "".join(digits[3:]))
-    except:
+    except ValueError:
         return -1
 
 

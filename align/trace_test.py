@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 
-import logging
 import sys
-import time
 
-import numpy as np
 
 import pymeasure
 import pymeasure.adapters
-import pyvisa
 
 import hp8560e
-import ablock
 
 
 def main(argv):
