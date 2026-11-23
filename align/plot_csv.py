@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 import math
-import json
 import pathlib
 import sys
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 import seaborn as sns
 
 import bands
@@ -21,7 +19,7 @@ def main(argv):
     for path in argv[1:]:
         print(path)
         with open(path, "r") as f:
-            df = pd.read_csv(path)
+            df = pd.read_csv(f)
             band = bands.which_band(df["frequencies"][0])
             df["frequencies"] = df["frequencies"] / 1e6
 
