@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
-import logging
 import sys
-import time
 
 import numpy as np
 

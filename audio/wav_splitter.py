@@ -19,7 +19,7 @@ def get_wav_info(wav_file):
         n_frames = params.nframes
         duration = n_frames / float(framerate)
 
-        print(f"WAV File Info:")
+        print("WAV File Info:")
         print(f"  Channels: {n_channels}")
         print(f"  Sample Width: {sampwidth} bytes")
         print(f"  Frame Rate: {framerate} Hz")
