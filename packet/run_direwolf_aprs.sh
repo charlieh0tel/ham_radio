@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HERE="$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")"
+HERE="$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")"
 
 DIREWOLF="${HOME}/src/direwolf/build/src/direwolf"
 WHAT="$1"; shift
