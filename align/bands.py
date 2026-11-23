@@ -1,5 +1,6 @@
 import dataclasses
 
+
 @dataclasses.dataclass
 class Band:
     name: str
@@ -7,7 +8,7 @@ class Band:
     stop_frequency: float
 
 
-BANDS=[
+BANDS = [
     Band(name="160m", start_frequency=1.800e6, stop_frequency=2.000e6),
     Band(name="80m", start_frequency=3.500e6, stop_frequency=4.000e6),
     # 60m is channelized in the US, but this is fine for what we are doing.
@@ -19,10 +20,10 @@ BANDS=[
     Band(name="15m", start_frequency=21.000e6, stop_frequency=21.450e6),
     Band(name="12m", start_frequency=24.890e6, stop_frequency=24.990e6),
     Band(name="10m", start_frequency=28.000e6, stop_frequency=29.700e6),
-    Band(name="6m", start_frequency=50.000e6, stop_frequency=54.000e6)
+    Band(name="6m", start_frequency=50.000e6, stop_frequency=54.000e6),
 ]
 
-BAND_BY_NAME={band.name: band for band in BANDS}
+BAND_BY_NAME = {band.name: band for band in BANDS}
 
 
 def which_band(freq):

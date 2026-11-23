@@ -15,12 +15,13 @@ import hp8560e
 
 
 def main(argv):
-    #logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     resource = "tcpip::e5810a::gpib0,11"
-    adapter = pymeasure.adapters.VISAAdapter(resource, visa_library="@py",
-                                             timeout=20 * 1000)
+    adapter = pymeasure.adapters.VISAAdapter(
+        resource, visa_library="@py", timeout=20 * 1000
+    )
     sa = hp8560e.HP8560E(adapter)
-    
+
     print("Calibrating thru for all bands.")
     print("Setup thru calibration.")
     input("Press return to continue. -> ")
@@ -43,7 +44,7 @@ def main(argv):
         sa.take_sweep()
         sa.normalize = True
 
-        band_thru_calibrations[band.name] = sa.read_trace(which='B')
+        band_thru_calibrations[band.name] = sa.read_trace(which="B")
 
         sa.write("VIEW TRB;")
         time.sleep(5)

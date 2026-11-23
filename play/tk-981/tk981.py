@@ -4,34 +4,41 @@
 def read(path):
     with open(path, "rb") as file:
         return file.read()
-    
-CONTENTS=read("kpg49d_example.dat")
+
+
+CONTENTS = read("kpg49d_example.dat")
+
 
 def memories(contents):
-    start=0x330
-    record_length=32
-    max_records=32 * 16
-    return [contents[start + n * record_length:
-                     start + (n + 1) * record_length]
-            for n in range(max_records)]
-    
+    start = 0x330
+    record_length = 32
+    max_records = 32 * 16
+    return [
+        contents[start + n * record_length : start + (n + 1) * record_length]
+        for n in range(max_records)
+    ]
+
+
 MEMORIES = memories(CONTENTS)
 
-#print(MEMORIES[0])
+# print(MEMORIES[0])
+
 
 def freq(mem):
     assert len(mem) == 4
-    bcd_digits = [mem[3] >> 4,
-                  mem[3] & 0xf,
-                  mem[2] >> 4,
-                  mem[2] & 0xf,
-                  mem[1] >> 4,
-                  mem[1] & 0xf,
-                  mem[0] >> 4,
-                  mem[0] & 0xf]
+    bcd_digits = [
+        mem[3] >> 4,
+        mem[3] & 0xF,
+        mem[2] >> 4,
+        mem[2] & 0xF,
+        mem[1] >> 4,
+        mem[1] & 0xF,
+        mem[0] >> 4,
+        mem[0] & 0xF,
+    ]
     digits = [chr(48 + bcd_digit) for bcd_digit in bcd_digits]
     try:
-        return float(''.join(digits[0:3]) + '.' + ''.join(digits[3:]))
+        return float("".join(digits[0:3]) + "." + "".join(digits[3:]))
     except:
         return -1
 
@@ -43,28 +50,30 @@ def u16le(m):
 
 def get_tone(mem):
     raw = u16le(mem)
-    if raw == 0xffff:
+    if raw == 0xFFFF:
         return "none "
     elif raw > 0x2800:
         code = raw & 0x07FF
-        pol =  "R" if raw & 0x8000 else "N"
+        pol = "R" if raw & 0x8000 else "N"
         return f"D{code:03o}{pol}"
     else:
-        return "%5.1f" % (float(raw) / 10.)
+        return "%5.1f" % (float(raw) / 10.0)
+
 
 print()
 
 for index, memory in enumerate(MEMORIES):
     ffff = u16le(memory[0:2])
-    assert ffff == 0xffff
+    assert ffff == 0xFFFF
 
     n = memory[2]
-    if n == 0xff: continue
+    if n == 0xFF:
+        continue
 
-    if memory[4] == 0xff: 
+    if memory[4] == 0xFF:
         ## Start of system.
         n_entries = memory[3]
-        name = memory[5:15].decode('ascii', errors='backslashreplace')
+        name = memory[5:15].decode("ascii", errors="backslashreplace")
         print(f"-- System {n:2} {n_entries:3} {name} --")
     else:
         ## Group (memory).
@@ -72,5 +81,5 @@ for index, memory in enumerate(MEMORIES):
         up = freq(memory[7:11])
         dtone = get_tone(memory[13:15])
         utone = get_tone(memory[15:17])
-        name = memory[17:27].decode('ascii', errors='backslashreplace')
+        name = memory[17:27].decode("ascii", errors="backslashreplace")
         print(f"{n:2} {down:8.4f} {up:8.4f} {dtone} {utone} {name}")
