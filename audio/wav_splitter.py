@@ -54,8 +54,7 @@ def split_wav_by_duration(input_file, segment_duration, output_dir=None):
         total_segments = (n_frames + frames_per_segment - 1) // frames_per_segment
 
         print(
-            f"\nSplitting into {total_segments} segments of"
-            f"{segment_duration}s each..."
+            f"\nSplitting into {total_segments} segments of{segment_duration}s each..."
         )
 
         for i in range(total_segments):
@@ -66,7 +65,7 @@ def split_wav_by_duration(input_file, segment_duration, output_dir=None):
             frames = wav.readframes(frames_to_read)
 
             base_name = input_path.stem
-            output_file = output_dir / f"{base_name}_part{i+1:03d}.wav"
+            output_file = output_dir / f"{base_name}_part{i + 1:03d}.wav"
 
             with wave.open(str(output_file), "wb") as output_wav:
                 output_wav.setparams(params)
@@ -113,7 +112,7 @@ def split_wav_by_count(input_file, num_parts, output_dir=None):
             frames = wav.readframes(frames_to_read)
 
             base_name = input_path.stem
-            output_file = output_dir / f"{base_name}_part{i+1:03d}.wav"
+            output_file = output_dir / f"{base_name}_part{i + 1:03d}.wav"
 
             with wave.open(str(output_file), "wb") as output_wav:
                 output_wav.setparams(params)

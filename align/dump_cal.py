@@ -22,20 +22,21 @@ def main(argv):
         amplitudes = np.array(list(trace.to_parameter_units()))
         mean = np.mean(amplitudes)
         std = np.std(amplitudes)
-        
-        print(f"band={band.name:10s}  mean={mean:6.3f} sd={std:6.3f} {trace.amplitude_units} ")
-        
-        title = (f"{band.name} mean={mean:.2f} std={std:.2f} dB")
+
+        print(
+            f"band={band.name:10s}  mean={mean:6.3f} sd={std:6.3f} {trace.amplitude_units} "
+        )
+
+        title = f"{band.name} mean={mean:.2f} std={std:.2f} dB"
 
         fig, ax = plt.subplots()
         ax.plot(frequencies, amplitudes, label=None)
         ax.set(xlabel="MHz", ylabel="IL (dB)", title=title)
         ax.minorticks_on()
-        ax.set_ybound(0., -20.)
-        
+        ax.set_ybound(0.0, -20.0)
+
         plt.tight_layout()
         plt.show()
-
 
     return 0
 

@@ -15,10 +15,11 @@ import hp8560e
 
 
 def main(argv):
-    #logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     resource = "tcpip::e5810a::gpib0,11"
-    adapter = pymeasure.adapters.VISAAdapter(resource, visa_library="@py",
-                                             timeout=20 * 1000)
+    adapter = pymeasure.adapters.VISAAdapter(
+        resource, visa_library="@py", timeout=20 * 1000
+    )
     sa = hp8560e.HP8560E(adapter)
 
     band_name = argv[1]
@@ -59,7 +60,6 @@ def main(argv):
     yymmdd = datetime.datetime.now().strftime("%y%m%d")
     with open(f"align_{band_name}_{yymmdd}.csv", "w") as f:
         trace.to_dataframe().to_csv(f, index=False)
-    
 
     return 0
 
