@@ -6,7 +6,8 @@
 
 import { test, expect } from '@playwright/test';
 
-const PAGE = '/sherwood.html';
+const PAGE = '/sherwood.html'
+const PROXY_ROUTE = /cors-proxy\.ch-413\.workers\.dev/;
 
 // Two rows in the shape the real table uses: 13+ cells, the model in cell 0
 // with an "Added" date, narrow dynamic range in cell 12.  The second row
@@ -33,26 +34,19 @@ const TABLE_HTML = `
 </body></html>`;
 
 /**
- * Answer every CORS proxy with the same canned table, so the first one wins
- * and the page never touches the network.
+ * Answer the CORS proxy with a canned table.
  *
  * @param {import('@playwright/test').Page} page
  * @param {string} [body] - HTML to serve as the fetched page
  */
-async function stubProxies(page, body = TABLE_HTML) {
-  await page.route('**/corsproxy.io/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'text/html', body }));
-  // allorigins wraps the page in JSON; the other two return it raw.
-  await page.route('**/api.allorigins.win/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json',
-                    body: JSON.stringify({ contents: body }) }));
-  await page.route('**/thingproxy.freeboard.io/**', (route) =>
+async function stubProxy(page, body = TABLE_HTML) {
+  await page.route(PROXY_ROUTE, (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body }));
 }
 
 test('asks before fetching anything', async ({ page }) => {
   let fetched = false;
-  await page.route('**/corsproxy.io/**', (route) => { fetched = true; route.abort(); });
+  await page.route('**/cors-proxy.ch-413.workers.dev/**', (route) => { fetched = true; route.abort(); });
 
   await page.goto(PAGE);
   await expect(page.locator('#permission-screen')).toBeVisible();
@@ -62,7 +56,7 @@ test('asks before fetching anything', async ({ page }) => {
 
 test('declining leaves the data unfetched', async ({ page }) => {
   let fetched = false;
-  await page.route('**/corsproxy.io/**', (route) => { fetched = true; route.abort(); });
+  await page.route('**/cors-proxy.ch-413.workers.dev/**', (route) => { fetched = true; route.abort(); });
 
   await page.goto(PAGE);
   await page.getByRole('button', { name: 'No thanks' }).click();
@@ -71,7 +65,7 @@ test('declining leaves the data unfetched', async ({ page }) => {
 });
 
 test('parses the table into rows', async ({ page }) => {
-  await stubProxies(page);
+  await stubProxy(page);
   await page.goto(PAGE);
   await page.getByRole('button', { name: 'Yes, fetch data' }).click();
 
@@ -85,7 +79,7 @@ test('parses the table into rows', async ({ page }) => {
 });
 
 test('search filters the rows', async ({ page }) => {
-  await stubProxies(page);
+  await stubProxy(page);
   await page.goto(PAGE);
   await page.getByRole('button', { name: 'Yes, fetch data' }).click();
   await expect(page.locator('tbody tr')).toHaveCount(2);
@@ -96,7 +90,7 @@ test('search filters the rows', async ({ page }) => {
 });
 
 test('sorting by a column reorders the rows', async ({ page }) => {
-  await stubProxies(page);
+  await stubProxy(page);
   await page.goto(PAGE);
   await page.getByRole('button', { name: 'Yes, fetch data' }).click();
 
@@ -106,28 +100,11 @@ test('sorting by a column reorders the rows', async ({ page }) => {
   await expect(page.locator('tbody tr').first()).toContainText('Icom IC-7300');
 });
 
-test('every proxy failing shows the error screen', async ({ page }) => {
-  await page.route('**/corsproxy.io/**', (route) => route.abort());
-  await page.route('**/api.allorigins.win/**', (route) => route.abort());
-  await page.route('**/thingproxy.freeboard.io/**', (route) => route.abort());
-
+test('proxy failing shows the error screen', async ({ page }) => {
+  await page.route('**/cors-proxy.ch-413.workers.dev/**', (route) => route.abort());
   await page.goto(PAGE);
   await page.getByRole('button', { name: 'Yes, fetch data' }).click();
 
   await expect(page.locator('#error-screen')).toBeVisible();
   await expect(page.locator('#error-detail')).not.toBeEmpty();
-});
-
-test('falls through to the next proxy when the first fails', async ({ page }) => {
-  await page.route('**/corsproxy.io/**', (route) => route.abort());
-  await stubProxies(page);
-  // stubProxies re-registers corsproxy; the abort above was registered first
-  // and Playwright matches the most recently added route, so re-abort it.
-  await page.route('**/corsproxy.io/**', (route) => route.abort());
-
-  await page.goto(PAGE);
-  await page.getByRole('button', { name: 'Yes, fetch data' }).click();
-
-  await expect(page.locator('#dashboard')).toBeVisible();
-  await expect(page.locator('tbody tr')).toHaveCount(2);
 });
