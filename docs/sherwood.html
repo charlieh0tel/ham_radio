@@ -150,11 +150,12 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
       <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">sherweng.com</a>,
       maintained by Rob Sherwood NC0B. All data and measurements belong to Sherwood Engineering — this tool only visualizes it.
     </p>
-    <div class="notice">
-      Since sherweng.com is plain HTTP, a CORS proxy is needed to relay the request from this HTTPS page.
-      It will try <strong>corsproxy.io</strong>, then <strong>allorigins.win</strong>, then
-      <strong>thingproxy.freeboard.io</strong> in sequence. Your IP is visible to whichever service succeeds.
-      No data is stored or forwarded elsewhere.
+    <div class="notice" id="proxy-notice">
+      Since sherweng.com is plain HTTP, a CORS proxy is needed to
+      relay the request from this HTTPS page.  The proxy is
+      implemented with a CloudFlare worker running under AI6KG's
+      account.  Your IP is visible to CloudFlare.  No data is stored
+      or forwarded elsewhere.
     </div>
     <p>Fetch the latest data now?</p>
     <div class="btn-row">
@@ -174,7 +175,7 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 <div id="error-screen" class="screen" style="display:none;">
   <div class="card">
     <h2>Could not load data</h2>
-    <p>All proxies failed. Visit the original page directly:<br>
+    <p>The CORS proxy failed. Visit the original page directly:<br>
       <a href="http://www.sherweng.com/table.html" target="_blank" rel="noopener">http://www.sherweng.com/table.html</a>
     </p>
     <div class="error-detail" id="error-detail"></div>
@@ -297,6 +298,7 @@ sup.fn { font-size:9px; color:var(--col-B); cursor:help; vertical-align:super; l
 // module, where the `/* exported */` marker that would say so is inert.
 
 const TARGET = 'http://www.sherweng.com/table.html';
+const PROXY_URL = 'https://cors-proxy.ch-413.workers.dev/?url=';
 
 /**
  * One tested receiver, as parsed from the Sherwood table.  Numeric fields are
@@ -353,18 +355,6 @@ function inputById(id) {
 function selectById(id) {
   return /** @type {HTMLSelectElement} */ (byId(id));
 }
-
-const PROXIES = [
-  { label:'corsproxy.io',
-    /** @param {string} u @returns {Promise<string>} */
-    fetch: async (/** @type {string} */ u) => { const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(u)); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); } },
-  { label:'allorigins.win',
-    /** @param {string} u @returns {Promise<string>} */
-    fetch: async (/** @type {string} */ u) => { const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(u)); if(!r.ok) throw new Error('HTTP '+r.status); const j=await r.json(); if(!j.contents) throw new Error('empty'); return j.contents; } },
-  { label:'thingproxy.freeboard.io',
-    /** @param {string} u @returns {Promise<string>} */
-    fetch: async (/** @type {string} */ u) => { const r=await fetch('https://thingproxy.freeboard.io/fetch/'+u); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); } }
-];
 
 // ── Footnote definitions (from Sherwood's key) ──────────────────────────
 // Transcribed verbatim.  Leave the wording and the spelling as he wrote it.
@@ -460,29 +450,32 @@ function showNoConsent() {
 // eslint-disable-next-line no-unused-vars -- called from onclick
 async function startFetch() {
   show('loading-screen');
-  const errors = [];
-  for (const proxy of PROXIES) {
-    try {
-      byId('loading-msg').textContent = 'Trying ' + proxy.label + '…';
-      const html = await proxy.fetch(TARGET);
-      byId('loading-msg').textContent = 'Parsing table…';
-      const { data, footnotes } = parseSherwoodHTML(html);
-      if (!data.length) {
-        console.warn('Parsed 0 rows — page structure may have changed');
-      }
-      ALL_DATA = data;
-      FOOTNOTES_SEEN = footnotes;
-      buildBrandFilter();
-      buildFootnoteKey();
-      const dm = html.match(/Updated\s+([\d]+\s+\w+\s+[\d]{4})/i);
-      if (dm) byId('data-date').textContent = 'Updated: ' + dm[1];
-      show('dashboard');
-      update();
-      return;
-    } catch(e) { errors.push(proxy.label + ': ' + (e instanceof Error ? e.message : String(e))); }
+  try {
+    byId('loading-msg').textContent = 'Fetching data…';
+    const res = await fetch(PROXY_URL + encodeURIComponent(TARGET));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const html = await res.text();
+
+    byId('loading-msg').textContent = 'Parsing table…';
+    const { data, footnotes } = parseSherwoodHTML(html);
+    if (!data.length) {
+      console.warn('Parsed 0 rows — page structure may have changed');
+    }
+
+    ALL_DATA = data;
+    FOOTNOTES_SEEN = footnotes;
+    buildBrandFilter();
+    buildFootnoteKey();
+
+    const dm = html.match(/Updated\s+([\d]+\s+\w+\s+[\d]{4})/i);
+    if (dm) byId('data-date').textContent = 'Updated: ' + dm[1];
+
+    show('dashboard');
+    update();
+  } catch (e) {
+    byId('error-detail').textContent = e instanceof Error ? e.message : String(e);
+    show('error-screen');
   }
-  byId('error-detail').textContent = errors.join('\n');
-  show('error-screen');
 }
 
 // ── Parser ───────────────────────────────────────────────────────────────
